@@ -1,0 +1,59 @@
+<document>
+	<algorithm>
+		<name>BCEP</name>
+		<class>bcep.BCEP_Model</class>
+		<parameter>
+		    <name>SMALL</name>
+		    <type>integer</type>
+		    <domain>
+		      <min>0</min>
+		      <max>100</max>
+		    </domain>
+		    <default>6</default>
+		</parameter>
+		<parameter>
+		    <name>MIERDA</name>
+		    <type>real</type>
+		    <domain>
+		      <min>0</min>
+		      <max>100</max>
+		    </domain>
+		    <default>8</default>
+		</parameter>
+		<parameter>
+		    <name>ASCO</name>
+		    <type>nominal</type>
+		    <domain>
+		      <item>DE</item>
+		      <item>MIERDA</item>
+		      <item>JAVA</item>
+		    </domain>
+		    <default>8</default>
+		</parameter>
+	</algorithm>
+
+
+
+
+	<algorithm>
+		<name>Tree-based JEP-C</name>
+		<class>bcep.BCEP_Model</class>
+	</algorithm>
+
+
+
+
+	<algorithm>
+		<name>Top-k minimal SJEPs</name>
+	</algorithm>
+
+
+
+
+
+	<algorithm>
+		<name>DGPC</name>
+	</algorithm>
+</document>
+
+
