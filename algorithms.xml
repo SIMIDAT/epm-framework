@@ -3,7 +3,7 @@
 		<name>BCEP</name>
 		<class>bcep.BCEP_Model</class>
 		<parameter>
-		    <name>SMALL</name>
+		    <name>INTEGER PARAMETER</name>
 		    <type>integer</type>
 		    <domain>
 		      <min>0</min>
@@ -12,7 +12,7 @@
 		    <default>6</default>
 		</parameter>
 		<parameter>
-		    <name>MIERDA</name>
+		    <name>REAL PARAMETER</name>
 		    <type>real</type>
 		    <domain>
 		      <min>0</min>
@@ -21,14 +21,14 @@
 		    <default>8</default>
 		</parameter>
 		<parameter>
-		    <name>ASCO</name>
+		    <name>NOMINAL PARAMETER</name>
 		    <type>nominal</type>
 		    <domain>
-		      <item>DE</item>
-		      <item>MIERDA</item>
-		      <item>JAVA</item>
+		      <item>ELEMENT 1</item>
+		      <item>ELEMENT 2</item>
+		      <item>ELEMENT 3</item>
 		    </domain>
-		    <default>8</default>
+		    <default>2</default> <!-- it goes from 1 to n -->
 		</parameter>
 	</algorithm>
 

@@ -21,12 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package bcep;
 
-import epm_algorithms.Model;
-import java.util.HashMap;
-import keel.Dataset.InstanceSet;
-
+package exceptions;
 
 /**
  *
@@ -34,26 +30,14 @@ import keel.Dataset.InstanceSet;
  * @version 1.0
  * @since JDK 1.8
  */
-public class BCEP_Model extends Model {
+public class IllegalActionException extends Exception{
+    private String reason;
     
-
-    public BCEP_Model() {
-        super.setFullyQualifiedName("bcep.BCEP_Model");
+    public IllegalActionException(String reason){
+        this.reason = reason;
     }
     
-    
-    @Override
-    public void learn(InstanceSet training, HashMap<String, String> paramsz){
-        System.out.println("EO QUE ME TIENES QUE PONER ALGO AQUIII");
-        
-    }
-    
-    @Override
-    public void predict(InstanceSet test){
-        System.out.println("Que NO estoy hecho aun!");
-    }
-    
-    public String toString(){
-        return "UNSUPPORTED";
+    public String getReason(){
+        return reason;
     }
 }

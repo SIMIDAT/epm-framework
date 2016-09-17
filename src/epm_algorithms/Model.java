@@ -49,8 +49,6 @@ public class Model implements Serializable{
      * @throws IOException 
      */
     public void saveModel(String path) throws IOException{
-        // add .ser extension
-        path += ".ser";
         ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(path));
         stream.writeObject(this);
         stream.close();
@@ -72,10 +70,14 @@ public class Model implements Serializable{
     }
      
     /**
-     * Learns a model from training data
+     * Learns a model from training data, and saves it to a file
      * @param training 
      */
     public void learn(InstanceSet training, HashMap<String, String> params){
+        
+    }
+    
+    public void predict(InstanceSet test){
         
     }
 
