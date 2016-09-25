@@ -24,6 +24,7 @@
 package epm_algorithms;
 
 import exceptions.IllegalActionException;
+import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.peer.PanelPeer;
 import java.io.File;
@@ -112,6 +113,7 @@ public class Main extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         AlgorithmList = new javax.swing.JComboBox<>();
         jButton1 = new javax.swing.JButton();
+        jScrollPane2 = new javax.swing.JScrollPane();
         ParametersPanel = new javax.swing.JPanel();
         ExecutionInfoLearn = new javax.swing.JLabel();
         SaveModelCheckbox = new javax.swing.JCheckBox();
@@ -178,6 +180,8 @@ public class Main extends javax.swing.JFrame {
         });
 
         ParametersPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Algorithms Parameters"));
+        ParametersPanel.setLayout(new java.awt.GridLayout(50, 2));
+        jScrollPane2.setViewportView(ParametersPanel);
 
         SaveModelCheckbox.setSelected(true);
         SaveModelCheckbox.setText("Save Model:");
@@ -204,38 +208,41 @@ public class Main extends javax.swing.JFrame {
         LearnPanel.setLayout(LearnPanelLayout);
         LearnPanelLayout.setHorizontalGroup(
             LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(LearnPanelLayout.createSequentialGroup()
-                .addGap(26, 26, 26)
-                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
+                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(LearnPanelLayout.createSequentialGroup()
-                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel1)
-                            .addComponent(SaveModelCheckbox))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addContainerGap()
+                        .addComponent(jScrollPane2))
+                    .addGroup(LearnPanelLayout.createSequentialGroup()
+                        .addGap(26, 26, 26)
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(ExecutionInfoLearn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(LearnPanelLayout.createSequentialGroup()
-                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(rutaTra, javax.swing.GroupLayout.DEFAULT_SIZE, 434, Short.MAX_VALUE)
-                                    .addComponent(rutaTst)
-                                    .addComponent(rutaModel))
-                                .addGap(18, 18, 18)
+                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(jLabel2)
+                                    .addComponent(jLabel3)
+                                    .addComponent(jLabel1)
+                                    .addComponent(SaveModelCheckbox))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(BrowseButtonModel)
-                                    .addComponent(BrowseButtonTRA)
-                                    .addComponent(BrowseButtonTST)))
-                            .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(LearnPanelLayout.createSequentialGroup()
-                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(ParametersPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(ExecutionInfoLearn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addContainerGap())))
-            .addGroup(LearnPanelLayout.createSequentialGroup()
-                .addGap(352, 352, 352)
+                                    .addGroup(LearnPanelLayout.createSequentialGroup()
+                                        .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(0, 0, Short.MAX_VALUE))
+                                    .addGroup(LearnPanelLayout.createSequentialGroup()
+                                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(rutaTst, javax.swing.GroupLayout.DEFAULT_SIZE, 641, Short.MAX_VALUE)
+                                            .addComponent(rutaModel)
+                                            .addComponent(rutaTra))
+                                        .addGap(18, 18, 18)
+                                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(BrowseButtonModel)
+                                            .addComponent(BrowseButtonTRA)
+                                            .addComponent(BrowseButtonTST))))))))
+                .addContainerGap())
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 352, Short.MAX_VALUE))
+                .addGap(404, 404, 404))
         );
         LearnPanelLayout.setVerticalGroup(
             LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -245,30 +252,37 @@ public class Main extends javax.swing.JFrame {
                     .addGroup(LearnPanelLayout.createSequentialGroup()
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel1)
-                            .addComponent(rutaTra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(BrowseButtonTRA))
+                            .addComponent(rutaTra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel2)
-                            .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(BrowseButtonTST))
-                        .addGap(46, 46, 46))
+                            .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(49, 49, 49))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
-                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(BrowseButtonModel)
-                            .addComponent(SaveModelCheckbox)
-                            .addComponent(rutaModel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(LearnPanelLayout.createSequentialGroup()
+                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(LearnPanelLayout.createSequentialGroup()
+                                        .addComponent(BrowseButtonTRA)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(BrowseButtonTST)
+                                        .addGap(35, 35, 35))
+                                    .addComponent(BrowseButtonModel, javax.swing.GroupLayout.Alignment.TRAILING))
+                                .addGap(1, 1, 1))
+                            .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(SaveModelCheckbox)
+                                .addComponent(rutaModel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
                     .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(10, 10, 10)
-                .addComponent(ParametersPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 245, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 314, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton1)
-                .addGap(2, 2, 2)
-                .addComponent(ExecutionInfoLearn, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(11, 11, 11)
+                .addComponent(ExecutionInfoLearn, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         Tabs.addTab("Learn Model", LearnPanel);
@@ -303,26 +317,28 @@ public class Main extends javax.swing.JFrame {
         LoadPanelLayout.setHorizontalGroup(
             LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(LoadPanelLayout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(LoadPanelLayout.createSequentialGroup()
-                        .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(29, 29, 29)
-                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(457, 457, 457)
+                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 366, Short.MAX_VALUE))
                     .addGroup(LoadPanelLayout.createSequentialGroup()
-                        .addGap(7, 7, 7)
+                        .addGap(19, 19, 19)
                         .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jLabel5)
                             .addComponent(jLabel4))
                         .addGap(5, 5, 5)
-                        .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(ModelPath1)
-                            .addComponent(InstancesPath, javax.swing.GroupLayout.DEFAULT_SIZE, 477, Short.MAX_VALUE))
+                            .addComponent(InstancesPath))
                         .addGap(18, 18, 18)
                         .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(BrowseModelButton)
-                            .addComponent(BrowseInstances))))
-                .addContainerGap(60, Short.MAX_VALUE))
+                            .addComponent(BrowseInstances)))
+                    .addGroup(LoadPanelLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         LoadPanelLayout.setVerticalGroup(
             LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -338,10 +354,10 @@ public class Main extends javax.swing.JFrame {
                     .addComponent(InstancesPath, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(BrowseInstances))
                 .addGap(18, 18, 18)
-                .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton2)
-                    .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(344, Short.MAX_VALUE))
+                .addComponent(jButton2)
+                .addGap(21, 21, 21)
+                .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(384, Short.MAX_VALUE))
         );
 
         Tabs.addTab("Load Model", LoadPanel);
@@ -593,6 +609,7 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextField rutaModel;
     private javax.swing.JTextField rutaTra;
     private javax.swing.JTextField rutaTst;
@@ -689,8 +706,12 @@ public class Main extends javax.swing.JFrame {
         }
         
         // Update the panel 
+        ParametersPanel.setLayout(new GridLayout(parameters.getLength(), 2));
         ParametersPanel.validate();
         ParametersPanel.repaint();
+        jScrollPane2.setViewportView(ParametersPanel);
+        
+    
         } catch(java.lang.ArrayIndexOutOfBoundsException ex) {
             // If algorithms.xml has an error disable all the interface.
             this.setEnabled(false);

@@ -54,6 +54,66 @@
 	<algorithm>
 		<name>DGPC</name>
 	</algorithm>
+        
+        <algorithm>
+            <name>EvAEP</name>
+            <class>evaep.EvAEP</class>
+            <parameter>
+                <name>Seed</name>
+                <type>integer</type>
+                <domain>
+                    <min>0</min>
+                    <max>9999999</max>
+                </domain>
+                <default>1</default>
+            </parameter>
+            <!--
+            <parameter>
+                <name>Rules Representation</name>
+                <type>nominal</type>
+                <domain>
+                    <item>can</item>
+                    <item>dnf</item>
+                </domain>
+                <default>1</default>
+            </parameter> -->
+            <parameter>
+                <name>Number of Fuzzy Labels</name>
+                <type>integer</type>
+                <domain>
+                    <min>1</min>
+                    <max>13</max>
+                </domain>
+                <default>3</default>
+            </parameter>
+            <parameter>
+                <name>Number of Evaluations</name>
+                <type>integer</type>
+                <domain>
+                    <min>100</min>
+                    <max>9999999</max>
+                </domain>
+                <default>10000</default>
+            </parameter>
+            <parameter>
+                <name>Crossover Probability</name>
+                <type>real</type>
+                <domain>
+                    <min>0</min>
+                    <max>1</max>
+                </domain>
+                <default>0.6</default>
+            </parameter>
+            <parameter>
+                <name>Mutation Probability</name>
+                <type>real</type>
+                <domain>
+                    <min>0</min>
+                    <max>1</max>
+                </domain>
+                <default>0.01</default>
+            </parameter>
+        </algorithm>
 </document>
 
 
