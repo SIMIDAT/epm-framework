@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package sjep_classifier;
+package Utils;
 
+import sjep_classifier.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;

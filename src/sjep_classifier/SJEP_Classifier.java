@@ -24,6 +24,9 @@ import java.util.logging.Logger;
 import javafx.util.Pair;
 import keel.Dataset.*;
 import org.core.*;
+import Utils.CPTree;
+import Utils.Item;
+import Utils.Pattern;
 
 /**
  *

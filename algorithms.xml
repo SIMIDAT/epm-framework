@@ -1,7 +1,8 @@
 <document>
-	<algorithm>
+    <!-- EXAMPLE OF ALGORITHM 
+    <algorithm>
 		<name>BCEP</name>
-		<class>bcep.BCEP_Model</class>
+		<class>bcep.BCEP_Model</class> The class with the learn() and predict() methods. 
 		<parameter>
 		    <name>INTEGER PARAMETER</name>
 		    <type>integer</type>
@@ -28,8 +29,23 @@
 		      <item>ELEMENT 2</item>
 		      <item>ELEMENT 3</item>
 		    </domain>
-		    <default>2</default> <!-- it goes from 1 to n -->
+		    <default>2</default> it goes from 1 to n 
 		</parameter>
+	</algorithm> -->
+        
+	<algorithm>
+		<name>BCEP</name>
+		<class>bcep.BCEP_Model</class>
+		<parameter>
+		    <name>Minimum support</name>
+		    <type>real</type>
+		    <domain>
+		      <min>0</min>
+		      <max>1</max>
+		    </domain>
+		    <default>0.2</default>
+		</parameter>
+		
 	</algorithm>
 
 

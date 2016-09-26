@@ -150,7 +150,7 @@
                           <Component id="AlgorithmList" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
-                      <Component id="jScrollPane2" pref="314" max="32767" attributes="0"/>
+                      <Component id="jScrollPane2" pref="338" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="jButton1" min="-2" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="11" max="-2" attributes="0"/>
@@ -244,6 +244,9 @@
               </SubComponents>
             </Container>
             <Component class="javax.swing.JLabel" name="ExecutionInfoLearn">
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="10"/>
+              </AuxValues>
             </Component>
             <Component class="javax.swing.JCheckBox" name="SaveModelCheckbox">
               <Properties>
@@ -333,7 +336,7 @@
                       <Component id="jButton2" min="-2" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="21" max="-2" attributes="0"/>
                       <Component id="ExecutionInfoLoad" min="-2" pref="65" max="-2" attributes="0"/>
-                      <EmptySpace pref="384" max="32767" attributes="0"/>
+                      <EmptySpace pref="408" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>

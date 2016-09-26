@@ -47,6 +47,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
+import keel.Dataset.Attributes;
+import keel.Dataset.DatasetException;
+import keel.Dataset.HeaderFormatException;
 import keel.Dataset.InstanceSet;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -277,7 +280,7 @@ public class Main extends javax.swing.JFrame {
                     .addComponent(jLabel3)
                     .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 314, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 338, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton1)
                 .addGap(11, 11, 11)
@@ -357,7 +360,7 @@ public class Main extends javax.swing.JFrame {
                 .addComponent(jButton2)
                 .addGap(21, 21, 21)
                 .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(384, Short.MAX_VALUE))
+                .addContainerGap(408, Short.MAX_VALUE))
         );
 
         Tabs.addTab("Load Model", LoadPanel);
@@ -451,8 +454,21 @@ public class Main extends javax.swing.JFrame {
             if (SaveModelCheckbox.isSelected() && rutaModel.getText().equals("")) {
                 throw new exceptions.IllegalActionException("ERROR: You must specify a path to save the model.");
             }
+            if (rutaTra.getText().equals("")) {
+                throw new exceptions.IllegalActionException("ERROR: You must specify a training file.");
+            }
+
+            // Reads training and test file
+            InstanceSet training = new InstanceSet();
+            InstanceSet test = new InstanceSet();
+            Attributes.clearAll();
+            training.readSet(rutaTra.getText(), true);
+            if (!rutaTst.getText().equals("")) {
+                test.readSet(rutaTst.getText(), false);
+            }
+
             ExecutionInfoLearn.setText("Executing Model... (This may take a while)");
-            //First: instantiate the class selected with th fully qualified name
+            //First: instantiate the class selected with the fully qualified name
             Object newObject;
             Class clase = Class.forName(actual_fully_qualified_class);
             newObject = clase.newInstance();
@@ -463,18 +479,25 @@ public class Main extends javax.swing.JFrame {
             args[1] = HashMap.class;
 
             // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
-            clase.getMethod("learn", args).invoke(newObject, new InstanceSet(), params);
-            
-            args = new Class[1];
-            args[0] = String.class;
-            clase.getMethod("saveModel", args).invoke(newObject, rutaModel.getText());
-            ExecutionInfoLearn.setText("Done.");
-            
+            clase.getMethod("learn", args).invoke(newObject, training, params);
+
+            // Invoke saveModel method if neccesary
+            if (SaveModelCheckbox.isSelected()) {
+                args = new Class[1];
+                args[0] = String.class;
+                clase.getMethod("saveModel", args).invoke(newObject, rutaModel.getText());
+            }
+           
+
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         } catch (exceptions.IllegalActionException ex) {
             ExecutionInfoLearn.setText("");
             ExecutionInfoLearn.setText(ex.getReason());
+        } catch (DatasetException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (HeaderFormatException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
@@ -593,7 +616,7 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JButton BrowseButtonTST;
     private javax.swing.JButton BrowseInstances;
     private javax.swing.JButton BrowseModelButton;
-    private javax.swing.JLabel ExecutionInfoLearn;
+    private static javax.swing.JLabel ExecutionInfoLearn;
     private javax.swing.JLabel ExecutionInfoLoad;
     private javax.swing.JTextField InstancesPath;
     private javax.swing.JPanel LearnPanel;
@@ -658,61 +681,60 @@ public class Main extends javax.swing.JFrame {
             Float.valueOf(100.0f), // Maximo
             Float.valueOf(0.5f)));  Paso */
         // Now, get the parameters
-        try{
-        NodeList parameters = node.getElementsByTagName("parameter");
-        for (int j = 0; j < parameters.getLength(); j++) {
-            Element nodeParam = (Element) parameters.item(j);
-            switch (nodeParam.getElementsByTagName("type").item(0).getTextContent()) {
-                case "integer":
-                    ParametersPanel.add(new JLabel(nodeParam.getElementsByTagName("name").item(0).getTextContent() + ": "));
-                    Integer defect,
-                     min,
-                     max;
-                    defect = Integer.parseInt(nodeParam.getElementsByTagName("default").item(0).getTextContent());
-                    Element domain = (Element) nodeParam.getElementsByTagName("domain").item(0);
-                    min = Integer.parseInt(domain.getElementsByTagName("min").item(0).getTextContent());
-                    max = Integer.parseInt(domain.getElementsByTagName("max").item(0).getTextContent());
-                    ParametersPanel.add(new JSpinner(new SpinnerNumberModel(defect.intValue(), min.intValue(), max.intValue(), 1)));
-                    break;
+        try {
+            NodeList parameters = node.getElementsByTagName("parameter");
+            for (int j = 0; j < parameters.getLength(); j++) {
+                Element nodeParam = (Element) parameters.item(j);
+                switch (nodeParam.getElementsByTagName("type").item(0).getTextContent()) {
+                    case "integer":
+                        ParametersPanel.add(new JLabel(nodeParam.getElementsByTagName("name").item(0).getTextContent() + ": "));
+                        Integer defect,
+                         min,
+                         max;
+                        defect = Integer.parseInt(nodeParam.getElementsByTagName("default").item(0).getTextContent());
+                        Element domain = (Element) nodeParam.getElementsByTagName("domain").item(0);
+                        min = Integer.parseInt(domain.getElementsByTagName("min").item(0).getTextContent());
+                        max = Integer.parseInt(domain.getElementsByTagName("max").item(0).getTextContent());
+                        ParametersPanel.add(new JSpinner(new SpinnerNumberModel(defect.intValue(), min.intValue(), max.intValue(), 1)));
+                        break;
 
-                case "real":
-                    ParametersPanel.add(new JLabel(nodeParam.getElementsByTagName("name").item(0).getTextContent() + ": "));
-                    Float defecto,
-                     mini,
-                     maxi;
-                    defecto = Float.parseFloat(nodeParam.getElementsByTagName("default").item(0).getTextContent());
-                    domain = (Element) nodeParam.getElementsByTagName("domain").item(0);
-                    mini = Float.parseFloat(domain.getElementsByTagName("min").item(0).getTextContent());
-                    maxi = Float.parseFloat(domain.getElementsByTagName("max").item(0).getTextContent());
-                    ParametersPanel.add(new JSpinner(new SpinnerNumberModel(defecto.floatValue(), mini.floatValue(), maxi.floatValue(), (float) 0.01)));
-                    break;
+                    case "real":
+                        ParametersPanel.add(new JLabel(nodeParam.getElementsByTagName("name").item(0).getTextContent() + ": "));
+                        Float defecto,
+                         mini,
+                         maxi;
+                        defecto = Float.parseFloat(nodeParam.getElementsByTagName("default").item(0).getTextContent());
+                        domain = (Element) nodeParam.getElementsByTagName("domain").item(0);
+                        mini = Float.parseFloat(domain.getElementsByTagName("min").item(0).getTextContent());
+                        maxi = Float.parseFloat(domain.getElementsByTagName("max").item(0).getTextContent());
+                        ParametersPanel.add(new JSpinner(new SpinnerNumberModel(defecto.floatValue(), mini.floatValue(), maxi.floatValue(), (float) 0.01)));
+                        break;
 
-                case "nominal":
-                    ParametersPanel.add(new JLabel(nodeParam.getElementsByTagName("name").item(0).getTextContent() + ": "));
-                    domain = (Element) nodeParam.getElementsByTagName("domain").item(0);
-                    Vector<String> values = new Vector<>();
-                    NodeList list = domain.getElementsByTagName("item");
-                    for (int i = 0; i < list.getLength(); i++) {
-                        values.add(list.item(i).getTextContent());
-                    }
-                    DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel(values);
-                    // Sets the default element:
-                    comboBoxModel.setSelectedItem(values.get(Integer.parseInt(nodeParam.getElementsByTagName("default").item(0).getTextContent()) - 1));
-                    JComboBox combo = new JComboBox(comboBoxModel);
-                    ParametersPanel.add(combo);
+                    case "nominal":
+                        ParametersPanel.add(new JLabel(nodeParam.getElementsByTagName("name").item(0).getTextContent() + ": "));
+                        domain = (Element) nodeParam.getElementsByTagName("domain").item(0);
+                        Vector<String> values = new Vector<>();
+                        NodeList list = domain.getElementsByTagName("item");
+                        for (int i = 0; i < list.getLength(); i++) {
+                            values.add(list.item(i).getTextContent());
+                        }
+                        DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel(values);
+                        // Sets the default element:
+                        comboBoxModel.setSelectedItem(values.get(Integer.parseInt(nodeParam.getElementsByTagName("default").item(0).getTextContent()) - 1));
+                        JComboBox combo = new JComboBox(comboBoxModel);
+                        ParametersPanel.add(combo);
+
+                }
 
             }
-        
-        }
-        
-        // Update the panel 
-        ParametersPanel.setLayout(new GridLayout(parameters.getLength(), 2));
-        ParametersPanel.validate();
-        ParametersPanel.repaint();
-        jScrollPane2.setViewportView(ParametersPanel);
-        
-    
-        } catch(java.lang.ArrayIndexOutOfBoundsException ex) {
+
+            // Update the panel 
+            ParametersPanel.setLayout(new GridLayout(parameters.getLength(), 2));
+            ParametersPanel.validate();
+            ParametersPanel.repaint();
+            jScrollPane2.setViewportView(ParametersPanel);
+
+        } catch (java.lang.ArrayIndexOutOfBoundsException ex) {
             // If algorithms.xml has an error disable all the interface.
             this.setEnabled(false);
             ExecutionInfoLearn.setText("");
@@ -748,5 +770,10 @@ public class Main extends javax.swing.JFrame {
             }
         }
         return parameters;
+    }
+
+    public static void setInfoLearnText(String text) {
+        ExecutionInfoLearn.setText("");
+        ExecutionInfoLearn.setText(text);
     }
 }
