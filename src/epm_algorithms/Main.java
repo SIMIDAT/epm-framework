@@ -131,6 +131,7 @@ public class Main extends javax.swing.JFrame {
         BrowseInstances = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         ExecutionInfoLoad = new javax.swing.JLabel();
+        BatchPanel = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Emerging Pattern Mining Algorithms Framework");
@@ -365,6 +366,19 @@ public class Main extends javax.swing.JFrame {
 
         Tabs.addTab("Load Model", LoadPanel);
 
+        javax.swing.GroupLayout BatchPanelLayout = new javax.swing.GroupLayout(BatchPanel);
+        BatchPanel.setLayout(BatchPanelLayout);
+        BatchPanelLayout.setHorizontalGroup(
+            BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 934, Short.MAX_VALUE)
+        );
+        BatchPanelLayout.setVerticalGroup(
+            BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 623, Short.MAX_VALUE)
+        );
+
+        Tabs.addTab("Batch Execution", BatchPanel);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -481,13 +495,19 @@ public class Main extends javax.swing.JFrame {
             // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
             clase.getMethod("learn", args).invoke(newObject, training, params);
 
+            // If the are a test set call the method "test" to make the test phase.
+            if (!rutaTst.getText().equals("")) {
+                args = new Class[1];
+                args[0] = InstanceSet.class;
+                clase.getMethod("predict", args).invoke(newObject, test);
+            }
+
             // Invoke saveModel method if neccesary
             if (SaveModelCheckbox.isSelected()) {
                 args = new Class[1];
                 args[0] = String.class;
                 clase.getMethod("saveModel", args).invoke(newObject, rutaModel.getText());
             }
-           
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
@@ -611,6 +631,7 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> AlgorithmList;
+    private javax.swing.JPanel BatchPanel;
     private javax.swing.JButton BrowseButtonModel;
     private javax.swing.JButton BrowseButtonTRA;
     private javax.swing.JButton BrowseButtonTST;

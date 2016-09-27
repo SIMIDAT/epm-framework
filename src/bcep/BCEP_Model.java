@@ -60,6 +60,7 @@ public class BCEP_Model extends Model {
     public void learn(InstanceSet training, HashMap<String, String> params) {
 
         try {
+            // First, check if the dataset has the correct format.
             checkDataset();
 
             int countD1 = 0;
@@ -175,12 +176,26 @@ public class BCEP_Model extends Model {
     @Override
     public void predict(InstanceSet test) {
         System.out.println("Que NO estoy hecho aun!");
+        
     }
-
+    
+    
+    @Override
+    public void test(InstanceSet test, boolean batch){
+        System.out.println("EO QUE NO VOY !");
+    }
+    
+    @Override
     public String toString() {
         return "UNSUPPORTED";
     }
 
+    /**
+     * Checks if the dataset is processable by the method, i.e. it checks if all
+     * its attributes are nominal.
+     *
+     * @throws exceptions.IllegalActionException
+     */
     public void checkDataset() throws exceptions.IllegalActionException {
         for (int i = 0; i < Attributes.getInputNumAttributes(); i++) {
             if (Attributes.getAttribute(i).getType() != Attribute.NOMINAL) {

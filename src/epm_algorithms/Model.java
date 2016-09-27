@@ -71,13 +71,32 @@ public class Model implements Serializable{
      
     /**
      * Learns a model from training data, and saves it to a file
-     * @param training 
+     * 
+     * @param training the training data
+     * @param params the parameters of the algorithms
      */
     public void learn(InstanceSet training, HashMap<String, String> params){
         
     }
     
+    
+    /**
+     *  Predict the class of the new unseen instances 
+     * @param test The set of instances to predict the class
+     */
     public void predict(InstanceSet test){
+        
+    }
+    
+    
+    /**
+     * This method perform the test phase of a classifier.
+     * first, it predicts the label of the instances and then check if the class predicted math with the actual class.
+     * 
+     * @param test  the test set.
+     * @param batch it is executed for a batch execution or not?
+     */
+    public void test(InstanceSet test, boolean batch){
         
     }
 
