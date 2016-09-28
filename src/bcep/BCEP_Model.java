@@ -168,7 +168,7 @@ public class BCEP_Model extends Model {
                 Main.setInfoLearnText("Mining finished. eJEPs found: " + sum);
             }
         } catch (IllegalActionException ex) {
-            Main.setInfoLearnText(ex.getReason());
+            Main.setInfoLearnTextError(ex.getReason());
         }
 
     }
@@ -181,8 +181,14 @@ public class BCEP_Model extends Model {
     
     
     @Override
-    public void test(InstanceSet test, boolean batch){
+    public HashMap<String, Double> test(InstanceSet test){
         System.out.println("EO QUE NO VOY !");
+        HashMap<String, Double> measures = new HashMap<>();
+        measures.put("WRACC", 0.75);
+        measures.put("CONF", 0.6);
+        measures.put("Supp", 0.2);
+        
+        return measures;
     }
     
     @Override

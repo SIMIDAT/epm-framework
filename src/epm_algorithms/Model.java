@@ -96,7 +96,7 @@ public class Model implements Serializable{
      * @param test  the test set.
      * @param batch it is executed for a batch execution or not?
      */
-    public void test(InstanceSet test, boolean batch){
+    public HashMap<String, Double> test(InstanceSet test){
         
     }
 

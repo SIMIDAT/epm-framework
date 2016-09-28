@@ -24,15 +24,20 @@
 package epm_algorithms;
 
 import exceptions.IllegalActionException;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.peer.PanelPeer;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultComboBoxModel;
@@ -42,8 +47,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JTextPane;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
@@ -71,6 +83,7 @@ public class Main extends javax.swing.JFrame {
     private DefaultComboBoxModel modelo;
     private Document doc;
     private String actual_fully_qualified_class;
+    protected static IllegalActionException excep = null;
 
     /**
      * Creates new form Main
@@ -89,10 +102,12 @@ public class Main extends javax.swing.JFrame {
         }
 
         // Sets the first algorithm parameters
-        addParamsToPanel(doc, 0);
+        addParamsToPanel(doc, 0, ParametersPanel);
+        addParamsToPanel(doc, 0, ParametersPanel1);
         // Adds the list of algorithms to the list ad set the first as default
         modelo = new DefaultComboBoxModel(algorithms);
         AlgorithmList.setModel(modelo);
+        AlgorithmList1.setModel(modelo);
 
     }
 
@@ -115,13 +130,14 @@ public class Main extends javax.swing.JFrame {
         BrowseButtonTST = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         AlgorithmList = new javax.swing.JComboBox<>();
-        jButton1 = new javax.swing.JButton();
+        LearnButton = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         ParametersPanel = new javax.swing.JPanel();
-        ExecutionInfoLearn = new javax.swing.JLabel();
         SaveModelCheckbox = new javax.swing.JCheckBox();
         rutaModel = new javax.swing.JTextField();
         BrowseButtonModel = new javax.swing.JButton();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        ExecutionInfoLearn = new javax.swing.JTextPane();
         LoadPanel = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         InstancesPath = new javax.swing.JTextField();
@@ -132,6 +148,17 @@ public class Main extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         ExecutionInfoLoad = new javax.swing.JLabel();
         BatchPanel = new javax.swing.JPanel();
+        jLabel6 = new javax.swing.JLabel();
+        AlgorithmList1 = new javax.swing.JComboBox<>();
+        ParametersPanel1 = new javax.swing.JPanel();
+        jLabel7 = new javax.swing.JLabel();
+        rutaBatch = new javax.swing.JTextField();
+        BrowseBatchFolder = new javax.swing.JButton();
+        BatchButton = new javax.swing.JButton();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        BatchOutput = new javax.swing.JTextPane();
+        jLabel8 = new javax.swing.JLabel();
+        numFolds = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Emerging Pattern Mining Algorithms Framework");
@@ -176,10 +203,10 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
-        jButton1.setText("Run!");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        LearnButton.setText("Run!");
+        LearnButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                LearnButtonActionPerformed(evt);
             }
         });
 
@@ -208,45 +235,45 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
+        jScrollPane1.setViewportView(ExecutionInfoLearn);
+
         javax.swing.GroupLayout LearnPanelLayout = new javax.swing.GroupLayout(LearnPanel);
         LearnPanel.setLayout(LearnPanelLayout);
         LearnPanelLayout.setHorizontalGroup(
             LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
-                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(LearnPanelLayout.createSequentialGroup()
+            .addGroup(LearnPanelLayout.createSequentialGroup()
+                .addGap(425, 425, 425)
+                .addComponent(LearnButton, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(LearnPanelLayout.createSequentialGroup()
+                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jScrollPane2))
-                    .addGroup(LearnPanelLayout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
                         .addGap(26, 26, 26)
+                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel2)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel1)
+                            .addComponent(SaveModelCheckbox))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(ExecutionInfoLearn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(LearnPanelLayout.createSequentialGroup()
-                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jLabel2)
-                                    .addComponent(jLabel3)
-                                    .addComponent(jLabel1)
-                                    .addComponent(SaveModelCheckbox))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addGroup(LearnPanelLayout.createSequentialGroup()
                                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(LearnPanelLayout.createSequentialGroup()
-                                        .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addGap(0, 0, Short.MAX_VALUE))
-                                    .addGroup(LearnPanelLayout.createSequentialGroup()
-                                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(rutaTst, javax.swing.GroupLayout.DEFAULT_SIZE, 641, Short.MAX_VALUE)
-                                            .addComponent(rutaModel)
-                                            .addComponent(rutaTra))
-                                        .addGap(18, 18, 18)
-                                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(BrowseButtonModel)
-                                            .addComponent(BrowseButtonTRA)
-                                            .addComponent(BrowseButtonTST))))))))
+                                    .addComponent(rutaTst, javax.swing.GroupLayout.DEFAULT_SIZE, 666, Short.MAX_VALUE)
+                                    .addComponent(rutaModel)
+                                    .addComponent(rutaTra))
+                                .addGap(18, 18, 18)
+                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(BrowseButtonModel)
+                                    .addComponent(BrowseButtonTRA)
+                                    .addComponent(BrowseButtonTST)))))
+                    .addComponent(jScrollPane1))
                 .addContainerGap())
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(404, 404, 404))
         );
         LearnPanelLayout.setVerticalGroup(
             LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -257,11 +284,7 @@ public class Main extends javax.swing.JFrame {
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel1)
                             .addComponent(rutaTra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(49, 49, 49))
+                        .addGap(59, 59, 59))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(LearnPanelLayout.createSequentialGroup()
@@ -269,7 +292,10 @@ public class Main extends javax.swing.JFrame {
                                     .addGroup(LearnPanelLayout.createSequentialGroup()
                                         .addComponent(BrowseButtonTRA)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(BrowseButtonTST)
+                                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                            .addComponent(BrowseButtonTST)
+                                            .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(jLabel2))
                                         .addGap(35, 35, 35))
                                     .addComponent(BrowseButtonModel, javax.swing.GroupLayout.Alignment.TRAILING))
                                 .addGap(1, 1, 1))
@@ -281,11 +307,11 @@ public class Main extends javax.swing.JFrame {
                     .addComponent(jLabel3)
                     .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 338, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton1)
-                .addGap(11, 11, 11)
-                .addComponent(ExecutionInfoLearn, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(LearnButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -366,15 +392,108 @@ public class Main extends javax.swing.JFrame {
 
         Tabs.addTab("Load Model", LoadPanel);
 
+        jLabel6.setText("Algorithm:");
+
+        AlgorithmList1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                AlgorithmList1ActionPerformed(evt);
+            }
+        });
+
+        ParametersPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Algorithms Parameters"));
+        ParametersPanel1.setLayout(new java.awt.GridLayout(50, 2));
+
+        jLabel7.setText("Folder with data:");
+
+        rutaBatch.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rutaBatchActionPerformed(evt);
+            }
+        });
+
+        BrowseBatchFolder.setText("Browse...");
+        BrowseBatchFolder.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BrowseBatchFolderActionPerformed(evt);
+            }
+        });
+
+        BatchButton.setText("Run!");
+        BatchButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BatchButtonActionPerformed(evt);
+            }
+        });
+
+        jScrollPane3.setViewportView(BatchOutput);
+
+        jLabel8.setText("Number of folds:");
+
+        numFolds.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "3", "5", "7", "9", "10" }));
+        numFolds.setSelectedIndex(1);
+        numFolds.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                numFoldsActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout BatchPanelLayout = new javax.swing.GroupLayout(BatchPanel);
         BatchPanel.setLayout(BatchPanelLayout);
         BatchPanelLayout.setHorizontalGroup(
             BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 934, Short.MAX_VALUE)
+            .addGroup(BatchPanelLayout.createSequentialGroup()
+                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, BatchPanelLayout.createSequentialGroup()
+                        .addGap(114, 114, 114)
+                        .addComponent(jLabel6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, BatchPanelLayout.createSequentialGroup()
+                        .addGap(417, 417, 417)
+                        .addComponent(BatchButton))
+                    .addGroup(BatchPanelLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(ParametersPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 907, Short.MAX_VALUE))))
+                .addContainerGap(15, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, BatchPanelLayout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel8)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(BatchPanelLayout.createSequentialGroup()
+                        .addComponent(rutaBatch, javax.swing.GroupLayout.PREFERRED_SIZE, 626, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(BrowseBatchFolder))
+                    .addComponent(numFolds, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
         BatchPanelLayout.setVerticalGroup(
             BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 623, Short.MAX_VALUE)
+            .addGroup(BatchPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(rutaBatch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(BrowseBatchFolder)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel8)
+                    .addComponent(numFolds, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(22, 22, 22)
+                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel6)
+                    .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(33, 33, 33)
+                .addComponent(ParametersPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 352, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(BatchButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 83, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         Tabs.addTab("Batch Execution", BatchPanel);
@@ -397,7 +516,7 @@ public class Main extends javax.swing.JFrame {
         // TODO add your handling code here:
         // Dinamically calls the method learn of the method: VERY INTERESTING FUNCTION!
         try {
-            ExecutionInfoLearn.setText("Executing Model... (This may take a while)");
+            appendToPane(ExecutionInfoLearn, "Executing Model... (This may take a while)", Color.BLUE);
             //First: instantiate the class selected with th fully qualified name of the read model
             Object model = Model.readModel(ModelPath1.getText());
             Class clase = Class.forName(((Model) model).getFullyQualifiedName());
@@ -457,11 +576,14 @@ public class Main extends javax.swing.JFrame {
 
     }//GEN-LAST:event_SaveModelCheckboxActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void LearnButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LearnButtonActionPerformed
 
         // Reads the parameters of the user
-        ExecutionInfoLearn.setText("Reading parameters...");
-        HashMap<String, String> params = readParameters();
+        appendToPane(ExecutionInfoLearn, "Reading parameters and files...", Color.BLUE);
+
+        HashMap<String, String> params = readParameters(ParametersPanel);
+        InstanceSet training = new InstanceSet();
+        InstanceSet test = new InstanceSet();
 
         // Dinamically calls the method learn of the method: VERY INTERESTING FUNCTION!
         try {
@@ -471,61 +593,72 @@ public class Main extends javax.swing.JFrame {
             if (rutaTra.getText().equals("")) {
                 throw new exceptions.IllegalActionException("ERROR: You must specify a training file.");
             }
+            // Execute the task in background to update the text area.
+            SwingWorker worker = new SwingWorker() {
+                @Override
+                protected Object doInBackground() throws Exception {
+                    // Reads training and test file
+                    Attributes.clearAll();
+                    training.readSet(rutaTra.getText(), true);
+                    if (!rutaTst.getText().equals("")) {
+                        test.readSet(rutaTst.getText(), false);
+                    }
 
-            // Reads training and test file
-            InstanceSet training = new InstanceSet();
-            InstanceSet test = new InstanceSet();
-            Attributes.clearAll();
-            training.readSet(rutaTra.getText(), true);
-            if (!rutaTst.getText().equals("")) {
-                test.readSet(rutaTst.getText(), false);
-            }
+                    appendToPane(ExecutionInfoLearn, "Executing Model... (This may take a while)", Color.BLUE);
 
-            ExecutionInfoLearn.setText("Executing Model... (This may take a while)");
-            //First: instantiate the class selected with the fully qualified name
-            Object newObject;
-            Class clase = Class.forName(actual_fully_qualified_class);
-            newObject = clase.newInstance();
+                    //First: instantiate the class selected with the fully qualified name
+                    Object newObject;
+                    Class clase = Class.forName(actual_fully_qualified_class);
+                    newObject = clase.newInstance();
 
-            // Second: get the argument class
-            Class[] args = new Class[2];
-            args[0] = InstanceSet.class;
-            args[1] = HashMap.class;
+                    // Second: get the argument class
+                    Class[] args = new Class[2];
+                    args[0] = InstanceSet.class;
+                    args[1] = HashMap.class;
 
-            // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
-            clase.getMethod("learn", args).invoke(newObject, training, params);
+                    // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                    clase.getMethod("learn", args).invoke(newObject, training, params);
 
-            // If the are a test set call the method "test" to make the test phase.
-            if (!rutaTst.getText().equals("")) {
-                args = new Class[1];
-                args[0] = InstanceSet.class;
-                clase.getMethod("predict", args).invoke(newObject, test);
-            }
+                    appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
+                    // If the are a test set call the method "test" to make the test phase.
+                    if (!rutaTst.getText().equals("")) {
+                        appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
 
-            // Invoke saveModel method if neccesary
-            if (SaveModelCheckbox.isSelected()) {
-                args = new Class[1];
-                args[0] = String.class;
-                clase.getMethod("saveModel", args).invoke(newObject, rutaModel.getText());
-            }
+                        args[0] = InstanceSet.class;
+                        clase.getMethod("test", args).invoke(newObject, test);
 
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (exceptions.IllegalActionException ex) {
-            ExecutionInfoLearn.setText("");
-            ExecutionInfoLearn.setText(ex.getReason());
-        } catch (DatasetException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (HeaderFormatException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                        appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
+                    }
+
+                    // Invoke saveModel method if neccesary
+                    if (SaveModelCheckbox.isSelected()) {
+                        appendToPane(ExecutionInfoLearn, "Saving Model...", Color.BLUE);
+
+                        args[0] = String.class;
+                        clase.getMethod("saveModel", args).invoke(newObject, rutaModel.getText());
+                        appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
+                    }
+
+                    return null;
+
+                }
+
+            };
+
+            worker.execute();
+
+        } catch (IllegalActionException ex) {
+            appendToPane(ExecutionInfoLearn, ex.getReason(), Color.red);
         }
-    }//GEN-LAST:event_jButton1ActionPerformed
+
+
+    }//GEN-LAST:event_LearnButtonActionPerformed
 
     private void AlgorithmListActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AlgorithmListActionPerformed
         // TODO add your handling code here:
         int value = AlgorithmList.getSelectedIndex();
         if (value != -1 || value > paramPanels.size()) {
-            addParamsToPanel(doc, value);
+            addParamsToPanel(doc, value, ParametersPanel);
         }
     }//GEN-LAST:event_AlgorithmListActionPerformed
 
@@ -553,7 +686,7 @@ public class Main extends javax.swing.JFrame {
     private void BrowseButtonTRAActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BrowseButtonTRAActionPerformed
         // Create the file chooser pointing to the home directory of the actual user
         // Select only files and apply filter to select only *.dat files.
-        JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.home")));
+        JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("KEEL data files", "dat"));
         // This eliminate the option of "All files" on the file selection dialog
@@ -578,7 +711,7 @@ public class Main extends javax.swing.JFrame {
     private void BrowseButtonModelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BrowseButtonModelActionPerformed
         // Create the file chooser pointing to the home directory of the actual user
         // Select only files and apply filter to select only *.dat files.
-        JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.home")));
+        JFileChooser fileChooser = new JFileChooser(/*new File(System.getProperty("user.home"))*/);
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.addChoosableFileFilter(new FileNameExtensionFilter(".ser files", "ser"));
         // This eliminate the option of "All files" on the file selection dialog
@@ -591,6 +724,134 @@ public class Main extends javax.swing.JFrame {
             rutaModel.setText(fileSelected.getAbsolutePath() + ".ser");
         }
     }//GEN-LAST:event_BrowseButtonModelActionPerformed
+
+    private void AlgorithmList1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AlgorithmList1ActionPerformed
+        int value = AlgorithmList1.getSelectedIndex();
+        if (value != -1 || value > paramPanels.size()) {
+            addParamsToPanel(doc, value, ParametersPanel1);
+        }
+    }//GEN-LAST:event_AlgorithmList1ActionPerformed
+
+    private void rutaBatchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rutaBatchActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_rutaBatchActionPerformed
+
+    private void BrowseBatchFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BrowseBatchFolderActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int result = fileChooser.showOpenDialog(BrowseBatchFolder.getParent());
+        // If the user press in 'Ok'...
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File fileSelected = fileChooser.getSelectedFile();
+            rutaBatch.setText(fileSelected.getAbsolutePath());
+        }
+    }//GEN-LAST:event_BrowseBatchFolderActionPerformed
+
+    private void BatchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BatchButtonActionPerformed
+        try {
+            if (rutaBatch.getText().equals("")) {
+                throw new IllegalActionException("ERROR: No folder selected.");
+            }
+            File root = new File(rutaBatch.getText());
+            int NUM_FOLDS = Integer.parseInt(numFolds.getItemAt(numFolds.getSelectedIndex()));
+            File[] folders = root.listFiles();
+            InstanceSet training = new InstanceSet();
+            InstanceSet test = new InstanceSet();
+            HashMap<String, Double> qualityMeasures = new HashMap<>();
+            // initializy quality measures hash map.
+            qualityMeasures.put("WRACC", 0.0);  // Normalized Unusualness
+            qualityMeasures.put("CONF", 0.7);   // Confidence
+            qualityMeasures.put("GR", 0.0);     // Growth Rate
+            qualityMeasures.put("TPR", 0.0);    // True positive rate
+            qualityMeasures.put("FPR", 0.0);    // False positive rate
+            qualityMeasures.put("DS", 0.0);     // Support Diference
+            qualityMeasures.put("FISHER", 0.0); // Fishers's test
+            HashMap<String, String> params = readParameters(ParametersPanel1);
+
+            SwingWorker work = new SwingWorker() {
+                @Override
+                protected Object doInBackground() throws Exception {
+
+                    // for each folder in the root directory
+                    for (File dir : folders) {
+                        if (dir.isDirectory()) {
+                            File[] files = dir.listFiles();
+
+                            appendToPane(BatchOutput, "Executing " + dir.getName() + "...", Color.BLUE);
+
+                            for (int i = 1; i <= NUM_FOLDS; i++) {
+                                // Search for the training and test files.
+                                for (File x : files) {
+                                    if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tra.dat")) {
+                                        try {
+                                            Attributes.clearAll();
+                                            training.readSet(x.getAbsolutePath(), true);
+                                        } catch (DatasetException | HeaderFormatException ex) {
+                                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
+                                    }
+                                    if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tra.dat")) {
+                                        try {
+                                            training.readSet(x.getAbsolutePath(), false);
+                                        } catch (DatasetException | HeaderFormatException ex) {
+                                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
+                                    }
+                                }
+
+                                // Execute the method
+                                //First: instantiate the class selected with the fully qualified name
+                                try {
+                                    Object newObject;
+                                    Class clase = Class.forName(actual_fully_qualified_class);
+                                    newObject = clase.newInstance();
+
+                                    // Second: get the argument class
+                                    Class[] args = new Class[2];
+                                    args[0] = InstanceSet.class;
+                                    args[1] = HashMap.class;
+
+                                    // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                                    clase.getMethod("learn", args).invoke(newObject, training, params);
+
+                                    // Call the test method. This method return in a hashmap the quality measures.
+                                    args = new Class[1];
+                                    args[0] = InstanceSet.class;
+                                    HashMap<String, Double> ret = (HashMap<String, Double>) clase.getMethod("test", args).invoke(newObject, test);
+
+                                    // After getting the results of the test, update the quality measure hashmap 
+                                    // (INCOMPLETE)
+                                    qualityMeasures.put("CONF", qualityMeasures.get("CONF") + ret.get("CONF"));
+                                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
+                                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+
+                            }
+
+                            // After finished the fold cross validation, make the average calculation of each quality measure.
+                            qualityMeasures.forEach(new BiConsumer<String, Double>() {
+                                @Override
+                                public void accept(String t, Double u) {
+                                    u /= (double) NUM_FOLDS;
+                                    // Here is where you must made all the operations with each averaged quality measure.
+                                    //appendToPane(BatchOutput, t + ": " + u, Color.BLUE);
+                                }
+                            });
+                        }
+
+                    }
+                    return null;
+                }
+            };
+            work.execute();
+        } catch (IllegalActionException ex) {
+            appendToPane(BatchOutput, ex.getReason(), Color.red);
+        }
+    }//GEN-LAST:event_BatchButtonActionPerformed
+
+    private void numFoldsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_numFoldsActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_numFoldsActionPerformed
 
     /**
      * @param args the command line arguments
@@ -631,29 +892,41 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> AlgorithmList;
+    private javax.swing.JComboBox<String> AlgorithmList1;
+    private javax.swing.JButton BatchButton;
+    private javax.swing.JTextPane BatchOutput;
     private javax.swing.JPanel BatchPanel;
+    private javax.swing.JButton BrowseBatchFolder;
     private javax.swing.JButton BrowseButtonModel;
     private javax.swing.JButton BrowseButtonTRA;
     private javax.swing.JButton BrowseButtonTST;
     private javax.swing.JButton BrowseInstances;
     private javax.swing.JButton BrowseModelButton;
-    private static javax.swing.JLabel ExecutionInfoLearn;
+    private static javax.swing.JTextPane ExecutionInfoLearn;
     private javax.swing.JLabel ExecutionInfoLoad;
     private javax.swing.JTextField InstancesPath;
+    private javax.swing.JButton LearnButton;
     private javax.swing.JPanel LearnPanel;
     private javax.swing.JPanel LoadPanel;
     private javax.swing.JTextField ModelPath1;
     private javax.swing.JPanel ParametersPanel;
+    private javax.swing.JPanel ParametersPanel1;
     private javax.swing.JCheckBox SaveModelCheckbox;
     private javax.swing.JTabbedPane Tabs;
-    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JComboBox<String> numFolds;
+    private javax.swing.JTextField rutaBatch;
     private javax.swing.JTextField rutaModel;
     private javax.swing.JTextField rutaTra;
     private javax.swing.JTextField rutaTst;
@@ -688,7 +961,7 @@ public class Main extends javax.swing.JFrame {
      * @param doc A DOM object with the algorthims and params definitions
      * @param index The position of the algorithm in the file
      */
-    private void addParamsToPanel(Document doc, int index) {
+    private void addParamsToPanel(Document doc, int index, JPanel ParametersPanel) {
         //Get algorithm
         NodeList nodes = doc.getElementsByTagName("algorithm");
         Element node = (Element) nodes.item(index);
@@ -753,7 +1026,7 @@ public class Main extends javax.swing.JFrame {
             ParametersPanel.setLayout(new GridLayout(parameters.getLength(), 2));
             ParametersPanel.validate();
             ParametersPanel.repaint();
-            jScrollPane2.setViewportView(ParametersPanel);
+            //jScrollPane2.setViewportView(ParametersPanel);
 
         } catch (java.lang.ArrayIndexOutOfBoundsException ex) {
             // If algorithms.xml has an error disable all the interface.
@@ -770,7 +1043,7 @@ public class Main extends javax.swing.JFrame {
      * @return A HashMap<String, String> with key the name of the parameter and
      * value the value of the parameter.
      */
-    private HashMap<String, String> readParameters() {
+    private HashMap<String, String> readParameters(JPanel ParametersPanel) {
         String key = "";
         HashMap<String, String> parameters = new HashMap<>();
         for (int i = 0; i < ParametersPanel.getComponentCount(); i++) {
@@ -794,7 +1067,29 @@ public class Main extends javax.swing.JFrame {
     }
 
     public static void setInfoLearnText(String text) {
-        ExecutionInfoLearn.setText("");
-        ExecutionInfoLearn.setText(text);
+        appendToPane(ExecutionInfoLearn, text, Color.blue);
     }
+
+    public static void setInfoLearnTextError(String text) {
+        appendToPane(ExecutionInfoLearn, text, Color.red);
+    }
+
+    private synchronized static void appendToPane(JTextPane tp, String msg, Color c) {
+        SwingUtilities.invokeLater(() -> {
+            StyleContext sc = StyleContext.getDefaultStyleContext();
+            AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
+
+            aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
+            aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
+
+            int len = tp.getDocument().getLength();
+            tp.setCaretPosition(len);
+            tp.setCharacterAttributes(aset, false);
+
+            String date = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date());
+
+            tp.replaceSelection(date + ": " + msg + "\n");
+        });
+    }
+
 }
