@@ -39,6 +39,7 @@ import javafx.util.Pair;
 import keel.Dataset.Attributes;
 import static sjep_classifier.SJEP_Classifier.getInstances;
 import static sjep_classifier.SJEP_Classifier.getSimpleItems;
+import static sjep_classifier.SJEP_Classifier.median;
 import static sjep_classifier.SJEP_Classifier.minSupp;
 
 /**
@@ -164,6 +165,9 @@ public class BCEP_Model extends Model {
                 int sum = 0;
                 for (ArrayList<Pattern> patterns : allPatterns) {
                     sum += patterns.size();
+                    for (Pattern pat : patterns) {
+                        patterns.add(pat);
+                    }
                 }
                 Main.setInfoLearnText("Mining finished. eJEPs found: " + sum);
             }
@@ -174,23 +178,63 @@ public class BCEP_Model extends Model {
     }
 
     @Override
-    public void predict(InstanceSet test) {
+    public String[] predict(InstanceSet test) {
         System.out.println("Que NO estoy hecho aun!");
-        
+
     }
-    
-    
+
     @Override
-    public HashMap<String, Double> test(InstanceSet test){
-        System.out.println("EO QUE NO VOY !");
-        HashMap<String, Double> measures = new HashMap<>();
-        measures.put("WRACC", 0.75);
-        measures.put("CONF", 0.6);
-        measures.put("Supp", 0.2);
+    public HashMap<String, Double> test(InstanceSet test) {
+        int[][] confusionMatrices = new int[patterns.size()][5];
+        ArrayList<HashMap<String, Double>> qm;
+
+        ArrayList<Item> simpleItems = getSimpleItems(test, minSupp, 0);
+        ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = getInstances(test, simpleItems, 0);
+
+        // Calculate the confusion matrix of each pattern to calculate the quality measures.
+        int sumNvars = 0;
+        for (int i = 0; i < patterns.size(); i++) {
+            int tp = 0;
+            int tn = 0;
+            int fp = 0;
+            int fn = 0;
+            // for each instance
+            for (int j = 0; j < testInstances.size(); j++) {
+                // If the pattern covers the example
+                if (patterns.get(i).covers(testInstances.get(j).getKey())) {
+
+                    if (patterns.get(i).getClase() == testInstances.get(j).getValue()) {
+                        tp++;
+                    } else {
+                        fp++;
+                    }
+                } else if (patterns.get(i).getClase() != testInstances.get(j).getValue()) {
+                    tn++;
+                } else {
+                    fn++;
+                }
+
+            }
+
+            confusionMatrices[i][0] = tp;
+            confusionMatrices[i][1] = tn;
+            confusionMatrices[i][2] = fp;
+            confusionMatrices[i][3] = fn;
+            confusionMatrices[i][4] = patterns.get(i).getItems().size();
+        }
+
+        // CALCULATE HERE DESCRIPTIVE QUALITY MEASURES FOR EACH PATTERN
+        qm = Model.calculateMeasuresFromConfusionMatrix(confusionMatrices);
+
+        // FILTER HERE THE RULES: GETS THE BEST n RULES AND THE BEST n RULES FOR EACH CLASS.
+        // CALCULATE HERE THE ACCURACY AND AUC OF THE MODEL (FILTERED BY CLASS OR GLOBAL AND NON FILTERED)
+        HashMap<String, Double> AverageQualityMeasures = Model.AverageQualityMeasures(qm);
         
-        return measures;
+        // make the average of the quality measures
+
+        return AverageQualityMeasures;
     }
-    
+
     @Override
     public String toString() {
         return "UNSUPPORTED";
@@ -273,4 +317,89 @@ public class BCEP_Model extends Model {
         return result;
 
     }
+
+    public static void calculateAccuracy(InstanceSet testSet, int[] predictions) {
+        // we consider class 0 as positive and class 1 as negative
+        int tp = 0;
+        int fp = 0;
+        int tn = 0;
+        int fn = 0;
+
+        // Calculate the confusion matrix.
+        for (int i = 0; i < predictions.length; i++) {
+            if (testSet.getOutputNumericValue(i, 0) == 0) {
+                if (predictions[i] == 0) {
+                    tp++;
+                } else {
+                    fn++;
+                }
+            } else if (predictions[i] == 0) {
+                fp++;
+            } else {
+                tn++;
+            }
+        }
+
+        System.out.println("Test Accuracy: " + ((double) (tp + tn) / (double) (tp + tn + fp + fn)) * 100 + "%");
+    }
+
+    public static void computeAccuracy(ArrayList<Pair<ArrayList<Item>, Integer>> testInstances, ArrayList<Pattern> patterns, InstanceSet test, int countD1, int countD2) {
+        int[] predictions = new int[testInstances.size()];
+        //Now, for each pattern
+        for (int i = 0; i < testInstances.size(); i++) {
+            // calculate the score for each class for classify:
+            double scoreD1 = 0;
+            double scoreD2 = 0;
+            ArrayList<Integer> scoresD1 = new ArrayList<>();  // This is to calculate the base-score, that is the median
+            ArrayList<Integer> scoresD2 = new ArrayList<>();
+            // for each pattern mined
+            for (int j = 0; j < patterns.size(); j++) {
+                if (patterns.get(j).covers(testInstances.get(i).getKey())) {
+                    // If the example is covered by the pattern.
+                    // sum it support to the class of the pattern
+                    if (testInstances.get(i).getValue() == 0) {
+                        scoreD1 += patterns.get(j).getSupport();
+                        scoresD1.add(patterns.get(j).getSupport());
+                    } else {
+                        scoreD2 += patterns.get(j).getSupport();
+                        scoresD2.add(patterns.get(j).getSupport());
+                    }
+
+                }
+            }
+
+            // Now calculate the normalized score to make the prediction
+            double medianD1 = median(scoresD1);
+            double medianD2 = median(scoresD2);
+
+            if (medianD1 == 0) {
+                scoreD1 = 0;
+            } else {
+                scoreD1 = scoreD1 / medianD1;
+            }
+
+            if (medianD2 == 0) {
+                scoreD2 = 0;
+            } else {
+                scoreD2 = scoreD2 / medianD2;
+            }
+
+            // make the prediction:
+            if (scoreD1 > scoreD2) {
+                predictions[i] = 0;
+            } else if (scoreD1 < scoreD2) {
+                predictions[i] = 1;
+            } else // In case of ties, the majority class is setted
+            {
+                if (countD1 < countD2) {
+                    predictions[i] = 0;
+                } else {
+                    predictions[i] = 1;
+                }
+            }
+        }
+
+        calculateAccuracy(test, predictions);
+    }
+
 }

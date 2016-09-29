@@ -23,6 +23,7 @@
  */
 package epm_algorithms;
 
+import com.sun.javafx.runtime.SystemProperties;
 import exceptions.IllegalActionException;
 import java.awt.Color;
 import java.awt.Font;
@@ -83,7 +84,8 @@ public class Main extends javax.swing.JFrame {
     private DefaultComboBoxModel modelo;
     private Document doc;
     private String actual_fully_qualified_class;
-    protected static IllegalActionException excep = null;
+    HashMap<String, Double> qualityMeasures = new HashMap<>();
+    File lastDirectory;
 
     /**
      * Creates new form Main
@@ -91,8 +93,12 @@ public class Main extends javax.swing.JFrame {
     public Main() {
         // Here we have to read the algorithms XML and add to algorithms the names of the methods
         doc = readXML("algorithms.xml");
-
+        lastDirectory = new File(System.getProperty("user.home"));
         initComponents();
+
+        // initializy quality measures hash map.
+        resetMeasures();
+
         // Adds algorithm names
         NodeList nodes = doc.getElementsByTagName("algorithm");
         for (int i = 0; i < nodes.getLength(); i++) {
@@ -307,11 +313,11 @@ public class Main extends javax.swing.JFrame {
                     .addComponent(jLabel3)
                     .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(LearnButton)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
+                .addComponent(LearnButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 194, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -387,7 +393,7 @@ public class Main extends javax.swing.JFrame {
                 .addComponent(jButton2)
                 .addGap(21, 21, 21)
                 .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(408, Short.MAX_VALUE))
+                .addContainerGap(485, Short.MAX_VALUE))
         );
 
         Tabs.addTab("Load Model", LoadPanel);
@@ -448,9 +454,6 @@ public class Main extends javax.swing.JFrame {
                         .addComponent(jLabel6)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, BatchPanelLayout.createSequentialGroup()
-                        .addGap(417, 417, 417)
-                        .addComponent(BatchButton))
                     .addGroup(BatchPanelLayout.createSequentialGroup()
                         .addContainerGap()
                         .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -470,6 +473,10 @@ public class Main extends javax.swing.JFrame {
                         .addComponent(BrowseBatchFolder))
                     .addComponent(numFolds, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
+            .addGroup(BatchPanelLayout.createSequentialGroup()
+                .addGap(421, 421, 421)
+                .addComponent(BatchButton)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         BatchPanelLayout.setVerticalGroup(
             BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -488,11 +495,11 @@ public class Main extends javax.swing.JFrame {
                     .addComponent(jLabel6)
                     .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(33, 33, 33)
-                .addComponent(ParametersPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 352, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ParametersPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(BatchButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 83, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -604,7 +611,7 @@ public class Main extends javax.swing.JFrame {
                         test.readSet(rutaTst.getText(), false);
                     }
 
-                    appendToPane(ExecutionInfoLearn, "Executing Model... (This may take a while)", Color.BLUE);
+                    appendToPane(ExecutionInfoLearn, "Executing " + (String) AlgorithmList.getSelectedItem() + " algorithm... (This may take a while)", Color.BLUE);
 
                     //First: instantiate the class selected with the fully qualified name
                     Object newObject;
@@ -623,7 +630,7 @@ public class Main extends javax.swing.JFrame {
                     // If the are a test set call the method "test" to make the test phase.
                     if (!rutaTst.getText().equals("")) {
                         appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
-
+                        args = new Class[1];
                         args[0] = InstanceSet.class;
                         clase.getMethod("test", args).invoke(newObject, test);
 
@@ -665,7 +672,7 @@ public class Main extends javax.swing.JFrame {
     private void BrowseButtonTSTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BrowseButtonTSTActionPerformed
         // Create the file chooser pointing to the home directory of the actual user
         // Select only files and apply filter to select only *.dat files.
-        JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.home")));
+        JFileChooser fileChooser = new JFileChooser(lastDirectory);
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("KEEL data files", "dat"));
         // This eliminate the option of "All files" on the file selection dialog
@@ -675,6 +682,7 @@ public class Main extends javax.swing.JFrame {
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
             File fileSelected = fileChooser.getSelectedFile();
+            lastDirectory = fileSelected.getParentFile();
             rutaTst.setText(fileSelected.getAbsolutePath());
         }
     }//GEN-LAST:event_BrowseButtonTSTActionPerformed
@@ -686,7 +694,7 @@ public class Main extends javax.swing.JFrame {
     private void BrowseButtonTRAActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BrowseButtonTRAActionPerformed
         // Create the file chooser pointing to the home directory of the actual user
         // Select only files and apply filter to select only *.dat files.
-        JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser(lastDirectory);
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("KEEL data files", "dat"));
         // This eliminate the option of "All files" on the file selection dialog
@@ -696,6 +704,7 @@ public class Main extends javax.swing.JFrame {
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
             File fileSelected = fileChooser.getSelectedFile();
+            lastDirectory = fileSelected.getParentFile();
             rutaTra.setText(fileSelected.getAbsolutePath());
         }
     }//GEN-LAST:event_BrowseButtonTRAActionPerformed
@@ -757,15 +766,7 @@ public class Main extends javax.swing.JFrame {
             File[] folders = root.listFiles();
             InstanceSet training = new InstanceSet();
             InstanceSet test = new InstanceSet();
-            HashMap<String, Double> qualityMeasures = new HashMap<>();
-            // initializy quality measures hash map.
-            qualityMeasures.put("WRACC", 0.0);  // Normalized Unusualness
-            qualityMeasures.put("CONF", 0.7);   // Confidence
-            qualityMeasures.put("GR", 0.0);     // Growth Rate
-            qualityMeasures.put("TPR", 0.0);    // True positive rate
-            qualityMeasures.put("FPR", 0.0);    // False positive rate
-            qualityMeasures.put("DS", 0.0);     // Support Diference
-            qualityMeasures.put("FISHER", 0.0); // Fishers's test
+
             HashMap<String, String> params = readParameters(ParametersPanel1);
 
             SwingWorker work = new SwingWorker() {
@@ -819,9 +820,7 @@ public class Main extends javax.swing.JFrame {
                                     args[0] = InstanceSet.class;
                                     HashMap<String, Double> ret = (HashMap<String, Double>) clase.getMethod("test", args).invoke(newObject, test);
 
-                                    // After getting the results of the test, update the quality measure hashmap 
-                                    // (INCOMPLETE)
-                                    qualityMeasures.put("CONF", qualityMeasures.get("CONF") + ret.get("CONF"));
+                                    // Store the result to make the average result
                                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
                                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                 }
@@ -834,9 +833,12 @@ public class Main extends javax.swing.JFrame {
                                 public void accept(String t, Double u) {
                                     u /= (double) NUM_FOLDS;
                                     // Here is where you must made all the operations with each averaged quality measure.
-                                    //appendToPane(BatchOutput, t + ": " + u, Color.BLUE);
+                                    appendToPane(BatchOutput, t + ": " + u, Color.BLUE);
                                 }
                             });
+
+                            // Reset values to process the next dataset
+                            resetMeasures();
                         }
 
                     }
@@ -1090,6 +1092,68 @@ public class Main extends javax.swing.JFrame {
 
             tp.replaceSelection(date + ": " + msg + "\n");
         });
+    }
+
+    /**
+     * Reset/Initialize the quality measures hash map
+     */
+    private void resetMeasures() {
+        qualityMeasures.put("WRACC", 0.0);  // Normalized Unusualness
+        qualityMeasures.put("NVAR", 0.0);  // Number of variables
+        qualityMeasures.put("NRULES", 0.0);  // Number of rules
+        qualityMeasures.put("GAIN", 0.0);  // Information Gain
+        qualityMeasures.put("CONF", 0.0);   // Confidence
+        qualityMeasures.put("GR", 0.0);     // Growth Rate
+        qualityMeasures.put("TPR", 0.0);    // True positive rate
+        qualityMeasures.put("FPR", 0.0);    // False positive rate
+        qualityMeasures.put("SUPDIFF", 0.0);     // Support Diference
+        qualityMeasures.put("FISHER", 0.0); // Fishers's test
+        qualityMeasures.put("HELLINGER", 0.0); // Hellinger Distance
+        qualityMeasures.put("ACC", 0.0); // Accuracy
+        qualityMeasures.put("AUC", 0.0); // ROC Curve
+    }
+
+    private void updateMeasuresCV(HashMap<String, Double> measures) {
+        if (measures.containsKey("WRACC")) {
+            qualityMeasures.put("WRACC", qualityMeasures.get("WRACC") + measures.get("WRACC"));
+        }
+        if (measures.containsKey("NVAR")) {
+            qualityMeasures.put("NVAR", qualityMeasures.get("NVAR") + measures.get("NVAR"));
+        }
+        if (measures.containsKey("NRULES")) {
+            qualityMeasures.put("NRULES", qualityMeasures.get("NRULES") + measures.get("NRULES"));
+        }
+        if (measures.containsKey("GAIN")) {
+            qualityMeasures.put("GAIN", qualityMeasures.get("GAIN") + measures.get("GAIN"));
+        }
+        if (measures.containsKey("CONF")) {
+            qualityMeasures.put("CONF", qualityMeasures.get("CONF") + measures.get("CONF"));
+        }
+        if (measures.containsKey("GR")) {
+            qualityMeasures.put("GR", qualityMeasures.get("GR") + measures.get("GR"));
+        }
+        if (measures.containsKey("TPR")) {
+            qualityMeasures.put("TPR", qualityMeasures.get("TPR") + measures.get("TPR"));
+        }
+        if (measures.containsKey("FPR")) {
+            qualityMeasures.put("FPR", qualityMeasures.get("FPR") + measures.get("FPR"));
+        }
+        if (measures.containsKey("SUPDIFF")) {
+            qualityMeasures.put("SUPDIFF", qualityMeasures.get("SUPDIFF") + measures.get("SUPDIFF"));
+        }
+        if (measures.containsKey("FISHER")) {
+            qualityMeasures.put("FISHER", qualityMeasures.get("FISHER") + measures.get("FISHER"));
+        }
+        if (measures.containsKey("HELLINGER")) {
+            qualityMeasures.put("HELLINGER", qualityMeasures.get("HELLINGER") + measures.get("HELLINGER"));
+        }
+        if (measures.containsKey("ACC")) {
+            qualityMeasures.put("ACC", qualityMeasures.get("ACC") + measures.get("ACC"));
+        }
+        if (measures.containsKey("AUC")) {
+            qualityMeasures.put("AUC", qualityMeasures.get("AUC") + measures.get("AUC"));
+        }
+
     }
 
 }
