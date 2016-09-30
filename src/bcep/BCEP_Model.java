@@ -51,7 +51,8 @@ import static sjep_classifier.SJEP_Classifier.minSupp;
 public class BCEP_Model extends Model {
 
     ArrayList<Pattern> patterns;
-    ArrayList<ArrayList<Pattern>> allPatterns;
+    ArrayList<Pattern> patternsFilteredAllClasses;
+    ArrayList<Pattern> patternsFilteredByClass;
 
     public BCEP_Model() {
         super.setFullyQualifiedName("bcep.BCEP_Model");
@@ -102,9 +103,21 @@ public class BCEP_Model extends Model {
                 // Perform mining
                 patterns = tree.mineTree(minSupp);
                 ArrayList<Pair<ArrayList<Item>, Integer>> inst = getInstances(training, simpleItems, 0);
+                for (Pattern pat : patterns) {
+                    pat.calculateMeasures(training);
+                }
+//                ArrayList<Pattern> aux = (ArrayList < Pattern >) patterns.clone();
+//                patterns.clear();
+//                for(int i = 0; i < aux.size(); i++){
+//                    if(aux.get(i).getGrowthRate() > 100){
+//                        patterns.add(aux.get(i));
+//                    }
+//                }
                 patterns = pruneEPs(patterns, inst);
                 Main.setInfoLearnText("Mining finished. eJEPs found: " + patterns.size());
             } else {
+                ArrayList<ArrayList<Pattern>> allPatterns;
+                patterns = new ArrayList<>();
                 // MULTICLASS EXECUTION
                 // Execute the mining algorithm k times, with k the number of classes.
                 allPatterns = new ArrayList<>();
@@ -163,13 +176,22 @@ public class BCEP_Model extends Model {
                 }
 
                 int sum = 0;
-                for (ArrayList<Pattern> patterns : allPatterns) {
-                    sum += patterns.size();
-                    for (Pattern pat : patterns) {
-                        patterns.add(pat);
+
+                for (ArrayList<Pattern> pattern : allPatterns) {
+                    sum += pattern.size();
+                    if (!pattern.isEmpty()) {
+                        for (Pattern pat : pattern) {
+                            patterns.add(pat);
+                        }
                     }
                 }
-                Main.setInfoLearnText("Mining finished. eJEPs found: " + sum);
+
+                // calculate measures of training
+                Main.setInfoLearnText("Min{ing finished. eJEPs found: " + sum);
+            }
+
+            for (Pattern pat : patterns) {
+                pat.calculateMeasures(training);
             }
         } catch (IllegalActionException ex) {
             Main.setInfoLearnTextError(ex.getReason());
@@ -184,12 +206,19 @@ public class BCEP_Model extends Model {
     }
 
     @Override
-    public HashMap<String, Double> test(InstanceSet test) {
+    public ArrayList<HashMap<String, Double>> test(InstanceSet test) {
+        // INITIALIZATION -------------------------------------------------------
         int[][] confusionMatrices = new int[patterns.size()][5];
+        int[] classes = new int[patterns.size()];
         ArrayList<HashMap<String, Double>> qm;
-
         ArrayList<Item> simpleItems = getSimpleItems(test, minSupp, 0);
         ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = getInstances(test, simpleItems, 0);
+        patternsFilteredAllClasses = new ArrayList<>();
+        patternsFilteredByClass = new ArrayList<>();
+        for (int i = 0; i < patterns.size(); i++) {
+            classes[i] = patterns.get(i).getClase();
+        }
+        //----------------------------------------------------------------------
 
         // Calculate the confusion matrix of each pattern to calculate the quality measures.
         int sumNvars = 0;
@@ -226,13 +255,34 @@ public class BCEP_Model extends Model {
         // CALCULATE HERE DESCRIPTIVE QUALITY MEASURES FOR EACH PATTERN
         qm = Model.calculateMeasuresFromConfusionMatrix(confusionMatrices);
 
-        // FILTER HERE THE RULES: GETS THE BEST n RULES AND THE BEST n RULES FOR EACH CLASS.
-        // CALCULATE HERE THE ACCURACY AND AUC OF THE MODEL (FILTERED BY CLASS OR GLOBAL AND NON FILTERED)
-        HashMap<String, Double> AverageQualityMeasures = Model.AverageQualityMeasures(qm);
-        
-        // make the average of the quality measures
+        // FILTER HERE THE RULES: GETS THE BEST n RULES 
+        ArrayList<HashMap<String, Double>> bestNRules = Model.getBestNRulesBy((ArrayList<HashMap<String, Double>>) qm.clone(), "CONF", 3);
+        for (HashMap<String, Double> rule : bestNRules) {
+            int value = rule.get("RULE_NUMBER").intValue();
+            patternsFilteredAllClasses.add(patterns.get(value));
+        }
 
-        return AverageQualityMeasures;
+        // NOW GET THE BEST N RULES FOR EACH CLASS
+        ArrayList<HashMap<String, Double>> bestNRulesByClass = Model.getBestNRulesByClass((ArrayList<HashMap<String, Double>>) qm.clone(), "CONF", 3, classes);
+        for (HashMap<String, Double> rule : bestNRulesByClass) {
+            int value = rule.get("RULE_NUMBER").intValue();
+            patternsFilteredByClass.add(patterns.get(value));
+        }
+
+        // Gets the Averaged results
+        HashMap<String, Double> AvgNoFilter = Model.AverageQualityMeasures(qm);
+        HashMap<String, Double> AvgFilterAllRules = Model.AverageQualityMeasures(bestNRules);
+        HashMap<String, Double> AvgFilterByClass = Model.AverageQualityMeasures(bestNRulesByClass);
+
+        ArrayList<HashMap<String, Double>> results = new ArrayList<>();
+        results.add(AvgNoFilter);
+        results.add(AvgFilterAllRules);
+        results.add(AvgFilterByClass);
+
+        // CALCULATE HERE THE ACCURACY AND AUC OF THE MODEL (FILTERED BY CLASS OR GLOBAL AND NON FILTERED)
+        // After that, add the auc and acc to the averaged quality measures hash map.
+        // OPTIONAL: If you want, you can save the patterns and individual quality measures on a file.
+        return results;
     }
 
     @Override
@@ -264,27 +314,24 @@ public class BCEP_Model extends Model {
      * @return
      */
     private ArrayList<Pattern> pruneEPs(ArrayList<Pattern> patterns, ArrayList<Pair<ArrayList<Item>, Integer>> training) {
-        // Sort the patterns by ranking.
-        patterns.sort(new Comparator<Pattern>() {
-            @Override
-            public int compare(Pattern o1, Pattern o2) {
-                if (o1.getSupport() > o2.getSupport()) {
-                    return 1;
-                } else if (o1.getSupport() < o2.getSupport()) {
-                    return -1;
-                } else if (o1.getItems().size() > o2.getItems().size()) {
-                    return 1;
-                } else if (o1.getItems().size() < o2.getItems().size()) {
-                    return -1;
-                } else {
-                    return 0;
-                }
+        // Sort the patterns by ranking (in ASCENDING ORDER)
+        patterns.sort((o1, o2) -> {
+            if (o1.getSupport() > o2.getSupport()) {
+                return 1;
+            } else if (o1.getSupport() < o2.getSupport()) {
+                return -1;
+            } else if (o1.getItems().size() > o2.getItems().size()) {
+                return 1;
+            } else if (o1.getItems().size() < o2.getItems().size()) {
+                return -1;
+            } else {
+                return 0;
             }
         });
 
         // Apply the data class covering procedure
         boolean allCovered = true;
-        int counter = 0;
+        int counter = patterns.size() - 1;
         ArrayList<Pattern> result = new ArrayList<>();
         boolean[] tokens = new boolean[training.size()];
         for (int i = 0; i < tokens.length; i++) {
@@ -311,8 +358,8 @@ public class BCEP_Model extends Model {
                 }
             }
 
-            counter++;
-        } while (!allCovered && counter < patterns.size());
+            counter--;
+        } while (!allCovered && counter >= 0);
 
         return result;
 

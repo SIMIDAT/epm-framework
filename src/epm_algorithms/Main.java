@@ -30,10 +30,16 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.peer.PanelPeer;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -93,7 +99,17 @@ public class Main extends javax.swing.JFrame {
     public Main() {
         // Here we have to read the algorithms XML and add to algorithms the names of the methods
         doc = readXML("algorithms.xml");
-        lastDirectory = new File(System.getProperty("user.home"));
+        File f = new File("options.txt");
+        if (f.exists()) {
+            try {
+                BufferedReader bf = new BufferedReader(new FileReader(f));
+                lastDirectory = new File(bf.readLine());
+            } catch (IOException ex) {
+                lastDirectory = new File(System.getProperty("user.home"));
+            }
+        } else {
+            lastDirectory = new File(System.getProperty("user.home"));
+        }
         initComponents();
 
         // initializy quality measures hash map.
@@ -571,8 +587,19 @@ public class Main extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTST.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            File fileSelected = fileChooser.getSelectedFile();
-            ModelPath1.setText(fileSelected.getAbsolutePath());
+            PrintWriter pw = null;
+            try {
+                File fileSelected = fileChooser.getSelectedFile();
+                lastDirectory = fileSelected.getParentFile();
+                pw = new PrintWriter(new File("options.txt"));
+                pw.println(lastDirectory.getAbsolutePath());
+                ModelPath1.setText(fileSelected.getAbsolutePath());
+
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                pw.close();
+            }
         }
     }//GEN-LAST:event_BrowseModelButtonActionPerformed
 
@@ -681,9 +708,18 @@ public class Main extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTST.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            File fileSelected = fileChooser.getSelectedFile();
-            lastDirectory = fileSelected.getParentFile();
-            rutaTst.setText(fileSelected.getAbsolutePath());
+            PrintWriter pw = null;
+            try {
+                File fileSelected = fileChooser.getSelectedFile();
+                lastDirectory = fileSelected.getParentFile();
+                pw = new PrintWriter(new File("options.txt"));
+                pw.println(lastDirectory.getAbsolutePath());
+                rutaTst.setText(fileSelected.getAbsolutePath());
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                pw.close();
+            }
         }
     }//GEN-LAST:event_BrowseButtonTSTActionPerformed
 
@@ -703,9 +739,18 @@ public class Main extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTRA.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            File fileSelected = fileChooser.getSelectedFile();
-            lastDirectory = fileSelected.getParentFile();
-            rutaTra.setText(fileSelected.getAbsolutePath());
+            PrintWriter pw = null;
+            try {
+                File fileSelected = fileChooser.getSelectedFile();
+                lastDirectory = fileSelected.getParentFile();
+                pw = new PrintWriter(new File("options.txt"));
+                pw.println(lastDirectory.getAbsolutePath());
+                rutaTra.setText(fileSelected.getAbsolutePath());
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                pw.close();
+            }
         }
     }//GEN-LAST:event_BrowseButtonTRAActionPerformed
 
@@ -729,8 +774,19 @@ public class Main extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTRA.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            File fileSelected = fileChooser.getSelectedFile();
-            rutaModel.setText(fileSelected.getAbsolutePath() + ".ser");
+            PrintWriter pw = null;
+            try {
+                File fileSelected = fileChooser.getSelectedFile();
+                lastDirectory = fileSelected.getParentFile();
+                pw = new PrintWriter(new File("options.txt"));
+                pw.println(lastDirectory.getAbsolutePath());
+                rutaModel.setText(fileSelected.getAbsolutePath() + ".ser");
+
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                pw.close();
+            }
         }
     }//GEN-LAST:event_BrowseButtonModelActionPerformed
 
@@ -751,8 +807,19 @@ public class Main extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseBatchFolder.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            File fileSelected = fileChooser.getSelectedFile();
-            rutaBatch.setText(fileSelected.getAbsolutePath());
+            PrintWriter pw = null;
+            try {
+                File fileSelected = fileChooser.getSelectedFile();
+                lastDirectory = fileSelected.getParentFile();
+                pw = new PrintWriter(new File("options.txt"));
+                pw.println(lastDirectory.getAbsolutePath());
+                rutaBatch.setText(fileSelected.getAbsolutePath());
+
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                pw.close();
+            }
         }
     }//GEN-LAST:event_BrowseBatchFolderActionPerformed
 
@@ -777,7 +844,10 @@ public class Main extends javax.swing.JFrame {
                     for (File dir : folders) {
                         if (dir.isDirectory()) {
                             File[] files = dir.listFiles();
-
+                            HashMap<String, Double> QMsUnfiltered = Model.generateQualityMeasuresHashMap();
+                            HashMap<String, Double> QMsGlobal = Model.generateQualityMeasuresHashMap();
+                            HashMap<String, Double> QMsByClass = Model.generateQualityMeasuresHashMap();
+                            
                             appendToPane(BatchOutput, "Executing " + dir.getName() + "...", Color.BLUE);
 
                             for (int i = 1; i <= NUM_FOLDS; i++) {
@@ -787,13 +857,14 @@ public class Main extends javax.swing.JFrame {
                                         try {
                                             Attributes.clearAll();
                                             training.readSet(x.getAbsolutePath(), true);
+                                            Main.setInfoLearnTextError(x.getName());
                                         } catch (DatasetException | HeaderFormatException ex) {
                                             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                         }
                                     }
-                                    if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tra.dat")) {
+                                    if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tst.dat")) {
                                         try {
-                                            training.readSet(x.getAbsolutePath(), false);
+                                            test.readSet(x.getAbsolutePath(), false);
                                         } catch (DatasetException | HeaderFormatException ex) {
                                             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                         }
@@ -816,11 +887,16 @@ public class Main extends javax.swing.JFrame {
                                     clase.getMethod("learn", args).invoke(newObject, training, params);
 
                                     // Call the test method. This method return in a hashmap the quality measures.
+                                    // for unfiltered, filtered global, and filtered by class QMs.
                                     args = new Class[1];
                                     args[0] = InstanceSet.class;
-                                    HashMap<String, Double> ret = (HashMap<String, Double>) clase.getMethod("test", args).invoke(newObject, test);
+                                    ArrayList<HashMap<String, Double>> ret = (ArrayList<HashMap<String, Double>>) clase.getMethod("test", args).invoke(newObject, test);
 
                                     // Store the result to make the average result
+                                    QMsUnfiltered = Model.updateHashMap(QMsUnfiltered, ret.get(0));
+                                    QMsGlobal = Model.updateHashMap(QMsGlobal, ret.get(1));
+                                    QMsByClass = Model.updateHashMap(QMsByClass, ret.get(2));
+                                   
                                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
                                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                 }
@@ -828,17 +904,8 @@ public class Main extends javax.swing.JFrame {
                             }
 
                             // After finished the fold cross validation, make the average calculation of each quality measure.
-                            qualityMeasures.forEach(new BiConsumer<String, Double>() {
-                                @Override
-                                public void accept(String t, Double u) {
-                                    u /= (double) NUM_FOLDS;
-                                    // Here is where you must made all the operations with each averaged quality measure.
-                                    appendToPane(BatchOutput, t + ": " + u, Color.BLUE);
-                                }
-                            });
-
-                            // Reset values to process the next dataset
-                            resetMeasures();
+                            Model.saveResults(dir, QMsUnfiltered, QMsGlobal, QMsByClass, NUM_FOLDS);
+                          
                         }
 
                     }

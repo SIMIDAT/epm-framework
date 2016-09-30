@@ -24,16 +24,23 @@
 package epm_algorithms;
 
 import Utils.FisherExact;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.print.attribute.HashAttributeSet;
+import keel.Dataset.Attributes;
 import keel.Dataset.InstanceSet;
 
 /**
@@ -46,6 +53,7 @@ public class Model implements Serializable {
 
     private String fullyQualifiedName;
     private static final double SIGNIFICANCE_LEVEL = 0.1;
+    private static final int NUMBER_OF_RULES_FILTER = 3;
 
     /**
      * Saves the current model to a .ser file extension.
@@ -75,8 +83,9 @@ public class Model implements Serializable {
     }
 
     /**
-     * Learns a model from training data, and saves it to a file. The patterns obtained in the model must be saved on a 
-     * class variable to make it accessible to "predict" and "test" methods.
+     * Learns a model from training data, and saves it to a file. The patterns
+     * obtained in the model must be saved on a class variable to make it
+     * accessible to "predict" and "test" methods.
      *
      * @param training the training data
      * @param params the parameters of the algorithms
@@ -86,7 +95,7 @@ public class Model implements Serializable {
     }
 
     /**
-     * Predict the class of the new unseen instances. 
+     * Predict the class of the new unseen instances.
      *
      * @param test The set of instances to predict the class
      * @return An array with the class predicted for each test instance
@@ -96,13 +105,16 @@ public class Model implements Serializable {
     }
 
     /**
-     * This method perform on a single pass the complete test phase of the method, i.e. it calculates
-     * descriptive quality measures and predictive ones. Additionally, saves on files the results.
+     * This method perform on a single pass the complete test phase of the
+     * method, i.e. it calculates descriptive quality measures and predictive
+     * ones. Additionally, saves on files the results.
      *
      * @param test the test set.
-     * @param batch it is executed for a batch execution or not?
+     * @return An ArrayList with 3 HashMaps, this HashMaps store the measures
+     * for the unfiltered, the filtered for all classes and the filtered for
+     * each class set of rules respectively.
      */
-    public HashMap<String, Double> test(InstanceSet test) {
+    public ArrayList<HashMap<String, Double>> test(InstanceSet test) {
         /* MEASURES TO BE RETURNED
         "WRACC" 
         "NVAR"
@@ -161,7 +173,8 @@ public class Model implements Serializable {
     }
 
     /**
-     * Calculates the descriptive quality measures for each ruleof a given confusion matrix
+     * Calculates the descriptive quality measures for each ruleof a given
+     * confusion matrix
      *
      * @param matrices A matrix with tp, tn, fp, fn and number of variables
      * @return A hash map with the descriptive quality measures.
@@ -234,7 +247,7 @@ public class Model implements Serializable {
                 }
                 gain = (p / P) * (Math.log(tpr / ((p + n) / P_N)) - Math.log(P / P_N));
             }
-            
+
             //Support difference
             double suppDif;
             if (P_N == 0) {
@@ -273,22 +286,139 @@ public class Model implements Serializable {
             qms.add(measures);
         }
 
-
         return qms;
     }
-    
-    // Filtrado normal (las n mejores reglas) 
-    
-    // filtrado por clase (las n mejores reglas de cada clase), se necesita un parametro adicional que indique la clase de cada patron.
-    
-    
+
     /**
-     * Get the averaged descriptive quality measures from a set of quality measures of each rule.
-     * @param measures
-     * @return 
+     * Gets the best n rules by a given quality measure. Note that this function
+     * returns the best rules ignoring the class, i.e. it can return rules for
+     * only one class.
+     *
+     * @param qm an ArrayList with the HashMaps with the quality measures for
+     * each pattern
+     * @param by A String with the short name of the quality measure.
+     * @param n The number of patterns to get.
+     * @return
      */
-    protected static HashMap<String, Double> AverageQualityMeasures(ArrayList<HashMap<String, Double>> measures){
-        
+    protected static ArrayList<HashMap<String, Double>> getBestNRulesBy(ArrayList<HashMap<String, Double>> qm, String by, int n) {
+
+        ArrayList<HashMap<String, Double>> result = new ArrayList<>();
+        // Sort by the quality measure (in ASCENDING ORDER)
+        qm.sort((o1, o2) -> {
+            if (!by.equals("FPR")) {
+                if (o1.get(by) < o2.get(by)) {
+                    return -1;
+                } else if (o1.get(by) > o2.get(by)) {
+                    return 1;
+                } else if (o1.get("NVAR") < o2.get("NVAR")) {
+                    return 1;
+                } else if (o1.get("NVAR") > o2.get("NVAR")) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            } else // If it is FPR, then the less, the better
+            {
+                if (o1.get(by) > o2.get(by)) {
+                    return -1;
+                } else if (o1.get(by) < o2.get(by)) {
+                    return 1;
+                } else if (o1.get("NVAR") < o2.get("NVAR")) {
+                    return 1;
+                } else if (o1.get("NVAR") > o2.get("NVAR")) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+
+        // get the best n rules and return
+        for (int i = qm.size() - 1; i >= qm.size() - NUMBER_OF_RULES_FILTER; i--) {
+            result.add(qm.get(i));
+        }
+
+        return result;
+    }
+
+    // filtrado por clase (las n mejores reglas de cada clase), se necesita un parametro adicional que indique la clase de cada patron.
+    /**
+     * Gets the best n rules by a given quality measure for each class.
+     *
+     * @param qm an ArrayList with the HashMaps with the quality measures for
+     * each pattern
+     * @param by A String with the short name of the quality measure.
+     * @param n The number of patterns to get.
+     * @param classes an array of integers with the class of the pattern.
+     * @return
+     */
+    protected static ArrayList<HashMap<String, Double>> getBestNRulesByClass(ArrayList<HashMap<String, Double>> qm, String by, int n, int[] classes) {
+        ArrayList<HashMap<String, Double>> result = new ArrayList<>();
+        // Separate the value for each class
+        int numClasses = Attributes.getOutputAttribute(0).getNumNominalValues();
+        ArrayList<ArrayList<HashMap<String, Double>>> patternsByClass = new ArrayList<>(numClasses);
+        for (int i = 0; i < numClasses; i++) {
+            ArrayList<HashMap<String, Double>> pat = new ArrayList<>();
+            for (int j = 0; j < classes.length; j++) {
+                if (classes[j] == i) {
+                    pat.add(qm.get(j));
+                }
+            }
+            patternsByClass.add(i, pat);
+        }
+
+        // Now, sort each class by the quality measure
+        for (ArrayList<HashMap<String, Double>> patterns : patternsByClass) {
+            // sorts in ASCENDING ORDER !
+            patterns.sort((o1, o2) -> {
+                if (!by.equals("FPR")) {
+                    if (o1.get(by) < o2.get(by)) {
+                        return -1;
+                    } else if (o1.get(by) > o2.get(by)) {
+                        return 1;
+                    } else if (o1.get("NVAR") < o2.get("NVAR")) {
+                        return 1;
+                    } else if (o1.get("NVAR") > o2.get("NVAR")) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                } else // If it is FPR, then the less, the better
+                {
+                    if (o1.get(by) > o2.get(by)) {
+                        return -1;
+                    } else if (o1.get(by) < o2.get(by)) {
+                        return 1;
+                    } else if (o1.get("NVAR") < o2.get("NVAR")) {
+                        return 1;
+                    } else if (o1.get("NVAR") > o2.get("NVAR")) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                }
+            });
+        }
+
+        // And now, get the best n rules for each and return
+        for (ArrayList<HashMap<String, Double>> patterns : patternsByClass) {
+            for (int i = patterns.size() - 1; i >= patterns.size() - NUMBER_OF_RULES_FILTER && i >= 0; i--) {
+                result.add(patterns.get(i));
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Gets the averaged descriptive quality measures from a set of quality
+     * measures of each rule.
+     *
+     * @param measures An array list with all the quality measures for each rule
+     * @return A single HashMap with the averaged measures.
+     */
+    protected static HashMap<String, Double> AverageQualityMeasures(ArrayList<HashMap<String, Double>> measures) {
+
         HashMap<String, Double> result = generateQualityMeasuresHashMap();
         double sumWRACC = 0.0;
         double sumGAIN = 0.0;
@@ -326,7 +456,7 @@ public class Model implements Serializable {
         result.put("GR", sumGR / (double) measures.size());
         result.put("FISHER", sumFISHER / (double) measures.size());
         result.put("NRULES", (double) measures.size());
-        
+
         return result;
     }
 
@@ -337,7 +467,7 @@ public class Model implements Serializable {
      * @param another
      * @return
      */
-    protected HashMap<String, Double> updateHashMap(HashMap<String, Double> one, HashMap<String, Double> another) {
+    protected static HashMap<String, Double> updateHashMap(HashMap<String, Double> one, HashMap<String, Double> another) {
         HashMap<String, Double> sum = generateQualityMeasuresHashMap();
         one.forEach(new BiConsumer<String, Double>() {
             @Override
@@ -349,18 +479,57 @@ public class Model implements Serializable {
         return sum;
     }
 
-    protected HashMap<String, Double> meanHashmap(HashMap<String, Double> element, int nPatterns) {
-        HashMap<String, Double> mean = generateQualityMeasuresHashMap();
-        element.forEach(new BiConsumer<String, Double>() {
-            @Override
-            public void accept(String t, Double u) {
-                if (!t.equals("NVAR") || !t.equals("NRULES")) {
-                    mean.put(t, u / (double) nPatterns);
-                }
-            }
-        });
+    public static void saveResults(File dir, HashMap<String, Double> QMsUnfiltered, HashMap<String, Double> QMsGlobal, HashMap<String, Double> QMsByClass, int NUM_FOLDS) {
 
-        return mean;
+        try {
+            File measures1 = new File(dir.getAbsolutePath() + "/QM_Unfiltered.txt");
+            File measures2 = new File(dir.getAbsolutePath() + "/QM_FilteredALL.txt");
+            File measures3 = new File(dir.getAbsolutePath() + "/QM_FilteredBYCLASS.txt");
+            measures1.createNewFile();
+            measures2.createNewFile();
+            measures3.createNewFile();
+            
+            final PrintWriter w = new PrintWriter(measures1);
+           
+            QMsUnfiltered.forEach(new BiConsumer<String, Double>() {
+                      
+                @Override
+                public void accept(String t, Double u) {
+                        u /= (double) NUM_FOLDS;
+                        // Here is where you must made all the operations with each averaged quality measure.
+                        w.println(t + " ==> " + u);
+                }
+            });
+            
+            w.close();
+            final PrintWriter w2 = new PrintWriter(measures2);
+            
+            QMsGlobal.forEach(new BiConsumer<String, Double>() {
+                @Override
+                public void accept(String t, Double u) {
+                    u /= (double) NUM_FOLDS;
+                    // Here is where you must made all the operations with each averaged quality measure.
+                    w2.println(t + " ==> " + u);
+                }
+            });
+            w2.close();
+            final PrintWriter w3 = new PrintWriter(measures3);
+            
+            QMsByClass.forEach(new BiConsumer<String, Double>() {
+                @Override
+                public void accept(String t, Double u) {
+                    u /= (double) NUM_FOLDS;
+                    // Here is where you must made all the operations with each averaged quality measure.
+                     w3.println(t + " ==> " + u);
+                }
+            });
+            w3.close();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
+        } 
+
     }
 
 }

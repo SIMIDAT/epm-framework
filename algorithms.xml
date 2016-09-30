@@ -46,22 +46,13 @@
             <default>0.2</default>
         </parameter>
         <parameter>
-            <name>Keep the best rules</name>
-            <type>integer</type>
+            <name>Minimum GrowthRate</name>
+            <type>real</type>
             <domain>
-                <min>-1</min>
-                <max>99999</max>
+                <min>1</min>
+                <max>10000</max>
             </domain>
-            <default>3</default>
-        </parameter>
-        <parameter>
-            <name>Keep</name>
-            <type>nominal</type>
-            <domain>
-                <item>For each rule</item>
-                <item>Overall</item>
-            </domain>
-            <default>1</default>
+            <default>100</default>
         </parameter>
     </algorithm>
 
