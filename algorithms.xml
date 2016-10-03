@@ -43,7 +43,7 @@
                 <min>0</min>
                 <max>1</max>
             </domain>
-            <default>0.2</default>
+            <default>0.01</default>
         </parameter>
         <parameter>
             <name>Minimum GrowthRate</name>

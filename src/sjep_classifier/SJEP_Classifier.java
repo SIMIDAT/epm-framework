@@ -381,10 +381,11 @@ public class SJEP_Classifier {
         String[] att_names = new String[Attributes.getInputAttributes().length];
         ArrayList<Pair<ArrayList<Item>, Integer>> result = new ArrayList<>();
         ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
-
+        
         for (int i = 0; i < att_names.length; i++) {
             att_names[i] = Attributes.getAttribute(i).getName();
         }
+     
 
         for (int i = 0; i < a.getNumInstances(); i++) {
             ArrayList<Item> list = new ArrayList<>();

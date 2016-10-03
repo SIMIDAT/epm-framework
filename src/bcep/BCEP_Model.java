@@ -68,6 +68,7 @@ public class BCEP_Model extends Model {
             int countD1 = 0;
             int countD2 = 0;
             float minSupp = Float.parseFloat(params.get("Minimum support"));
+            float minGR = Float.parseFloat(params.get("Minimum GrowthRate"));
             ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
             // Gets the count of examples for each class to calculate the growth rate.
             for (int i = 0; i < training.getNumInstances(); i++) {
@@ -82,6 +83,10 @@ public class BCEP_Model extends Model {
                 // get simple itemsets to perform the ordering of the items and filter by gorwth rate
                 // Class '0' is considered as positive
                 ArrayList<Item> simpleItems = getSimpleItems(training, minSupp, 0);
+                // Calculate the probabilites of the items (We use M-estimate)
+                for (Item it : simpleItems) {
+                    it.calculateProbabilities(training, "M");
+                }
                 // sort items by growth rate
                 simpleItems.sort(null);
                 // gets all instances removing those itemset that not appear on simpleItems
@@ -106,16 +111,17 @@ public class BCEP_Model extends Model {
                 for (Pattern pat : patterns) {
                     pat.calculateMeasures(training);
                 }
-//                ArrayList<Pattern> aux = (ArrayList < Pattern >) patterns.clone();
-//                patterns.clear();
-//                for(int i = 0; i < aux.size(); i++){
-//                    if(aux.get(i).getGrowthRate() > 100){
-//                        patterns.add(aux.get(i));
-//                    }
-//                }
+                ArrayList<Pattern> aux = (ArrayList< Pattern>) patterns.clone();
+                patterns.clear();
+                for (int i = 0; i < aux.size(); i++) {
+                    if (aux.get(i).getGrowthRate() > Float.parseFloat(params.get("Minimum GrowthRate"))
+                            && aux.get(i).getSupp() >= minSupp) {
+                        patterns.add(aux.get(i));
+                    }
+                }
                 patterns = pruneEPs(patterns, inst);
                 Main.setInfoLearnText("Mining finished. eJEPs found: " + patterns.size());
-            } else {
+            } else { // FALTA EL FILTRADO DE SOPORTE Y GR EN LA PARTE MULTICLASE
                 ArrayList<ArrayList<Pattern>> allPatterns;
                 patterns = new ArrayList<>();
                 // MULTICLASS EXECUTION
@@ -136,6 +142,10 @@ public class BCEP_Model extends Model {
                     // Class 'i' is considered de positive class, the rest of classes correspond to the negative one.
                     // Get the simple items.
                     ArrayList<Item> simpleItems = getSimpleItems(training, minSupp, i);
+                    // Calculate the probabilites of the items (We use M-estimate)
+                    for (Item it : simpleItems) {
+                        it.calculateProbabilities(training, "M");
+                    }
                     // sort items by growth rate
                     simpleItems.sort(null);
                     // gets all instances removing those itemset that not appear on simpleItems
@@ -166,6 +176,14 @@ public class BCEP_Model extends Model {
                             next.setClase(i);
                         }
                     }
+                    ArrayList<Pattern> aux = (ArrayList< Pattern>) patterns.clone();
+                    patterns.clear();
+                    for (int j = 0; j < aux.size(); j++) {
+                        if (aux.get(j).getGrowthRate() > Float.parseFloat(params.get("Minimum GrowthRate"))
+                                && aux.get(j).getSupp() >= minSupp) {
+                            patterns.add(aux.get(j));
+                        }
+                    }
                     if (patterns.isEmpty()) {
                         allPatterns.add(new ArrayList<>());
                     } else {
@@ -193,6 +211,7 @@ public class BCEP_Model extends Model {
             for (Pattern pat : patterns) {
                 pat.calculateMeasures(training);
             }
+
         } catch (IllegalActionException ex) {
             Main.setInfoLearnTextError(ex.getReason());
         }
@@ -202,7 +221,37 @@ public class BCEP_Model extends Model {
     @Override
     public String[] predict(InstanceSet test) {
         System.out.println("Que NO estoy hecho aun!");
-
+        ArrayList<Item> simpleItems = getSimpleItems(test, minSupp, 0);
+        ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = getInstances(test, simpleItems, 0);
+        // for each instances on the test set
+        for (int i = 0; i < testInstances.size(); i++) {
+            ArrayList<Pattern> B = new ArrayList<>();
+            // First, get the set of patterns that covers the example.
+            for (Pattern p : patterns) {
+                if (p.covers(testInstances.get(i).getKey())) {
+                    B.add(p);
+                }
+            }
+            
+            // sort B in strength-order
+            B.sort((Pattern o1, Pattern o2) -> {
+                if (o1.getStrength() > o2.getStrength()) {
+                    return 1;
+                } else if (o1.getStrength() < o2.getStrength()) {
+                    return -1;
+                } else {
+                    // Compare lengths
+                    if(o1.getItems().size() > o2.getItems().size()){
+                        return 1;
+                    } else if(o2.getItems().size() < o2.getItems().size()){
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                }
+            });
+        }
+        return null;
     }
 
     @Override
@@ -280,6 +329,7 @@ public class BCEP_Model extends Model {
         results.add(AvgFilterByClass);
 
         // CALCULATE HERE THE ACCURACY AND AUC OF THE MODEL (FILTERED BY CLASS OR GLOBAL AND NON FILTERED)
+        String[] predict = predict(test);
         // After that, add the auc and acc to the averaged quality measures hash map.
         // OPTIONAL: If you want, you can save the patterns and individual quality measures on a file.
         return results;
@@ -437,13 +487,11 @@ public class BCEP_Model extends Model {
             } else if (scoreD1 < scoreD2) {
                 predictions[i] = 1;
             } else // In case of ties, the majority class is setted
-            {
-                if (countD1 < countD2) {
+             if (countD1 < countD2) {
                     predictions[i] = 0;
                 } else {
                     predictions[i] = 1;
                 }
-            }
         }
 
         calculateAccuracy(test, predictions);
