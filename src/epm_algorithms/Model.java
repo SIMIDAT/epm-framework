@@ -33,6 +33,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -52,6 +53,7 @@ import keel.Dataset.InstanceSet;
 public class Model implements Serializable {
 
     private String fullyQualifiedName;
+    protected String minorityClass;
     private static final double SIGNIFICANCE_LEVEL = 0.1;
     private static final int NUMBER_OF_RULES_FILTER = 3;
 
@@ -63,10 +65,14 @@ public class Model implements Serializable {
      * @throws IOException
      */
     public void saveModel(String path) throws IOException {
-        ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(path));
-        stream.writeObject(this);
-        stream.close();
-        System.out.println("Model saved Correctly in " + path);
+        try {
+            ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(path));
+            stream.writeObject(this);
+            stream.close();
+            System.out.println("Model saved Correctly in " + path);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     /**
@@ -98,9 +104,10 @@ public class Model implements Serializable {
      * Predict the class of the new unseen instances.
      *
      * @param test The set of instances to predict the class
-     * @return An array with the class predicted for each test instance
+     * @return An array with the class predicted for each test instance for
+     * unfiltered patterns, filtered global and filtered by class respectively.
      */
-    public String[] predict(InstanceSet test) {
+    public String[][] predict(InstanceSet test) {
 
     }
 
@@ -167,16 +174,17 @@ public class Model implements Serializable {
         qualityMeasures.put("FISHER", 0.0); // Fishers's test
         qualityMeasures.put("RULE_NUMBER", 0.0); // Rule number (for filtering purposes only)
         qualityMeasures.put("ACC", 0.0); // Accuracy
-        qualityMeasures.put("AUC", 0.0); // ROC Curve
+        qualityMeasures.put("AUC", 0.0); // Area Under the Curve
 
         return qualityMeasures;
     }
 
     /**
-     * Calculates the descriptive quality measures for each ruleof a given
-     * confusion matrix
+     * Calculates the descriptive quality measures for each rule of a given set
+     * of confusion matrices.
      *
-     * @param matrices A matrix with tp, tn, fp, fn and number of variables
+     * @param matrices A matrix with tp, tn, fp, fn and number of variables for
+     * each rule
      * @return A hash map with the descriptive quality measures.
      */
     protected static ArrayList<HashMap<String, Double>> calculateMeasuresFromConfusionMatrix(int[][] matrices) {
@@ -318,8 +326,7 @@ public class Model implements Serializable {
                     return 0;
                 }
             } else // If it is FPR, then the less, the better
-            {
-                if (o1.get(by) > o2.get(by)) {
+             if (o1.get(by) > o2.get(by)) {
                     return -1;
                 } else if (o1.get(by) < o2.get(by)) {
                     return 1;
@@ -330,7 +337,6 @@ public class Model implements Serializable {
                 } else {
                     return 0;
                 }
-            }
         });
 
         // get the best n rules and return
@@ -384,8 +390,7 @@ public class Model implements Serializable {
                         return 0;
                     }
                 } else // If it is FPR, then the less, the better
-                {
-                    if (o1.get(by) > o2.get(by)) {
+                 if (o1.get(by) > o2.get(by)) {
                         return -1;
                     } else if (o1.get(by) < o2.get(by)) {
                         return 1;
@@ -396,7 +401,6 @@ public class Model implements Serializable {
                     } else {
                         return 0;
                     }
-                }
             });
         }
 
@@ -456,6 +460,7 @@ public class Model implements Serializable {
         result.put("GR", sumGR / (double) measures.size());
         result.put("FISHER", sumFISHER / (double) measures.size());
         result.put("NRULES", (double) measures.size());
+        result.put("RULE_NUMBER", Double.NaN);
 
         return result;
     }
@@ -479,6 +484,16 @@ public class Model implements Serializable {
         return sum;
     }
 
+    /**
+     * Saves the results of the HashMaps on files. Additionally this function
+     * make the average results for cross-validation results
+     *
+     * @param dir
+     * @param QMsUnfiltered
+     * @param QMsGlobal
+     * @param QMsByClass
+     * @param NUM_FOLDS
+     */
     public static void saveResults(File dir, HashMap<String, Double> QMsUnfiltered, HashMap<String, Double> QMsGlobal, HashMap<String, Double> QMsByClass, int NUM_FOLDS) {
 
         try {
@@ -488,39 +503,54 @@ public class Model implements Serializable {
             measures1.createNewFile();
             measures2.createNewFile();
             measures3.createNewFile();
-            
+
             final PrintWriter w = new PrintWriter(measures1);
-           
+
             QMsUnfiltered.forEach(new BiConsumer<String, Double>() {
-                      
+
                 @Override
                 public void accept(String t, Double u) {
+                    DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+                    if (!u.isNaN()) {
                         u /= (double) NUM_FOLDS;
                         // Here is where you must made all the operations with each averaged quality measure.
-                        w.println(t + " ==> " + u);
+                        w.println(t + " ==> " + sixDecimals.format(u));
+                    } else {
+                        w.println(t + " ==> --------");
+                    }
                 }
             });
-            
+
             w.close();
             final PrintWriter w2 = new PrintWriter(measures2);
-            
+
             QMsGlobal.forEach(new BiConsumer<String, Double>() {
                 @Override
                 public void accept(String t, Double u) {
-                    u /= (double) NUM_FOLDS;
-                    // Here is where you must made all the operations with each averaged quality measure.
-                    w2.println(t + " ==> " + u);
+                    DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+                    if (!u.isNaN()) {
+                        u /= (double) NUM_FOLDS;
+                        // Here is where you must made all the operations with each averaged quality measure.
+                        w2.println(t + " ==> " + sixDecimals.format(u));
+                    } else {
+                        w2.println(t + " ==> --------");
+                    }
                 }
             });
             w2.close();
             final PrintWriter w3 = new PrintWriter(measures3);
-            
+
             QMsByClass.forEach(new BiConsumer<String, Double>() {
                 @Override
                 public void accept(String t, Double u) {
-                    u /= (double) NUM_FOLDS;
-                    // Here is where you must made all the operations with each averaged quality measure.
-                     w3.println(t + " ==> " + u);
+                    DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+                    if (!u.isNaN()) {
+                        u /= (double) NUM_FOLDS;
+                        // Here is where you must made all the operations with each averaged quality measure.
+                        w3.println(t + " ==> " + sixDecimals.format(u));
+                    } else {
+                        w3.println(t + " ==> --------");
+                    }
                 }
             });
             w3.close();
@@ -528,8 +558,63 @@ public class Model implements Serializable {
             Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        }
 
+    }
+
+    /**
+     * It calculates associated precision measures for predictions. Measures
+     * calculated are: Accuracy and AUC (When the number of classes == 2).
+     *
+     * @param predictions The predictions made by: 1- unfiltered patterns 2-
+     * patterns filtered by global measure 3- patterns filtered by class
+     */
+    protected void calculatePrecisionMeasures(String[][] predictions, InstanceSet test, ArrayList<HashMap<String, Double>> results) {
+
+        if (Attributes.getOutputAttribute(0).getNominalValuesList().size() <= 2) {
+            // For 2-class we calculate the confusion matrix
+            for (int i = 0; i < predictions.length; i++) {
+                float tp = 0;
+                float tn = 0;
+                float fp = 0;
+                float fn = 0;
+                for (int j = 0; j < predictions[0].length; j++) {
+                    if (test.getOutputNominalValue(j, 0).equals(minorityClass)) {
+                        if (predictions[i][j].equals(minorityClass)) {
+                            tp++;
+                        } else {
+                            fn++;
+                        }
+                    } else if (predictions[i][j].equals(minorityClass)) {
+                        fp++;
+                    } else {
+                        tn++;
+                    }
+                }
+
+                double acc = (double) (tp + tn) / (tp + tn + fp + fn);
+                double tpr = (double) tp / (tp + fn);
+                double fpr = (double) fp / (fp + tn);
+                double auc = (1.0 + tpr - fpr) / 2.0;
+
+                results.get(i).put("ACC", acc);
+                results.get(i).put("AUC", auc);
+            }
+        } else {
+            for (int i = 0; i < predictions.length; i++) {
+                float aciertos = 0;
+                for (int j = 0; j < predictions[i].length; j++) {
+                    if (predictions[i][j].equals(test.getOutputNominalValue(j, 0))) {
+                        aciertos++;
+                    }
+                }
+
+                double acc = ((double) aciertos / (double) test.getNumInstances());
+                results.get(i).put("ACC", acc);
+                results.get(i).put("AUC", Double.NaN);
+
+            }
+        }
     }
 
 }

@@ -30,6 +30,7 @@ import keel.Dataset.Attribute;
 import Utils.*;
 import epm_algorithms.Main;
 import exceptions.IllegalActionException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -37,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.util.Pair;
 import keel.Dataset.Attributes;
+import keel.Dataset.Instance;
 import static sjep_classifier.SJEP_Classifier.getInstances;
 import static sjep_classifier.SJEP_Classifier.getSimpleItems;
 import static sjep_classifier.SJEP_Classifier.median;
@@ -48,11 +50,12 @@ import static sjep_classifier.SJEP_Classifier.minSupp;
  * @version 1.0
  * @since JDK 1.8
  */
-public class BCEP_Model extends Model {
+public class BCEP_Model extends Model implements Serializable {
 
     ArrayList<Pattern> patterns;
     ArrayList<Pattern> patternsFilteredAllClasses;
     ArrayList<Pattern> patternsFilteredByClass;
+    float[] classProbabilities;
 
     public BCEP_Model() {
         super.setFullyQualifiedName("bcep.BCEP_Model");
@@ -70,6 +73,10 @@ public class BCEP_Model extends Model {
             float minSupp = Float.parseFloat(params.get("Minimum support"));
             float minGR = Float.parseFloat(params.get("Minimum GrowthRate"));
             ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
+            classProbabilities = new float[classes.size()];
+            for (int i = 0; i < classProbabilities.length; i++) {
+                classProbabilities[i] = 0;
+            }
             // Gets the count of examples for each class to calculate the growth rate.
             for (int i = 0; i < training.getNumInstances(); i++) {
                 if (classes.indexOf(training.getInstance(i).getOutputNominalValues(0)) == 0) {
@@ -77,6 +84,19 @@ public class BCEP_Model extends Model {
                 } else {
                     countD2++;
                 }
+            }
+            if (countD1 < countD2) {
+                this.minorityClass = Attributes.getOutputAttribute(0).getNominalValue(0);
+            } else {
+                this.minorityClass = Attributes.getOutputAttribute(0).getNominalValue(1);
+            }
+
+            //Gets class probabilities
+            for (Instance inst : training.getInstances()) {
+                classProbabilities[inst.getOutputNominalValuesInt(0)]++;
+            }
+            for (int i = 0; i < classProbabilities.length; i++) {
+                classProbabilities[i] /= (float) training.getNumInstances();
             }
 
             if (Attributes.getOutputAttribute(0).getNumNominalValues() <= 2) {
@@ -121,7 +141,7 @@ public class BCEP_Model extends Model {
                 }
                 patterns = pruneEPs(patterns, inst);
                 Main.setInfoLearnText("Mining finished. eJEPs found: " + patterns.size());
-            } else { // FALTA EL FILTRADO DE SOPORTE Y GR EN LA PARTE MULTICLASE
+            } else {
                 ArrayList<ArrayList<Pattern>> allPatterns;
                 patterns = new ArrayList<>();
                 // MULTICLASS EXECUTION
@@ -176,14 +196,14 @@ public class BCEP_Model extends Model {
                             next.setClase(i);
                         }
                     }
-                    ArrayList<Pattern> aux = (ArrayList< Pattern>) patterns.clone();
-                    patterns.clear();
-                    for (int j = 0; j < aux.size(); j++) {
-                        if (aux.get(j).getGrowthRate() > Float.parseFloat(params.get("Minimum GrowthRate"))
-                                && aux.get(j).getSupp() >= minSupp) {
-                            patterns.add(aux.get(j));
-                        }
-                    }
+//                    ArrayList<Pattern> aux = (ArrayList< Pattern>) patterns.clone();
+//                    patterns.clear();
+//                    for (int j = 0; j < aux.size(); j++) {
+//                        if (aux.get(j).getGrowthRate() > Float.parseFloat(params.get("Minimum GrowthRate"))
+//                                && aux.get(j).getSupp() >= minSupp) {
+//                            patterns.add(aux.get(j));
+//                        }
+//                    }
                     if (patterns.isEmpty()) {
                         allPatterns.add(new ArrayList<>());
                     } else {
@@ -205,7 +225,7 @@ public class BCEP_Model extends Model {
                 }
 
                 // calculate measures of training
-                Main.setInfoLearnText("Min{ing finished. eJEPs found: " + sum);
+                Main.setInfoLearnText("Mining finished. eJEPs found: " + sum);
             }
 
             for (Pattern pat : patterns) {
@@ -219,39 +239,23 @@ public class BCEP_Model extends Model {
     }
 
     @Override
-    public String[] predict(InstanceSet test) {
-        System.out.println("Que NO estoy hecho aun!");
+    public String[][] predict(InstanceSet test) {
         ArrayList<Item> simpleItems = getSimpleItems(test, minSupp, 0);
         ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = getInstances(test, simpleItems, 0);
-        // for each instances on the test set
-        for (int i = 0; i < testInstances.size(); i++) {
-            ArrayList<Pattern> B = new ArrayList<>();
-            // First, get the set of patterns that covers the example.
-            for (Pattern p : patterns) {
-                if (p.covers(testInstances.get(i).getKey())) {
-                    B.add(p);
-                }
-            }
-            
-            // sort B in strength-order
-            B.sort((Pattern o1, Pattern o2) -> {
-                if (o1.getStrength() > o2.getStrength()) {
-                    return 1;
-                } else if (o1.getStrength() < o2.getStrength()) {
-                    return -1;
-                } else {
-                    // Compare lengths
-                    if(o1.getItems().size() > o2.getItems().size()){
-                        return 1;
-                    } else if(o2.getItems().size() < o2.getItems().size()){
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-                }
-            });
+        String[] predictionsNoFilter = makePredictions(testInstances, patterns);
+        String[] predictionsFilterGlobal = null;
+        String[] predictionsFilterClass = null;
+
+        if (patternsFilteredAllClasses != null) {
+            predictionsFilterGlobal = makePredictions(testInstances, patternsFilteredAllClasses);
         }
-        return null;
+        if (patternsFilteredByClass != null) {
+            predictionsFilterClass = makePredictions(testInstances, patternsFilteredByClass);
+        }
+
+        String[][] preds = {predictionsNoFilter, predictionsFilterGlobal, predictionsFilterClass};
+
+        return preds;
     }
 
     @Override
@@ -329,7 +333,8 @@ public class BCEP_Model extends Model {
         results.add(AvgFilterByClass);
 
         // CALCULATE HERE THE ACCURACY AND AUC OF THE MODEL (FILTERED BY CLASS OR GLOBAL AND NON FILTERED)
-        String[] predict = predict(test);
+        String[][] predict = predict(test);
+        this.calculatePrecisionMeasures(predict, test, results);
         // After that, add the auc and acc to the averaged quality measures hash map.
         // OPTIONAL: If you want, you can save the patterns and individual quality measures on a file.
         return results;
@@ -495,6 +500,140 @@ public class BCEP_Model extends Model {
         }
 
         calculateAccuracy(test, predictions);
+    }
+
+    public Pattern next(ArrayList<Item> covered, ArrayList<Pattern> B) {
+        // Z = {s in B && |s - covered| >= 1}
+        if (B.size() == 1) {
+            return B.get(0);
+        } else if (B.size() == 0) {
+            return null;
+        } else {
+            ArrayList<Pattern> Z = new ArrayList<>();
+            for (Pattern pat : B) {
+                // fill Z
+                Pattern copy = pat.clone();
+                copy.getItems().removeAll(covered);
+                if (!copy.getItems().isEmpty()) {
+                    Z.add(pat);
+                }
+            }
+
+            if (Z.isEmpty()) {
+                return null;
+            } else if (Z.size() == 1) {
+                return Z.get(0);
+            } else {
+                // Now, sort Z in the order specified (ASCENDING ORDER)
+                Z.sort((Pattern o1, Pattern o2) -> {
+                    // Sort by strength
+                    if (o1.getStrength() > o2.getStrength()) {
+                        return 1;
+                    } else if (o1.getStrength() < o2.getStrength()) {
+                        return -1;
+                    } else // Compare lengths
+                     if (o1.getItems().size() > o2.getItems().size()) {
+                            return -1;
+                        } else if (o1.getItems().size() < o2.getItems().size()) {
+                            return 1;
+                        } else {
+                            // Compare the number of new covered items.
+                            Pattern copy1 = o1.clone();
+                            Pattern copy2 = o2.clone();
+                            copy1.getItems().removeAll(covered);
+                            copy2.getItems().removeAll(covered);
+                            if (copy1.getItems().size() > copy2.getItems().size()) {
+                                return 1;
+                            } else if (copy1.getItems().size() < copy2.getItems().size()) {
+                                return -1;
+                            } else {
+                                return 0;
+                            }
+                        }
+                });
+            }
+
+            // Once the list is sorted, return the LAST element (the better)
+            return Z.get(Z.size() - 1);
+        }
+    }
+
+    private String[] makePredictions(ArrayList<Pair<ArrayList<Item>, Integer>> testInstances, ArrayList<Pattern> patterns) {
+        String[] predictions = new String[testInstances.size()];
+        // for each instances on the test set
+        for (int i = 0; i < testInstances.size(); i++) {
+            ArrayList<Item> covered = new ArrayList<>();
+            ArrayList<Item> numerator = new ArrayList<>();
+            ArrayList<Item> denominator = new ArrayList<>();
+            ArrayList<Pattern> B = new ArrayList<>();
+            // First, get the set of patterns that covers the example.
+            for (Pattern p : patterns) {
+                if (p.covers(testInstances.get(i).getKey())) {
+                    B.add(p);
+                }
+            }
+
+            boolean allCovered = false;
+
+            do {
+                Pattern next = next(covered, B);
+                if (next != null) {
+                    // numerator = numerator U Bi
+                    for (Item it : next.getItems()) {
+                        if (!numerator.contains(it)) {
+                            numerator.add(it);
+                        }
+                    }
+                    // denominator = denominator U {Bi Intersect covered}
+                    Pattern clone = next.clone();
+                    clone.getItems().retainAll(covered); // Intersection.
+                    // Union with denominator
+                    for (Item it : clone.getItems()) {
+                        if (!denominator.contains(it)) {
+                            denominator.add(it);
+                        }
+                    }
+
+                    // covered = covered U Bi
+                    for (Item it : next.getItems()) {
+                        if (!covered.contains(it)) {
+                            covered.add(it);
+                        }
+                    }
+
+                    B.remove(next);
+                    // Check if all items are covered
+                    if (covered.size() >= testInstances.get(i).getKey().size() || B.isEmpty()) {
+                        allCovered = true;
+                    }
+                } else {
+                    allCovered = true;
+
+                }
+            } while (!allCovered);
+
+            // Calculate the probability of each class
+            float maxProb = -1;
+            int indexClass = -1;
+            for (int j = 0; j < classProbabilities.length; j++) {
+                float productNumerator = 1;
+                float productDenominator = 1;
+                for (Item it : numerator) {
+                    productNumerator *= it.getProbabilityForClass(j);
+                }
+                for (Item it : denominator) {
+                    productDenominator *= it.getProbabilityForClass(j);
+                }
+                float prob = classProbabilities[j] * (productNumerator / productDenominator);
+                if (prob > maxProb) {
+                    maxProb = prob;
+                    indexClass = j;
+                }
+            }
+
+            predictions[i] = Attributes.getOutputAttribute(0).getNominalValue(indexClass);
+        }
+        return predictions;
     }
 
 }

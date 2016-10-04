@@ -5,6 +5,7 @@
  */
 package Utils;
 
+import java.io.Serializable;
 import sjep_classifier.*;
 import java.util.ArrayList;
 import keel.Dataset.Attributes;
@@ -15,7 +16,7 @@ import keel.Dataset.InstanceSet;
  *
  * @author angel
  */
-public class Pattern {
+public class Pattern implements Serializable{
 
     private ArrayList<Item> items;
     private int support; // support counts for SJEP-C
@@ -23,7 +24,14 @@ public class Pattern {
     private float strength;
     private float supp; // support quality measure.
     private int clase; // the class of the pattern
-
+    
+    public Pattern clone(){
+        Pattern result = new Pattern((ArrayList<Item>) this.items.clone(), this.support, this.clase);
+        result.growthRate = this.growthRate;
+        result.strength = this.strength;
+        result.supp = this.supp;
+        return result;
+    }
     public Pattern(ArrayList<Item> items, int supp, int clase) {
         this.items = new ArrayList<Item>(items);
         support = supp;

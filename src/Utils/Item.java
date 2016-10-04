@@ -6,8 +6,11 @@
 package Utils;
 
 import exceptions.InvalidProbabilityException;
+import java.io.Serializable;
 import sjep_classifier.*;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,7 +22,7 @@ import keel.Dataset.InstanceSet;
  *
  * @author angel
  */
-public class Item implements Comparable<Item> {
+public class Item implements Comparable<Item>, Serializable {
 
     private final int itemID;              // The ID of the item
     private final String value;            // the value of the variable
@@ -206,8 +209,7 @@ public class Item implements Comparable<Item> {
             counts_classItemset[i] = 0;
             counts_class[i] = 0;
         }
-
-        System.out.println(data.getNumInstances());
+        
         // for each instance
         for (Instance inst : data.getInstances()) {
             // find if the Item exists in the instance.
@@ -244,5 +246,6 @@ public class Item implements Comparable<Item> {
         }
 
     }
+
 
 }

@@ -168,7 +168,9 @@ public class Main extends javax.swing.JFrame {
         ModelPath1 = new javax.swing.JTextField();
         BrowseInstances = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
-        ExecutionInfoLoad = new javax.swing.JLabel();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        PredictionsPanel = new javax.swing.JTextPane();
+        jButton1 = new javax.swing.JButton();
         BatchPanel = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         AlgorithmList1 = new javax.swing.JComboBox<>();
@@ -364,6 +366,16 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
+        PredictionsPanel.setEditable(false);
+        jScrollPane4.setViewportView(PredictionsPanel);
+
+        jButton1.setText("Save to File...");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout LoadPanelLayout = new javax.swing.GroupLayout(LoadPanel);
         LoadPanel.setLayout(LoadPanelLayout);
         LoadPanelLayout.setHorizontalGroup(
@@ -373,7 +385,7 @@ public class Main extends javax.swing.JFrame {
                     .addGroup(LoadPanelLayout.createSequentialGroup()
                         .addGap(457, 457, 457)
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 366, Short.MAX_VALUE))
+                        .addGap(0, 391, Short.MAX_VALUE))
                     .addGroup(LoadPanelLayout.createSequentialGroup()
                         .addGap(19, 19, 19)
                         .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -389,8 +401,12 @@ public class Main extends javax.swing.JFrame {
                             .addComponent(BrowseInstances)))
                     .addGroup(LoadPanelLayout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(jScrollPane4)))
                 .addContainerGap())
+            .addGroup(LoadPanelLayout.createSequentialGroup()
+                .addGap(404, 404, 404)
+                .addComponent(jButton1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         LoadPanelLayout.setVerticalGroup(
             LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -407,9 +423,11 @@ public class Main extends javax.swing.JFrame {
                     .addComponent(BrowseInstances))
                 .addGap(18, 18, 18)
                 .addComponent(jButton2)
-                .addGap(21, 21, 21)
-                .addComponent(ExecutionInfoLoad, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(485, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 492, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButton1)
+                .addContainerGap(38, Short.MAX_VALUE))
         );
 
         Tabs.addTab("Load Model", LoadPanel);
@@ -539,7 +557,8 @@ public class Main extends javax.swing.JFrame {
         // TODO add your handling code here:
         // Dinamically calls the method learn of the method: VERY INTERESTING FUNCTION!
         try {
-            appendToPane(ExecutionInfoLearn, "Executing Model... (This may take a while)", Color.BLUE);
+            InstanceSet test = new InstanceSet();
+            test.readSet(InstancesPath.getText(), true);
             //First: instantiate the class selected with th fully qualified name of the read model
             Object model = Model.readModel(ModelPath1.getText());
             Class clase = Class.forName(((Model) model).getFullyQualifiedName());
@@ -550,10 +569,16 @@ public class Main extends javax.swing.JFrame {
             args[0] = InstanceSet.class;
 
             // Third: Get the method 'learn' of the class and invoke it.
-            clase.getMethod("predict", args).invoke(newObject, new InstanceSet());
-            ExecutionInfoLearn.setText("Done.");
+            String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
+            for (int i = 0; i < predictions[0].length; i++) {
+                appendToPane(PredictionsPanel, test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i], Color.BLUE);
+            }
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | IOException | InvocationTargetException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (DatasetException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (HeaderFormatException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_jButton2ActionPerformed
@@ -659,15 +684,15 @@ public class Main extends javax.swing.JFrame {
                         appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
                         args = new Class[1];
                         args[0] = InstanceSet.class;
-                        clase.getMethod("test", args).invoke(newObject, test);
-
+                        ArrayList<HashMap<String, Double>> ret = (ArrayList<HashMap<String, Double>>) clase.getMethod("test", args).invoke(newObject, test);
+                        appendToPane(ExecutionInfoLearn, ret.get(0).toString(),Color.BLUE);
                         appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
                     }
 
                     // Invoke saveModel method if neccesary
                     if (SaveModelCheckbox.isSelected()) {
                         appendToPane(ExecutionInfoLearn, "Saving Model...", Color.BLUE);
-
+                        args = new Class[1];
                         args[0] = String.class;
                         clase.getMethod("saveModel", args).invoke(newObject, rutaModel.getText());
                         appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
@@ -847,7 +872,7 @@ public class Main extends javax.swing.JFrame {
                             HashMap<String, Double> QMsUnfiltered = Model.generateQualityMeasuresHashMap();
                             HashMap<String, Double> QMsGlobal = Model.generateQualityMeasuresHashMap();
                             HashMap<String, Double> QMsByClass = Model.generateQualityMeasuresHashMap();
-                            
+
                             appendToPane(BatchOutput, "Executing " + dir.getName() + "...", Color.BLUE);
 
                             for (int i = 1; i <= NUM_FOLDS; i++) {
@@ -896,7 +921,7 @@ public class Main extends javax.swing.JFrame {
                                     QMsUnfiltered = Model.updateHashMap(QMsUnfiltered, ret.get(0));
                                     QMsGlobal = Model.updateHashMap(QMsGlobal, ret.get(1));
                                     QMsByClass = Model.updateHashMap(QMsByClass, ret.get(2));
-                                   
+
                                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
                                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                 }
@@ -905,7 +930,7 @@ public class Main extends javax.swing.JFrame {
 
                             // After finished the fold cross validation, make the average calculation of each quality measure.
                             Model.saveResults(dir, QMsUnfiltered, QMsGlobal, QMsByClass, NUM_FOLDS);
-                          
+
                         }
 
                     }
@@ -921,6 +946,10 @@ public class Main extends javax.swing.JFrame {
     private void numFoldsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_numFoldsActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_numFoldsActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -972,7 +1001,6 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JButton BrowseInstances;
     private javax.swing.JButton BrowseModelButton;
     private static javax.swing.JTextPane ExecutionInfoLearn;
-    private javax.swing.JLabel ExecutionInfoLoad;
     private javax.swing.JTextField InstancesPath;
     private javax.swing.JButton LearnButton;
     private javax.swing.JPanel LearnPanel;
@@ -980,8 +1008,10 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JTextField ModelPath1;
     private javax.swing.JPanel ParametersPanel;
     private javax.swing.JPanel ParametersPanel1;
+    private static javax.swing.JTextPane PredictionsPanel;
     private javax.swing.JCheckBox SaveModelCheckbox;
     private javax.swing.JTabbedPane Tabs;
+    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -994,6 +1024,7 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JComboBox<String> numFolds;
     private javax.swing.JTextField rutaBatch;
     private javax.swing.JTextField rutaModel;
