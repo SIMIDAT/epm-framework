@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Utils;
+package utils;
 
 import sjep_classifier.*;
 import java.util.ArrayList;

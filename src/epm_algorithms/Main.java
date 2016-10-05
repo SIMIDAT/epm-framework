@@ -40,10 +40,13 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,6 +79,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.SAXException;
+import utils.Pattern;
+import utils.Utils;
 
 /**
  *
@@ -183,6 +188,7 @@ public class Main extends javax.swing.JFrame {
         BatchOutput = new javax.swing.JTextPane();
         jLabel8 = new javax.swing.JLabel();
         numFolds = new javax.swing.JComboBox<>();
+        ParallelCheckbox = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Emerging Pattern Mining Algorithms Framework");
@@ -477,6 +483,15 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
+        ParallelCheckbox.setText("Parallel");
+        ParallelCheckbox.setToolTipText("Execute in parallel using all possible threads -1 to prevent system hang.");
+        ParallelCheckbox.setEnabled(false);
+        ParallelCheckbox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ParallelCheckboxActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout BatchPanelLayout = new javax.swing.GroupLayout(BatchPanel);
         BatchPanel.setLayout(BatchPanelLayout);
         BatchPanelLayout.setHorizontalGroup(
@@ -487,7 +502,10 @@ public class Main extends javax.swing.JFrame {
                         .addGap(114, 114, 114)
                         .addComponent(jLabel6)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(ParallelCheckbox)
+                        .addGap(278, 278, 278))
                     .addGroup(BatchPanelLayout.createSequentialGroup()
                         .addContainerGap()
                         .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -527,7 +545,8 @@ public class Main extends javax.swing.JFrame {
                 .addGap(22, 22, 22)
                 .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel6)
-                    .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(ParallelCheckbox))
                 .addGap(33, 33, 33)
                 .addComponent(ParametersPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -574,12 +593,9 @@ public class Main extends javax.swing.JFrame {
                 appendToPane(PredictionsPanel, test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i], Color.BLUE);
             }
 
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | IOException | InvocationTargetException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (DatasetException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (HeaderFormatException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | IOException | InvocationTargetException | DatasetException | HeaderFormatException ex) {
+            //Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            appendToPane(PredictionsPanel, ex.getMessage(), Color.red);
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -678,15 +694,25 @@ public class Main extends javax.swing.JFrame {
                     // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
                     clase.getMethod("learn", args).invoke(newObject, training, params);
 
+                    // Get learned patterns, filter, and calculate measures
+                    ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
                     appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
-                    // If the are a test set call the method "test" to make the test phase.
+
+                    // If the are a test set call the method "predict" to make the test phase.
                     if (!rutaTst.getText().equals("")) {
+                        ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(patterns, test, (Model) newObject);
+
                         appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
                         args = new Class[1];
                         args[0] = InstanceSet.class;
-                        ArrayList<HashMap<String, Double>> ret = (ArrayList<HashMap<String, Double>>) clase.getMethod("test", args).invoke(newObject, test);
-                        appendToPane(ExecutionInfoLearn, ret.get(0).toString(),Color.BLUE);
-                        appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
+                        // Call predict method
+                        String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
+
+                        // Calculate predictions
+                        Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
+                        // Save Results
+                        Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
+                        appendToPane(ExecutionInfoLearn, "Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath(), Color.BLUE);
                     }
 
                     // Invoke saveModel method if neccesary
@@ -706,8 +732,8 @@ public class Main extends javax.swing.JFrame {
 
             worker.execute();
 
-        } catch (IllegalActionException ex) {
-            appendToPane(ExecutionInfoLearn, ex.getReason(), Color.red);
+        } catch (Exception ex) {
+            appendToPane(ExecutionInfoLearn, ex.getMessage(), Color.red);
         }
 
 
@@ -864,17 +890,23 @@ public class Main extends javax.swing.JFrame {
             SwingWorker work = new SwingWorker() {
                 @Override
                 protected Object doInBackground() throws Exception {
-
+                    int NUM_THREADS = 1;
+                    if (ParallelCheckbox.isSelected()) {
+                        NUM_THREADS = Runtime.getRuntime().availableProcessors();
+                    }
+//                    ExecutorService exec = Executors.newFixedThreadPool(NUM_THREADS);
                     // for each folder in the root directory
+
                     for (File dir : folders) {
+
                         if (dir.isDirectory()) {
                             File[] files = dir.listFiles();
-                            HashMap<String, Double> QMsUnfiltered = Model.generateQualityMeasuresHashMap();
-                            HashMap<String, Double> QMsGlobal = Model.generateQualityMeasuresHashMap();
-                            HashMap<String, Double> QMsByClass = Model.generateQualityMeasuresHashMap();
+                            Arrays.sort(files);
+                            HashMap<String, Double> QMsUnfiltered = Utils.generateQualityMeasuresHashMap();
+                            HashMap<String, Double> QMsGlobal = Utils.generateQualityMeasuresHashMap();
+                            HashMap<String, Double> QMsByClass = Utils.generateQualityMeasuresHashMap();
 
                             appendToPane(BatchOutput, "Executing " + dir.getName() + "...", Color.BLUE);
-
                             for (int i = 1; i <= NUM_FOLDS; i++) {
                                 // Search for the training and test files.
                                 for (File x : files) {
@@ -885,6 +917,7 @@ public class Main extends javax.swing.JFrame {
                                             Main.setInfoLearnTextError(x.getName());
                                         } catch (DatasetException | HeaderFormatException ex) {
                                             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                            appendToPane(BatchOutput, ex.toString(), Color.red);
                                         }
                                     }
                                     if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tst.dat")) {
@@ -892,6 +925,7 @@ public class Main extends javax.swing.JFrame {
                                             test.readSet(x.getAbsolutePath(), false);
                                         } catch (DatasetException | HeaderFormatException ex) {
                                             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                            appendToPane(BatchOutput, ex.toString(), Color.red);
                                         }
                                     }
                                 }
@@ -910,37 +944,50 @@ public class Main extends javax.swing.JFrame {
 
                                     // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
                                     clase.getMethod("learn", args).invoke(newObject, training, params);
+                                    // Get learned patterns, filter, and calculate measures
+                                    ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
 
                                     // Call the test method. This method return in a hashmap the quality measures.
                                     // for unfiltered, filtered global, and filtered by class QMs.
+                                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(patterns, test, (Model) newObject);
+
+                                    appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
                                     args = new Class[1];
                                     args[0] = InstanceSet.class;
-                                    ArrayList<HashMap<String, Double>> ret = (ArrayList<HashMap<String, Double>>) clase.getMethod("test", args).invoke(newObject, test);
+                                    // Call predict method
+                                    String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
 
+                                    // Calculate predictions
+                                    Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
                                     // Store the result to make the average result
-                                    QMsUnfiltered = Model.updateHashMap(QMsUnfiltered, ret.get(0));
-                                    QMsGlobal = Model.updateHashMap(QMsGlobal, ret.get(1));
-                                    QMsByClass = Model.updateHashMap(QMsByClass, ret.get(2));
+                                    QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
+                                    QMsGlobal = Utils.updateHashMap(QMsGlobal, Measures.get(1));
+                                    QMsByClass = Utils.updateHashMap(QMsByClass, Measures.get(2));
 
                                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
                                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                    appendToPane(BatchOutput, ex.getMessage(), Color.red);
                                 }
 
                             }
 
                             // After finished the fold cross validation, make the average calculation of each quality measure.
-                            Model.saveResults(dir, QMsUnfiltered, QMsGlobal, QMsByClass, NUM_FOLDS);
+                            Utils.saveResults(dir, QMsUnfiltered, QMsGlobal, QMsByClass, NUM_FOLDS);
 
                         }
 
                     }
+                    appendToPane(BatchOutput, "Done.", Color.BLUE);
                     return null;
                 }
             };
             work.execute();
+            
         } catch (IllegalActionException ex) {
             appendToPane(BatchOutput, ex.getReason(), Color.red);
         }
+
+
     }//GEN-LAST:event_BatchButtonActionPerformed
 
     private void numFoldsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_numFoldsActionPerformed
@@ -950,6 +997,10 @@ public class Main extends javax.swing.JFrame {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void ParallelCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ParallelCheckboxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_ParallelCheckboxActionPerformed
 
     /**
      * @param args the command line arguments
@@ -1006,6 +1057,7 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JPanel LearnPanel;
     private javax.swing.JPanel LoadPanel;
     private javax.swing.JTextField ModelPath1;
+    private javax.swing.JCheckBox ParallelCheckbox;
     private javax.swing.JPanel ParametersPanel;
     private javax.swing.JPanel ParametersPanel1;
     private static javax.swing.JTextPane PredictionsPanel;

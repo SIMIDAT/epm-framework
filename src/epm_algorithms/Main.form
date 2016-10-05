@@ -437,6 +437,9 @@
                               <Component id="jLabel6" min="-2" max="-2" attributes="0"/>
                               <EmptySpace type="unrelated" max="-2" attributes="0"/>
                               <Component id="AlgorithmList1" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
+                              <Component id="ParallelCheckbox" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="278" max="-2" attributes="0"/>
                           </Group>
                           <Group type="102" attributes="0">
                               <EmptySpace max="-2" attributes="0"/>
@@ -490,6 +493,7 @@
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jLabel6" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="AlgorithmList1" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="ParallelCheckbox" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace min="-2" pref="33" max="-2" attributes="0"/>
                       <Component id="ParametersPanel1" min="-2" pref="310" max="-2" attributes="0"/>
@@ -596,6 +600,16 @@
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
               </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="ParallelCheckbox">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Parallel"/>
+                <Property name="toolTipText" type="java.lang.String" value="Execute in parallel using all possible threads -1 to prevent system hang."/>
+                <Property name="enabled" type="boolean" value="false"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ParallelCheckboxActionPerformed"/>
+              </Events>
             </Component>
           </SubComponents>
         </Container>

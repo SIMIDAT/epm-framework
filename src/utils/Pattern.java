@@ -3,11 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Utils;
+package utils;
 
 import java.io.Serializable;
 import sjep_classifier.*;
 import java.util.ArrayList;
+import keel.Dataset.Attribute;
 import keel.Dataset.Attributes;
 import keel.Dataset.Instance;
 import keel.Dataset.InstanceSet;
@@ -16,7 +17,7 @@ import keel.Dataset.InstanceSet;
  *
  * @author angel
  */
-public class Pattern implements Serializable{
+public class Pattern implements Serializable {
 
     private ArrayList<Item> items;
     private int support; // support counts for SJEP-C
@@ -24,14 +25,15 @@ public class Pattern implements Serializable{
     private float strength;
     private float supp; // support quality measure.
     private int clase; // the class of the pattern
-    
-    public Pattern clone(){
+
+    public Pattern clone() {
         Pattern result = new Pattern((ArrayList<Item>) this.items.clone(), this.support, this.clase);
         result.growthRate = this.growthRate;
         result.strength = this.strength;
         result.supp = this.supp;
         return result;
     }
+
     public Pattern(ArrayList<Item> items, int supp, int clase) {
         this.items = new ArrayList<Item>(items);
         support = supp;
@@ -59,6 +61,31 @@ public class Pattern implements Serializable{
             }
         }
         // Return true, the pattern match the instance.
+        return true;
+    }
+
+    public boolean covers(Instance instance, Attribute[] inputAttrs) {
+        // for each item in the pattern
+        for (Item it : items) {
+            boolean exists = false;
+            for (int i = 0; i < inputAttrs.length; i++) {
+                if (inputAttrs[i].getName().equals(it.getVariable())) {
+                    // Found the variable, now check if the value match or covers 
+                    if (inputAttrs[i].getType() == Attribute.NOMINAL) {
+                        if (instance.getInputNominalValues(i).equals(it.getValue())) {
+                            exists = true;
+                        }
+                    } else if (it.getType() == Item.FUZZY_ITEM) {
+                        if (it.getValueFuzzy().Fuzzy((float) instance.getInputRealValues(i)) > 0) {
+                            exists = true;
+                        }
+                    }
+                }
+            }
+            if (!exists) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -135,7 +162,7 @@ public class Pattern implements Serializable{
         }
 
         this.supp = tp / (tp + tn + fp + fn);
-        
+
         if (this.growthRate == Float.POSITIVE_INFINITY) {
             this.strength = Float.POSITIVE_INFINITY;
         } else if (this.growthRate == 0 || this.supp == 0) {
