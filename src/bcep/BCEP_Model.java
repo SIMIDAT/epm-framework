@@ -30,7 +30,7 @@ import epm_algorithms.Model;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 import keel.Dataset.Attribute;
-import epm_algorithms.Main;
+import epm_algorithms.GUI;
 import exceptions.IllegalActionException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -54,11 +54,7 @@ import utils.Utils;
  * @since JDK 1.8
  */
 public class BCEP_Model extends Model implements Serializable {
-    /*
-    ArrayList<Pattern> patterns;
-    ArrayList<Pattern> patternsFilteredAllClasses;
-    ArrayList<Pattern> patternsFilteredByClass;
-    */
+    
     float[] classProbabilities;
 
     public BCEP_Model() {
@@ -228,7 +224,7 @@ public class BCEP_Model extends Model implements Serializable {
                 }
 
                 // calculate measures of training
-                // Main.setInfoLearnText("Mining finished. eJEPs found: " + sum);
+                // GUI.setInfoLearnText("Mining finished. eJEPs found: " + sum);
             }
 
             for (Pattern pat : getPatterns()) {
@@ -236,10 +232,10 @@ public class BCEP_Model extends Model implements Serializable {
             }
         } catch (IllegalActionException ex) {
             Logger.getLogger(BCEP_Model.class.getName()).log(Level.SEVERE, null, ex);
-            Main.setInfoLearnTextError(ex.getReason());
+            GUI.setInfoLearnTextError(ex.getReason());
         } catch (Exception ex) {
             Logger.getLogger(BCEP_Model.class.getName()).log(Level.SEVERE, null, ex);
-            Main.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
+            GUI.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
         }
 
     }
@@ -265,7 +261,7 @@ public class BCEP_Model extends Model implements Serializable {
             return preds1;
         } catch (Exception ex) {
             Logger.getLogger(BCEP_Model.class.getName()).log(Level.SEVERE, null, ex);
-            Main.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
+            GUI.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
         }
         return preds;
 
@@ -352,7 +348,7 @@ public class BCEP_Model extends Model implements Serializable {
 //            return results;
 //        } catch (Exception ex) {
 //            Logger.getLogger(BCEP_Model.class.getName()).log(Level.SEVERE, null, ex);
-//            Main.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
+//            GUI.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
 //        }
 //        return null;
 //    }
