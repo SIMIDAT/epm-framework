@@ -8,6 +8,7 @@ package utils;
 import java.io.Serializable;
 import sjep_classifier.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import keel.Dataset.Attribute;
 import keel.Dataset.Attributes;
 import keel.Dataset.Instance;
@@ -25,12 +26,16 @@ public class Pattern implements Serializable {
     private float strength;
     private float supp; // support quality measure.
     private int clase; // the class of the pattern
+    private HashMap<String, Double> tra_measures;
+    private HashMap<String, Double> tst_measures;
 
     public Pattern clone() {
         Pattern result = new Pattern((ArrayList<Item>) this.items.clone(), this.support, this.clase);
         result.growthRate = this.growthRate;
         result.strength = this.strength;
         result.supp = this.supp;
+        result.tra_measures = (HashMap<String, Double>) this.tra_measures.clone();
+        result.tst_measures = (HashMap<String, Double>) this.tst_measures.clone();
         return result;
     }
 
@@ -38,6 +43,8 @@ public class Pattern implements Serializable {
         this.items = new ArrayList<Item>(items);
         support = supp;
         this.clase = clase;
+        this.tra_measures = Utils.generateQualityMeasuresHashMap();
+        this.tst_measures = Utils.generateQualityMeasuresHashMap();
     }
 
     /**
@@ -209,6 +216,34 @@ public class Pattern implements Serializable {
      */
     public float getSupp() {
         return supp;
+    }
+
+    /**
+     * @return the tra_measures
+     */
+    public HashMap<String, Double> getTra_measures() {
+        return tra_measures;
+    }
+
+    /**
+     * @param tra_measures the tra_measures to set
+     */
+    public void setTra_measures(HashMap<String, Double> tra_measures) {
+        this.tra_measures = tra_measures;
+    }
+
+    /**
+     * @return the tst_measures
+     */
+    public HashMap<String, Double> getTst_measures() {
+        return tst_measures;
+    }
+
+    /**
+     * @param tst_measures the tst_measures to set
+     */
+    public void setTst_measures(HashMap<String, Double> tst_measures) {
+        this.tst_measures = tst_measures;
     }
 
 }

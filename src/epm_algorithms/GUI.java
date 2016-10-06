@@ -580,34 +580,45 @@ public class GUI extends javax.swing.JFrame {
         // TODO add your handling code here:
         // Dinamically calls the method learn of the method: VERY INTERESTING FUNCTION!
         PredictionsPanel.setEditable(true);
+        PredictionsPanel.setText("");
         preds = "";
         try {
+            Attributes.clearAll();
             InstanceSet test = new InstanceSet();
             test.readSet(InstancesPath.getText(), true);
             test.setAttributesAsNonStatic();
-
             SwingWorker worker = new SwingWorker() {
                 @Override
                 protected Object doInBackground() throws Exception {
+                    try {
+                        //First: instantiate the class selected with th fully qualified name of the read model
+                        Object model = Model.readModel(ModelPath1.getText());
+                        Class clase = Class.forName(((Model) model).getFullyQualifiedName());
+                        //Object newObject = clase.newInstance();
 
-                    //First: instantiate the class selected with th fully qualified name of the read model
-                    Object model = Model.readModel(ModelPath1.getText());
-                    Class clase = Class.forName(((Model) model).getFullyQualifiedName());
-                    //Object newObject = clase.newInstance();
+                        // Second: get the argument class
+                        Class[] args = new Class[1];
+                        args[0] = InstanceSet.class;
 
-                    // Second: get the argument class
-                    Class[] args = new Class[1];
-                    args[0] = InstanceSet.class;
-
-                    // Third: Get the method 'learn' of the class and invoke it.
-                    String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(model, test);
-                    for (int i = 0; i < predictions[0].length; i++) {
-                        appendToPane(PredictionsPanel, test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i], Color.BLUE, false);
-                        preds += test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i] + "\n";
+                        // Third: Get the method 'learn' of the class and invoke it.
+                        String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(model, test);
+                        for (int i = 0; i < predictions[0].length; i++) {
+                            if (test.getAttributeDefinitions().getOutputAttributes() != null) {
+                                appendToPane(PredictionsPanel, test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i], Color.BLUE, false);
+                                preds += test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i] + "\n";
+                            } else {
+                                appendToPane(PredictionsPanel, predictions[0][i], Color.BLUE, false);
+                                preds += predictions[0][i] + "\n";
+                            }
+                        }
+                        PredictionsPanel.setEditable(false);
+                        return null;
+                    } catch (Exception ex) {
+                        appendToPane(PredictionsPanel, ex.toString(), Color.red);
                     }
-                    PredictionsPanel.setEditable(false);
                     return null;
                 }
+
             };
             worker.execute();
         } catch (Exception ex) {
@@ -691,8 +702,10 @@ public class GUI extends javax.swing.JFrame {
                     // Reads training and test file
                     Attributes.clearAll();
                     training.readSet(rutaTra.getText(), true);
+                    training.setAttributesAsNonStatic();
                     if (!rutaTst.getText().equals("")) {
                         test.readSet(rutaTst.getText(), false);
+                        test.setAttributesAsNonStatic();
                     }
 
                     appendToPane(ExecutionInfoLearn, "Executing " + (String) AlgorithmList.getSelectedItem() + " algorithm... (This may take a while)", Color.BLUE);
@@ -707,18 +720,40 @@ public class GUI extends javax.swing.JFrame {
                     args[0] = InstanceSet.class;
                     args[1] = HashMap.class;
 
+                    System.out.println("Learning Model...");
                     // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
                     clase.getMethod("learn", args).invoke(newObject, training, params);
 
-                    // Get learned patterns, filter, and calculate measures
-                    ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
+                    System.out.println("Filtering patterns and calculating descriptive measures...");
+                    // Get learned patterns, filter, and calculate measures for training
+                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                    Measures.add(filterPatterns.get(0));
+                    Measures.add(filterPatterns.get(1));
+
+                    // Call predict method for ACC and AUC for training
+                    System.out.println("Calculating precision for training...");
+                    args = new Class[1];
+                    args[0] = InstanceSet.class;
+                    String[][] predictionsTra = (String[][]) clase.getMethod("predict", args).invoke(newObject, training);
+                    Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
+                    // Save training measures in a file.
+                    System.out.println("Save results in a file...");
+                    Utils.saveTraining(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures);
                     appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
+                    System.out.println("Done learning model.");
 
-                    // If the are a test set call the method "predict" to make the test phase.
+                    // If there is a test set call the method "predict" to make the test phase.
                     if (!rutaTst.getText().equals("")) {
-                        ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(patterns, test, (Model) newObject);
-
+                        // Calculate descriptive measures for training
                         appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
+                        System.out.println("Testing instances");
+
+                        Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
+                        filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                        Measures.add(filterPatterns.get(0));
+                        Measures.add(filterPatterns.get(1));
+
                         args = new Class[1];
                         args[0] = InstanceSet.class;
                         // Call predict method
@@ -727,7 +762,8 @@ public class GUI extends javax.swing.JFrame {
                         // Calculate predictions
                         Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
                         // Save Results
-                        Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
+                        //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
+                        Utils.saveTest(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures);
                         appendToPane(ExecutionInfoLearn, "Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath(), Color.BLUE);
                     }
 
@@ -924,6 +960,7 @@ public class GUI extends javax.swing.JFrame {
                             HashMap<String, Double> QMsByClass = Utils.generateQualityMeasuresHashMap();
 
                             appendToPane(BatchOutput, "Executing " + dir.getName() + "...", Color.BLUE);
+                            System.out.println("Executing..." + dir.getName() + "...");
                             for (int i = 1; i <= NUM_FOLDS; i++) {
                                 // Search for the training and test files.
                                 for (File x : files) {
@@ -931,7 +968,7 @@ public class GUI extends javax.swing.JFrame {
                                         try {
                                             Attributes.clearAll();
                                             training.readSet(x.getAbsolutePath(), true);
-                                            GUI.setInfoLearnTextError(x.getName());
+                                            training.setAttributesAsNonStatic();
                                         } catch (DatasetException | HeaderFormatException ex) {
                                             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                                             appendToPane(BatchOutput, ex.toString(), Color.red);
@@ -940,6 +977,7 @@ public class GUI extends javax.swing.JFrame {
                                     if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tst.dat")) {
                                         try {
                                             test.readSet(x.getAbsolutePath(), false);
+                                            test.setAttributesAsNonStatic();
                                         } catch (DatasetException | HeaderFormatException ex) {
                                             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                                             appendToPane(BatchOutput, ex.toString(), Color.red);
@@ -962,20 +1000,28 @@ public class GUI extends javax.swing.JFrame {
                                     // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
                                     clase.getMethod("learn", args).invoke(newObject, training, params);
                                     // Get learned patterns, filter, and calculate measures
-                                    ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
+                                    //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
 
                                     // Call the test method. This method return in a hashmap the quality measures.
                                     // for unfiltered, filtered global, and filtered by class QMs.
-                                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(patterns, test, (Model) newObject);
+                                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                                    Measures.add(filterPatterns.get(0));
+                                    Measures.add(filterPatterns.get(1));
 
                                     appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
                                     args = new Class[1];
                                     args[0] = InstanceSet.class;
                                     // Call predict method
                                     String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
-
-                                    // Calculate predictions
+                                    // Calculate descriptive measures in test
+                                    Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
+                                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                                    Measures.add(filterPatterns.get(0));
+                                    Measures.add(filterPatterns.get(1));
+                                    // Calculate predictions in test
                                     Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
+
                                     // Store the result to make the average result
                                     QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
                                     QMsGlobal = Utils.updateHashMap(QMsGlobal, Measures.get(1));

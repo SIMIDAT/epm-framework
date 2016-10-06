@@ -107,9 +107,28 @@ public class Main {
                     System.out.println("Learning Model...");
                     clase.getMethod("learn", arg).invoke(newObject, training, params);
                     // Get learned patterns, filter, and calculate measures
-                    ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
+                    //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
 
-                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(patterns, test, (Model) newObject);
+                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                    Measures.add(filterPatterns.get(0));
+                    Measures.add(filterPatterns.get(1));
+                    // Call predict method for ACC and AUC for training
+                    System.out.println("Calculating precision for training...");
+                    arg = new Class[1];
+                    arg[0] = InstanceSet.class;
+                    String[][] predictionsTra = (String[][]) clase.getMethod("predict", arg).invoke(newObject, training);
+                    Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
+                    // Save training measures in a file.
+                    System.out.println("Save results in a file...");
+                    Utils.saveTraining(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
+                    System.out.println("Done learning model.");
+                    System.out.println("Testing instances...");
+
+                    Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
+                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                    Measures.add(filterPatterns.get(0));
+                    Measures.add(filterPatterns.get(1));
 
                     arg = new Class[1];
                     arg[0] = InstanceSet.class;
@@ -119,8 +138,9 @@ public class Main {
                     // Calculate predictions
                     Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
                     // Save Results
-                    Utils.saveResults(new File(params.get("training")).getAbsoluteFile().getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-
+                    //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
+                    Utils.saveTest(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
+                    System.out.println("Done.");
                     break;
                 default:
                     System.out.println("You have to specify only one argument to execute in command-line or no arguments to launch the GUI.");
@@ -142,7 +162,7 @@ public class Main {
             while ((line = bf.readLine()) != null) {
                 StringTokenizer tok = new StringTokenizer(line, "=");
                 String nombreParam = tok.nextToken();
-                nombreParam = nombreParam.substring(0, nombreParam.length()-1);
+                nombreParam = nombreParam.substring(0, nombreParam.length() - 1);
                 String Valor = tok.nextToken();
                 Valor = Valor.substring(1, Valor.length());
                 result.put(nombreParam, Valor);

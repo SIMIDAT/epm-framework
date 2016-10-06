@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.Vector;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
@@ -77,40 +78,42 @@ public class Utils {
     }
 
     /**
-     * Calculates the descriptive quality measures for each rule of a given set
-     * of confusion matrices.
+     * Calculates the quality measures
      *
-     * @param matrices A matrix with tp, tn, fp, fn and number of variables for
-     * each rule
-     * @return A hash map with the descriptive quality measures.
+     * @param data
+     * @param model
+     * @param isTrain
+     * @param by
+     * @param nrules
+     * @return
      */
-    public static ArrayList<HashMap<String, Double>> calculateDescriptiveMeasures(ArrayList<Pattern> patterns, InstanceSet test, Model model) {
+    public static ArrayList<HashMap<String, Double>> calculateDescriptiveMeasures(InstanceSet data, Model model, boolean isTrain) {
         // 0 -> tp
         // 1 -> tn
         // 2 -> fp
         // 3 -> fn
         // 4 -> n_vars
         int sumNvars = 0;
-        test.setAttributesAsNonStatic();
-        Attribute[] inputAttributes = test.getAttributeDefinitions().getInputAttributes();
-        Attribute outputAttributes = test.getAttributeDefinitions().getOutputAttribute(0);
-        int[][] confusionMatrices = new int[patterns.size()][5];
-        for (int i = 0; i < patterns.size(); i++) {
+        data.setAttributesAsNonStatic();
+        Attribute[] inputAttributes = data.getAttributeDefinitions().getInputAttributes();
+        Attribute outputAttributes = data.getAttributeDefinitions().getOutputAttribute(0);
+        int[][] confusionMatrices = new int[model.getPatterns().size()][5];
+        for (int i = 0; i < model.getPatterns().size(); i++) {
             int tp = 0;
             int tn = 0;
             int fp = 0;
             int fn = 0;
             // for each instance
-            for (int j = 0; j < test.getNumInstances(); j++) {
+            for (int j = 0; j < data.getNumInstances(); j++) {
                 // If the pattern covers the example
-                if (patterns.get(i).covers(test.getInstance(j), inputAttributes)) {
+                if (model.getPatterns().get(i).covers(data.getInstance(j), inputAttributes)) {
 
-                    if (patterns.get(i).getClase() == outputAttributes.convertNominalValue(test.getOutputNominalValue(j, 0))) {
+                    if (model.getPatterns().get(i).getClase() == outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
                         tp++;
                     } else {
                         fp++;
                     }
-                } else if (patterns.get(i).getClase() != outputAttributes.convertNominalValue(test.getOutputNominalValue(j, 0))) {
+                } else if (model.getPatterns().get(i).getClase() != outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
                     tn++;
                 } else {
                     fn++;
@@ -122,7 +125,7 @@ public class Utils {
             confusionMatrices[i][1] = tn;
             confusionMatrices[i][2] = fp;
             confusionMatrices[i][3] = fn;
-            confusionMatrices[i][4] = patterns.get(i).getItems().size();
+            confusionMatrices[i][4] = model.getPatterns().get(i).getItems().size();
         }
 
         ArrayList<HashMap<String, Double>> qms = new ArrayList<>();
@@ -224,40 +227,17 @@ public class Utils {
             measures.put("RULE_NUMBER", (double) i);
 
             qms.add(measures);
+            if (isTrain) {
+                model.getPatterns().get(i).setTra_measures(measures);
+            } else {
+                model.getPatterns().get(i).setTst_measures(measures);
+            }
         }
-
-        // Filter the rules
-        // Get best n rules
-        ArrayList<HashMap<String, Double>> bestNRulesBy = getBestNRulesBy(qms, "CONF", 3);
-        ArrayList<Pattern> patternsFilteredAllClasses = new ArrayList<>();
-        for (HashMap<String, Double> rule : bestNRulesBy) {
-            int value = rule.get("RULE_NUMBER").intValue();
-            patternsFilteredAllClasses.add(model.getPatterns().get(value));
-        }
-        model.setPatternsFilteredAllClass(patternsFilteredAllClasses);
-
-        int[] classes = new int[patterns.size()];
-        for (int i = 0; i < classes.length; i++) {
-            classes[i] = patterns.get(i).getClase();
-        }
-
-        // get best n rules for each class
-        ArrayList<HashMap<String, Double>> bestNRulesByClass = getBestNRulesByClass(qms, "CONF", 3, classes);
-        ArrayList<Pattern> patternsFilteredByClass = new ArrayList<>();
-        for (HashMap<String, Double> rule : bestNRulesByClass) {
-            int value = rule.get("RULE_NUMBER").intValue();
-            patternsFilteredByClass.add(model.getPatterns().get(value));
-        }
-        model.setPatternsFilteredByClass(patternsFilteredByClass);
 
         // Average the results and return
         HashMap<String, Double> AverageQualityMeasures = AverageQualityMeasures(qms);
-        HashMap<String, Double> AverageQualityMeasures1 = AverageQualityMeasures(bestNRulesBy);
-        HashMap<String, Double> AverageQualityMeasures2 = AverageQualityMeasures(bestNRulesByClass);
         qms.clear();
         qms.add(AverageQualityMeasures);
-        qms.add(AverageQualityMeasures1);
-        qms.add(AverageQualityMeasures2);
         return qms;
     }
 
@@ -585,10 +565,15 @@ public class Utils {
                 }
 
                 double acc = (double) (tp + tn) / (tp + tn + fp + fn);
-                double tpr = (double) tp / (tp + fn);
-                double fpr = (double) fp / (fp + tn);
+                double tpr = 0;
+                if ((tp + fn) > 0) {
+                    tpr = (double) tp / (tp + fn);
+                }
+                double fpr = 0;
+                if ((fp + tn) > 0) {
+                    fpr = (double) fp / (fp + tn);
+                }
                 double auc = (1.0 + tpr - fpr) / 2.0;
-
                 results.get(i).put("ACC", acc);
                 results.get(i).put("AUC", auc);
             }
@@ -606,6 +591,238 @@ public class Utils {
                 results.get(i).put("AUC", Double.NaN);
 
             }
+        }
+    }
+
+    public static ArrayList<HashMap<String, Double>> filterPatterns(Model model, String by, int nrules) {
+        ArrayList<HashMap<String, Double>> qms = new ArrayList<>();
+        for (int i = 0; i < model.getPatterns().size(); i++) {
+            qms.add(model.getPatterns().get(i).getTra_measures());
+        }
+        // Filter the rules
+        // Get best n rules
+        ArrayList<HashMap<String, Double>> bestNRulesBy = getBestNRulesBy(qms, by, nrules);
+        ArrayList<Pattern> bestPatterns = new ArrayList<>();
+        for (int i = 0; i < bestNRulesBy.size(); i++) {
+            bestPatterns.add(model.getPatterns().get(((Double) bestNRulesBy.get(i).get("RULE_NUMBER")).intValue()));
+        }
+        model.setPatternsFilteredAllClass(bestPatterns);
+
+        int[] classes = new int[model.getPatterns().size()];
+        for (int i = 0; i < classes.length; i++) {
+            classes[i] = model.getPatterns().get(i).getClase();
+        }
+        ArrayList<HashMap<String, Double>> bestNRulesByClass = getBestNRulesByClass(qms, by, nrules, classes);
+        bestPatterns = new ArrayList<>();
+        for (int i = 0; i < bestNRulesByClass.size(); i++) {
+            bestPatterns.add(model.getPatterns().get(((Double) bestNRulesByClass.get(i).get("RULE_NUMBER")).intValue()));
+        }
+        model.setPatternsFilteredByClass(bestPatterns);
+
+        HashMap<String, Double> AverageQualityMeasures = AverageQualityMeasures(bestNRulesBy);
+        HashMap<String, Double> AverageQualityMeasures1 = AverageQualityMeasures(bestNRulesByClass);
+        qms.clear();
+        qms.add(AverageQualityMeasures);
+        qms.add(AverageQualityMeasures1);
+        return qms;
+    }
+
+    public static void saveTraining(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
+        PrintWriter pw1 = null;
+        PrintWriter pw2 = null;
+        PrintWriter pw3 = null;
+        PrintWriter pw4 = null;
+        try {
+            // define the files to write
+            pw1 = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
+            pw2 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_NOFILTER.txt");
+            pw3 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_BEST.txt");
+            pw4 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_BESTCLASS.txt");
+
+            DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+            // Write headers on file.
+            Object[] keys = Measures.get(0).keySet().toArray();
+            pw2.print("RULE_NUMBER\t\tN_VARS\t\t");
+            pw3.print("RULE_NUMBER\t\tN_VARS\t\t");
+            pw4.print("RULE_NUMBER\t\tN_VARS\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw2.print(k + "\t\t");
+                    pw3.print(k + "\t\t");
+                    pw4.print(k + "\t\t");
+                }
+            }
+            pw2.println();
+            pw3.println();
+            pw4.println();
+
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatterns().size(); i++) {
+                pw1.println("RULE NUMBER " + model.getPatterns().get(i).getTra_measures().get("RULE_NUMBER") + ": " + model.getPatterns().get(i).toString());
+                pw2.print(model.getPatterns().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw2.print(sixDecimals.format(model.getPatterns().get(i).getTra_measures().get("NVAR")) + "\t\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw2.print("-------\t\t");
+                        } else {
+                            pw2.print(sixDecimals.format(model.getPatterns().get(i).getTra_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw2.println();
+            }
+            // write mean results
+            pw2.print("-------\t\t-------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw2.print(sixDecimals.format(Measures.get(0).get(k)) + "\t\t");
+                }
+            }
+
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatternsFilteredAllClass().size(); i++) {
+                pw3.print(model.getPatternsFilteredAllClass().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTra_measures().get("NVAR")) + "\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw3.print("-------\t\t");
+                        } else {
+                            pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTra_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw3.println();
+            }
+
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatterns().size(); i++) {
+                pw4.print(model.getPatterns().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatterns().get(i).getTra_measures().get("NVAR")) + "\t\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw4.print("-------\t\t");
+                        } else {
+                            pw4.print(sixDecimals.format(model.getPatterns().get(i).getTra_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw4.println();
+            }
+
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            pw1.close();
+            pw2.close();
+            pw3.close();
+            pw4.close();
+        }
+    }
+
+    public static void saveTest(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
+        //PrintWriter pw1 = null;
+        PrintWriter pw2 = null;
+        PrintWriter pw3 = null;
+        PrintWriter pw4 = null;
+        try {
+            // define the files to write
+            //  pw1 = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
+            pw2 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_NOFILTER.txt");
+            pw3 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_BEST.txt");
+            pw4 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_BESTCLASS.txt");
+
+            DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+            // Write headers on file.
+            Object[] keys = Measures.get(0).keySet().toArray();
+            pw2.print("RULE_NUMBER\t\tN_VARS\t\t");
+            pw3.print("RULE_NUMBER\t\tN_VARS\t\t");
+            pw4.print("RULE_NUMBER\t\tN_VARS\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw2.print(k + "\t\t");
+                    pw3.print(k + "\t\t");
+                    pw4.print(k + "\t\t");
+                }
+            }
+            pw2.println();
+            pw3.println();
+            pw4.println();
+
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatterns().size(); i++) {
+                //pw1.println("RULE NUMBER " + model.getPatterns().get(i).getTra_measures().get("RULE_NUMBER") + ": " + model.getPatterns().get(i).toString());
+                pw2.print(model.getPatterns().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw2.print(sixDecimals.format(model.getPatterns().get(i).getTst_measures().get("NVAR")) + "\t\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw2.print("-------\t\t");
+                        } else {
+                            pw2.print(sixDecimals.format(model.getPatterns().get(i).getTst_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw2.println();
+            }
+            // write mean results
+            pw2.print("-------\t\t-------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw2.print(sixDecimals.format(Measures.get(0).get(k)) + "\t\t");
+                }
+            }
+
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatternsFilteredAllClass().size(); i++) {
+                pw3.print(model.getPatternsFilteredAllClass().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTst_measures().get("NVAR")) + "\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw3.print("-------\t\t");
+                        } else {
+                            pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTst_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw3.println();
+            }
+
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatterns().size(); i++) {
+                pw4.print(model.getPatterns().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatterns().get(i).getTst_measures().get("NVAR")) + "\t\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw4.print("-------\t\t");
+                        } else {
+                            pw4.print(sixDecimals.format(model.getPatterns().get(i).getTst_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw4.println();
+            }
+
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            pw2.close();
+            pw3.close();
+            pw4.close();
         }
     }
 

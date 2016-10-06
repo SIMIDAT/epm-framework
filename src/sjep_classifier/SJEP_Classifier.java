@@ -135,12 +135,10 @@ public class SJEP_Classifier {
                                 } else {
                                     fp++;
                                 }
+                            } else if (patterns.get(i).getClase() != testInstances.get(j).getValue()) {
+                                tn++;
                             } else {
-                                if (patterns.get(i).getClase() != testInstances.get(j).getValue()) {
-                                    tn++;
-                                } else {
-                                    fn++;
-                                }
+                                fn++;
                             }
 
                         }
@@ -265,13 +263,10 @@ public class SJEP_Classifier {
                                 } else {
                                     fp++;
                                 }
+                            } else if (patterns.get(j).getClase() != testInstances.get(k).getValue()) {
+                                tn++;
                             } else {
-                                if (patterns.get(j).getClase() != testInstances.get(k).getValue()) {
-                                    tn++;
-                                } else {
-                                    fn++;
-                                }
-
+                                fn++;
                             }
                         }
                         // Saves on the file
@@ -315,7 +310,12 @@ public class SJEP_Classifier {
         int countD2 = 0;
         ArrayList<Item> simpleItems = new ArrayList<>();
         // get classes
-        ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
+        ArrayList<String> classes;
+        try {
+            classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
+        } catch (NullPointerException ex) {
+            classes = new ArrayList<>(a.getAttributeDefinitions().getOutputAttribute(0).getNominalValuesList());
+        }
         // Gets the count of examples for each class to calculate the growth rate.
         for (int i = 0; i < a.getNumInstances(); i++) {
             if (a.getInstance(i).getOutputNominalValuesInt(0) == positiveClass) {
@@ -381,11 +381,10 @@ public class SJEP_Classifier {
         String[] att_names = new String[Attributes.getInputAttributes().length];
         ArrayList<Pair<ArrayList<Item>, Integer>> result = new ArrayList<>();
         ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
-        
+
         for (int i = 0; i < att_names.length; i++) {
             att_names[i] = Attributes.getAttribute(i).getName();
         }
-     
 
         for (int i = 0; i < a.getNumInstances(); i++) {
             ArrayList<Item> list = new ArrayList<>();
@@ -438,12 +437,10 @@ public class SJEP_Classifier {
                 } else {
                     fn++;
                 }
+            } else if (predictions[i] == 0) {
+                fp++;
             } else {
-                if (predictions[i] == 0) {
-                    fp++;
-                } else {
-                    tn++;
-                }
+                tn++;
             }
         }
 
@@ -496,13 +493,11 @@ public class SJEP_Classifier {
                 predictions[i] = 0;
             } else if (scoreD1 < scoreD2) {
                 predictions[i] = 1;
+            } else // In case of ties, the majority class is setted
+            if (countD1 < countD2) {
+                predictions[i] = 0;
             } else {
-                // In case of ties, the majority class is setted
-                if (countD1 < countD2) {
-                    predictions[i] = 0;
-                } else {
-                    predictions[i] = 1;
-                }
+                predictions[i] = 1;
             }
         }
 

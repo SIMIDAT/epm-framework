@@ -157,7 +157,12 @@ public class Item implements Comparable<Item>, Serializable {
 
     @Override
     public String toString() {
-        return getVariable() + " = " + getValue();
+        if(type == NOMINAL_ITEM){
+            return getVariable() + " = " + getValue();
+        } else if(type == FUZZY_ITEM){
+            return variable + " in (" + valueFuzzy.getX0() + ", " + valueFuzzy.getX1() + ", " + valueFuzzy.getX3() + ")";
+        }
+        return "";
     }
 
     public void incrementsD1() {
