@@ -11,4 +11,4 @@ In this framework you can execute the most important EPM algorithms that exists 
 # How to add a new EPM
 
 To add a new algorithm to the framework you only have to create a new class that extends the "Model" class and override the methods learn() and predict() which are used to learn the model and predict new instances respectively.
-Additionally, you must have to add an entry of the algorithm on "algorithms.xml" an example of entry with all parameters possibilities is shown in the file as a commentary.
+Additionally, you must have to add an entry of the algorithm on "algorithms.xml" an example of entry with all parameters possibilities is shown in the file as a commentary. Additional information about how to use it and how to implement algorithms is available at Manual_Spanish.pdf (in spanish). This software is incompleted, and the development of new features and addition of new algorithms and documentation will be added in the near future.
