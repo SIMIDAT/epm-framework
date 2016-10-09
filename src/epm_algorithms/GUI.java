@@ -45,6 +45,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
@@ -583,22 +584,25 @@ public class GUI extends javax.swing.JFrame {
         PredictionsPanel.setText("");
         preds = "";
         try {
-            if(InstancesPath.getText().equals("")){
+            if (ModelPath1.getText().equals("")) {
+                throw new IllegalActionException("ERROR: You must specify a model.");
+            }
+            if (InstancesPath.getText().equals("")) {
                 throw new IllegalActionException("ERROR: You must specify a test set.");
             }
             Attributes.clearAll();
             InstanceSet test = new InstanceSet();
-            try{
-            test.readSet(InstancesPath.getText(), true);
-            } catch (DatasetException | HeaderFormatException ex){
+            try {
+                test.readSet(InstancesPath.getText(), true);
+            } catch (DatasetException | HeaderFormatException ex) {
                 throw new IllegalActionException("ERROR: An error ocurred when reading the dataset. Possible bad format?");
             }
-           
+
             test.setAttributesAsNonStatic();
             SwingWorker worker = new SwingWorker() {
                 @Override
                 protected Object doInBackground() throws Exception {
-                    try {
+                  
                         //First: instantiate the class selected with th fully qualified name of the read model
                         Object model = Model.readModel(ModelPath1.getText());
                         Class clase = Class.forName(((Model) model).getFullyQualifiedName());
@@ -620,12 +624,23 @@ public class GUI extends javax.swing.JFrame {
                             }
                         }
                         PredictionsPanel.setEditable(false);
-                        return null;
-                    } catch (Exception ex) {
-                        appendToPane(PredictionsPanel, ex.toString(), Color.red);
-                    }
+                        ;
+                    
                     return null;
                 }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (ExecutionException ex) {
+                        appendToPane(PredictionsPanel, "An unexpected error has ocurred: " + ex.getCause().toString(), Color.red);
+                    }
+                }
+                
+                
 
             };
             worker.execute();
@@ -706,15 +721,16 @@ public class GUI extends javax.swing.JFrame {
                 throw new exceptions.IllegalActionException("ERROR: You must specify a training file.");
             }
             // Execute the task in background to update the text area.
-            SwingWorker worker = new SwingWorker() {
+            SwingWorker worker;
+            worker = new SwingWorker() {
                 @Override
                 protected Object doInBackground() throws Exception {
                     // Reads training and test file
                     Attributes.clearAll();
                     try{
                         training.readSet(rutaTra.getText(), true);
-                    } catch(DatasetException | HeaderFormatException ex){
-                        appendToPane(ExecutionInfoLearn, "ERROR: Incorrect format for training file. Aborting...", Color.red);
+                    } catch(DatasetException | HeaderFormatException | NullPointerException ex){
+                        throw new IllegalActionException("ERROR: Format error on training file.");
                     }
                     training.setAttributesAsNonStatic();
                     if (!rutaTst.getText().equals("")) {
@@ -794,9 +810,25 @@ public class GUI extends javax.swing.JFrame {
 
                 }
 
+                protected void done() {
+                    try {
+                        get();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (ExecutionException ex) {
+                        Throwable cause = ex.getCause();
+                        if(cause instanceof IllegalActionException){
+                            appendToPane(ExecutionInfoLearn, ((IllegalActionException) cause).getReason(), Color.red);
+                        } else {
+                            appendToPane(ExecutionInfoLearn, "An unexpected error has ocurred: " + cause.toString(), Color.red);
+                        }
+                    }
+                }
+
             };
 
             worker.execute();
+           
 
         } catch (IllegalActionException ex) {
             appendToPane(ExecutionInfoLearn, ex.getReason(), Color.red);
@@ -985,7 +1017,7 @@ public class GUI extends javax.swing.JFrame {
                                             Attributes.clearAll();
                                             training.readSet(x.getAbsolutePath(), true);
                                             training.setAttributesAsNonStatic();
-                                        } catch (DatasetException | HeaderFormatException ex) {
+                                        } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                                             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                                             appendToPane(BatchOutput, ex.toString(), Color.red);
                                         }
@@ -994,7 +1026,7 @@ public class GUI extends javax.swing.JFrame {
                                         try {
                                             test.readSet(x.getAbsolutePath(), false);
                                             test.setAttributesAsNonStatic();
-                                        } catch (DatasetException | HeaderFormatException ex) {
+                                        } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                                             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                                             appendToPane(BatchOutput, ex.toString(), Color.red);
                                         }
@@ -1003,7 +1035,7 @@ public class GUI extends javax.swing.JFrame {
 
                                 // Execute the method
                                 //First: instantiate the class selected with the fully qualified name
-                                try {
+                               
                                     Object newObject;
                                     Class clase = Class.forName(actual_fully_qualified_class);
                                     newObject = clase.newInstance();
@@ -1043,10 +1075,7 @@ public class GUI extends javax.swing.JFrame {
                                     QMsGlobal = Utils.updateHashMap(QMsGlobal, Measures.get(1));
                                     QMsByClass = Utils.updateHashMap(QMsByClass, Measures.get(2));
 
-                                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
-                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                    appendToPane(BatchOutput, ex.getMessage(), Color.red);
-                                }
+                              
 
                             }
 
@@ -1060,6 +1089,19 @@ public class GUI extends javax.swing.JFrame {
                     BatchOutput.setEditable(false);
                     return null;
                 }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (ExecutionException ex) {
+                        appendToPane(BatchOutput, "An unexpected error has ocurred: " + ex.getCause().toString(), Color.red);
+                    }
+                }
+                
+                
             };
             work.execute();
 
