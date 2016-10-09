@@ -90,7 +90,6 @@ public class Model implements Serializable {
      * @param params the parameters of the algorithms
      */
     public void learn(InstanceSet training, HashMap<String, String> params) {
-
     }
 
     /**
@@ -101,7 +100,7 @@ public class Model implements Serializable {
      * unfiltered patterns, filtered global and filtered by class respectively.
      */
     public String[][] predict(InstanceSet test)  {
-
+        return null;
     }
 
    

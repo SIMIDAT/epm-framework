@@ -28,6 +28,7 @@ public class Pattern implements Serializable {
     private int clase; // the class of the pattern
     private HashMap<String, Double> tra_measures;
     private HashMap<String, Double> tst_measures;
+    private double ALPHA;
 
     public Pattern clone() {
         Pattern result = new Pattern((ArrayList<Item>) this.items.clone(), this.support, this.clase);
@@ -36,12 +37,20 @@ public class Pattern implements Serializable {
         result.supp = this.supp;
         result.tra_measures = (HashMap<String, Double>) this.tra_measures.clone();
         result.tst_measures = (HashMap<String, Double>) this.tst_measures.clone();
+        result.setALPHA(this.getALPHA());
         return result;
     }
 
     public Pattern(ArrayList<Item> items, int supp, int clase) {
         this.items = new ArrayList<Item>(items);
         support = supp;
+        this.clase = clase;
+        this.tra_measures = Utils.generateQualityMeasuresHashMap();
+        this.tst_measures = Utils.generateQualityMeasuresHashMap();
+    }
+    
+    public Pattern(ArrayList<Item> items,  int clase) {
+        this.items = new ArrayList<Item>(items);
         this.clase = clase;
         this.tra_measures = Utils.generateQualityMeasuresHashMap();
         this.tst_measures = Utils.generateQualityMeasuresHashMap();
@@ -84,6 +93,12 @@ public class Pattern implements Serializable {
                         }
                     } else if (it.getType() == Item.FUZZY_ITEM) {
                         if (it.getValueFuzzy().Fuzzy((float) instance.getInputRealValues(i)) > 0) {
+                            exists = true;
+                        }
+                    } else if(it.getType() == Item.REAL_ITEM){
+                        double maxAlpha = it.getValueNum() + ALPHA;
+                        double minAlpha = it.getValueNum() - ALPHA;
+                        if(instance.getInputRealValues(i) >= minAlpha && instance.getInputRealValues(i) <= maxAlpha ){
                             exists = true;
                         }
                     }
@@ -244,6 +259,20 @@ public class Pattern implements Serializable {
      */
     public void setTst_measures(HashMap<String, Double> tst_measures) {
         this.tst_measures = tst_measures;
+    }
+
+    /**
+     * @return the ALPHA
+     */
+    public double getALPHA() {
+        return ALPHA;
+    }
+
+    /**
+     * @param ALPHA the ALPHA to set
+     */
+    public void setALPHA(double ALPHA) {
+        this.ALPHA = ALPHA;
     }
 
 }

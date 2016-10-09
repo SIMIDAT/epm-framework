@@ -583,9 +583,17 @@ public class GUI extends javax.swing.JFrame {
         PredictionsPanel.setText("");
         preds = "";
         try {
+            if(InstancesPath.getText().equals("")){
+                throw new IllegalActionException("ERROR: You must specify a test set.");
+            }
             Attributes.clearAll();
             InstanceSet test = new InstanceSet();
+            try{
             test.readSet(InstancesPath.getText(), true);
+            } catch (DatasetException | HeaderFormatException ex){
+                throw new IllegalActionException("ERROR: An error ocurred when reading the dataset. Possible bad format?");
+            }
+           
             test.setAttributesAsNonStatic();
             SwingWorker worker = new SwingWorker() {
                 @Override
@@ -621,6 +629,8 @@ public class GUI extends javax.swing.JFrame {
 
             };
             worker.execute();
+        } catch (IllegalActionException ex) {
+            appendToPane(PredictionsPanel, ex.getReason(), Color.red);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -701,7 +711,11 @@ public class GUI extends javax.swing.JFrame {
                 protected Object doInBackground() throws Exception {
                     // Reads training and test file
                     Attributes.clearAll();
-                    training.readSet(rutaTra.getText(), true);
+                    try{
+                        training.readSet(rutaTra.getText(), true);
+                    } catch(DatasetException | HeaderFormatException ex){
+                        appendToPane(ExecutionInfoLearn, "ERROR: Incorrect format for training file. Aborting...", Color.red);
+                    }
                     training.setAttributesAsNonStatic();
                     if (!rutaTst.getText().equals("")) {
                         test.readSet(rutaTst.getText(), false);
@@ -784,6 +798,8 @@ public class GUI extends javax.swing.JFrame {
 
             worker.execute();
 
+        } catch (IllegalActionException ex) {
+            appendToPane(ExecutionInfoLearn, ex.getReason(), Color.red);
         } catch (Exception ex) {
             appendToPane(ExecutionInfoLearn, ex.getMessage(), Color.red);
         }

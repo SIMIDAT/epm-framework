@@ -56,7 +56,19 @@
         </parameter>
     </algorithm>
 
-
+    <algorithm>
+        <name>DeEPS</name>
+        <class>deeps.DeEPS_Wrapper</class>
+        <parameter>
+            <name>ALPHA</name>
+            <type>real</type>
+            <domain>
+                <min>0</min>
+                <max>1</max>
+            </domain>
+            <default>0.12</default>
+        </parameter>
+    </algorithm>
 
 
     <algorithm>

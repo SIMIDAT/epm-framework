@@ -79,6 +79,18 @@ public class Item implements Comparable<Item>, Serializable {
         this.type = NOMINAL_ITEM;
     }
 
+    public Item(String variable, String value) {
+        itemID = 0;
+        this.value = value;
+        this.variable = variable;
+        growthRate = 0;
+        D1count = 0;
+        D2count = 0;
+        this.probabilitiesPerClass = new ArrayList<>();
+        this.valueNum = Float.NaN;
+        this.valueFuzzy = null;
+        this.type = NOMINAL_ITEM;
+    }
     /**
      * Constructor for numeric variable
      *

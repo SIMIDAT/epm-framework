@@ -49,6 +49,9 @@ import keel.Dataset.InstanceSet;
  */
 public class Utils {
 
+    /**
+     * The maximum significance level for Fisher's exact test.
+     */
     public static final Double SIGNIFICANCE_LEVEL = 0.1;
 
     /**
@@ -78,14 +81,13 @@ public class Utils {
     }
 
     /**
-     * Calculates the quality measures
+     * Calculates the descriptive quality measures
      *
-     * @param data
-     * @param model
-     * @param isTrain
-     * @param by
-     * @param nrules
-     * @return
+     * @param data The dataset with the data
+     * @param model The model where the rules are stored
+     * @param isTrain The calculated measures are for training (true) or for
+     * test (false)?
+     * @return The descriptive quality measures for each rule.
      */
     public static ArrayList<HashMap<String, Double>> calculateDescriptiveMeasures(InstanceSet data, Model model, boolean isTrain) {
         // 0 -> tp
@@ -270,7 +272,8 @@ public class Utils {
                     return 0;
                 }
             } else // If it is FPR, then the less, the better
-             if (o1.get(by) > o2.get(by)) {
+            {
+                if (o1.get(by) > o2.get(by)) {
                     return -1;
                 } else if (o1.get(by) < o2.get(by)) {
                     return 1;
@@ -281,6 +284,7 @@ public class Utils {
                 } else {
                     return 0;
                 }
+            }
         });
 
         // get the best n rules and return
@@ -291,7 +295,6 @@ public class Utils {
         return result;
     }
 
-    // filtrado por clase (las n mejores reglas de cada clase), se necesita un parametro adicional que indique la clase de cada patron.
     /**
      * Gets the best n rules by a given quality measure for each class.
      *
@@ -334,7 +337,8 @@ public class Utils {
                         return 0;
                     }
                 } else // If it is FPR, then the less, the better
-                 if (o1.get(by) > o2.get(by)) {
+                {
+                    if (o1.get(by) > o2.get(by)) {
                         return -1;
                     } else if (o1.get(by) < o2.get(by)) {
                         return 1;
@@ -345,6 +349,7 @@ public class Utils {
                     } else {
                         return 0;
                     }
+                }
             });
         }
 
@@ -521,6 +526,10 @@ public class Utils {
      *
      * @param predictions The predictions made by: 1- unfiltered patterns 2-
      * patterns filtered by global measure 3- patterns filtered by class
+     * @param test The test data
+     * @param training The training data
+     * @param results The Averaged quality measures for unfiltered, filtered and
+     * filtered by class sets of quality measures.
      */
     public static void calculatePrecisionMeasures(String[][] predictions, InstanceSet test, InstanceSet training, ArrayList<HashMap<String, Double>> results) {
         //------ GET THE MINORITY CLASS ----------------
@@ -594,6 +603,15 @@ public class Utils {
         }
     }
 
+    /**
+     * It gets the nrules best rules of a patterns set.
+     *
+     * @param model The model where the patterns are stored.
+     * @param by A quality measure, this string must match with a key of the
+     * quality measures hashmap.
+     * @param nrules The number of rules to return.
+     * @return
+     */
     public static ArrayList<HashMap<String, Double>> filterPatterns(Model model, String by, int nrules) {
         ArrayList<HashMap<String, Double>> qms = new ArrayList<>();
         for (int i = 0; i < model.getPatterns().size(); i++) {
@@ -627,6 +645,16 @@ public class Utils {
         return qms;
     }
 
+    /**
+     * Saves the results of the patterns sets in the given folder. This creates
+     * 4 files: RULES.txt, TRA_QUAC_NOFILTER.txt, TRA_QUAC_BEST.txt and
+     * TRA_QUAC_BESTCLASS.txt
+     *
+     * @param dir A folder to save the results.
+     * @param model The model where the pattern are stored.
+     * @param Measures The Averaged quality measures for each set of patterns
+     * (Unfiltered, filtered and filtered by class)
+     */
     public static void saveTraining(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
         PrintWriter pw1 = null;
         PrintWriter pw2 = null;
@@ -666,7 +694,7 @@ public class Utils {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
-                            pw2.print("-------\t\t");
+                            pw2.print("--------\t\t");
                         } else {
                             pw2.print(sixDecimals.format(model.getPatterns().get(i).getTra_measures().get(k)) + "\t\t");
                         }
@@ -675,7 +703,7 @@ public class Utils {
                 pw2.println();
             }
             // write mean results
-            pw2.print("-------\t\t-------\t\t");
+            pw2.print("--------\t\t--------\t\t");
             for (Object key : keys) {
                 String k = (String) key;
                 if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
@@ -691,7 +719,7 @@ public class Utils {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
-                            pw3.print("-------\t\t");
+                            pw3.print("--------\t\t");
                         } else {
                             pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTra_measures().get(k)) + "\t\t");
                         }
@@ -700,21 +728,37 @@ public class Utils {
                 pw3.println();
             }
 
+            pw3.print("--------\t\t--------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw3.print(sixDecimals.format(Measures.get(1).get(k)) + "\t\t");
+                }
+            }
+
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatterns().size(); i++) {
-                pw4.print(model.getPatterns().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
-                pw4.print(sixDecimals.format(model.getPatterns().get(i).getTra_measures().get("NVAR")) + "\t\t");
+            for (int i = 0; i < model.getPatternsFilteredByClass().size(); i++) {
+                pw4.print(model.getPatternsFilteredByClass().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTra_measures().get("NVAR")) + "\t\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
-                            pw4.print("-------\t\t");
+                            pw4.print("--------\t\t");
                         } else {
-                            pw4.print(sixDecimals.format(model.getPatterns().get(i).getTra_measures().get(k)) + "\t\t");
+                            pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTra_measures().get(k)) + "\t\t");
                         }
                     }
                 }
                 pw4.println();
+            }
+
+            pw4.print("--------\t\t--------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw4.print(sixDecimals.format(Measures.get(2).get(k)) + "\t\t");
+                }
             }
 
         } catch (FileNotFoundException ex) {
@@ -727,6 +771,16 @@ public class Utils {
         }
     }
 
+    /**
+     * Saves the results of the patterns sets in the given folder. This creates
+     * 3 files: TST_QUAC_NOFILTER.txt, TST_QUAC_BEST.txt and
+     * TST_QUAC_BESTCLASS.txt
+     *
+     * @param dir A folder to save the results.
+     * @param model The model where the pattern are stored.
+     * @param Measures The Averaged quality measures for each set of patterns
+     * (Unfiltered, filtered and filtered by class)
+     */
     public static void saveTest(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
         //PrintWriter pw1 = null;
         PrintWriter pw2 = null;
@@ -766,7 +820,7 @@ public class Utils {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
-                            pw2.print("-------\t\t");
+                            pw2.print("--------\t\t");
                         } else {
                             pw2.print(sixDecimals.format(model.getPatterns().get(i).getTst_measures().get(k)) + "\t\t");
                         }
@@ -775,7 +829,7 @@ public class Utils {
                 pw2.println();
             }
             // write mean results
-            pw2.print("-------\t\t-------\t\t");
+            pw2.print("--------\t\t--------\t\t");
             for (Object key : keys) {
                 String k = (String) key;
                 if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
@@ -791,7 +845,7 @@ public class Utils {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
-                            pw3.print("-------\t\t");
+                            pw3.print("--------\t\t");
                         } else {
                             pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTst_measures().get(k)) + "\t\t");
                         }
@@ -800,21 +854,38 @@ public class Utils {
                 pw3.println();
             }
 
+            // write mean results
+            pw3.print("--------\t\t--------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw3.print(sixDecimals.format(Measures.get(0).get(k)) + "\t\t");
+                }
+            }
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatterns().size(); i++) {
-                pw4.print(model.getPatterns().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
-                pw4.print(sixDecimals.format(model.getPatterns().get(i).getTst_measures().get("NVAR")) + "\t\t");
+            for (int i = 0; i < model.getPatternsFilteredByClass().size(); i++) {
+                pw4.print(model.getPatternsFilteredByClass().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTst_measures().get("NVAR")) + "\t\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
-                            pw4.print("-------\t\t");
+                            pw4.print("--------\t\t");
                         } else {
-                            pw4.print(sixDecimals.format(model.getPatterns().get(i).getTst_measures().get(k)) + "\t\t");
+                            pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTst_measures().get(k)) + "\t\t");
                         }
                     }
                 }
                 pw4.println();
+            }
+
+            // write mean results
+            pw4.print("--------\t\t--------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw4.print(sixDecimals.format(Measures.get(2).get(k)) + "\t\t");
+                }
             }
 
         } catch (FileNotFoundException ex) {
