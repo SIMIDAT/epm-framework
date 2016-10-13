@@ -41,8 +41,7 @@ import java.util.logging.Logger;
 import javafx.util.Pair;
 import keel.Dataset.Attributes;
 import keel.Dataset.Instance;
-import static sjep_classifier.SJEP_Classifier.getInstances;
-import static sjep_classifier.SJEP_Classifier.getSimpleItems;
+
 import static sjep_classifier.SJEP_Classifier.median;
 import static sjep_classifier.SJEP_Classifier.minSupp;
 import utils.Utils;
@@ -98,7 +97,7 @@ public class BCEP_Model extends Model implements Serializable {
             if (Attributes.getOutputAttribute(0).getNumNominalValues() <= 2) {
                 // get simple itemsets to perform the ordering of the items and filter by gorwth rate
                 // Class '0' is considered as positive
-                ArrayList<Item> simpleItems = getSimpleItems(training, minSupp, 0);
+                ArrayList<Item> simpleItems = Utils.getSimpleItems(training, minSupp, 0);
                 // Calculate the probabilites of the items (We use M-estimate)
                 for (Item it : simpleItems) {
                     it.calculateProbabilities(training, "M");
@@ -106,7 +105,7 @@ public class BCEP_Model extends Model implements Serializable {
                 // sort items by growth rate
                 simpleItems.sort(null);
                 // gets all instances removing those itemset that not appear on simpleItems
-                ArrayList<Pair<ArrayList<Item>, Integer>> instances = getInstances(training, simpleItems, 0);
+                ArrayList<Pair<ArrayList<Item>, Integer>> instances = Utils.getInstances(training, simpleItems, 0);
                 for (int i = 0; i < instances.size(); i++) {
                     // sort each arraylist of items
                     instances.get(i).getKey().sort(null);
@@ -123,7 +122,7 @@ public class BCEP_Model extends Model implements Serializable {
                 //System.out.println("Mining SJEPs...");
                 // Perform mining
                 setPatterns(tree.mineTree(minSupp));
-                ArrayList<Pair<ArrayList<Item>, Integer>> inst = getInstances(training, simpleItems, 0);
+                ArrayList<Pair<ArrayList<Item>, Integer>> inst = Utils.getInstances(training, simpleItems, 0);
                 for (Pattern pat : getPatterns()) {
                     pat.calculateMeasures(training);
                 }
@@ -157,7 +156,7 @@ public class BCEP_Model extends Model implements Serializable {
                     System.out.println("Mining class: " + Attributes.getOutputAttribute(0).getNominalValue(i));
                     // Class 'i' is considered de positive class, the rest of classes correspond to the negative one.
                     // Get the simple items.
-                    ArrayList<Item> simpleItems = getSimpleItems(training, minSupp, i);
+                    ArrayList<Item> simpleItems = Utils.getSimpleItems(training, minSupp, i);
                     // Calculate the probabilites of the items (We use M-estimate)
                     for (Item it : simpleItems) {
                         it.calculateProbabilities(training, "M");
@@ -165,7 +164,7 @@ public class BCEP_Model extends Model implements Serializable {
                     // sort items by growth rate
                     simpleItems.sort(null);
                     // gets all instances removing those itemset that not appear on simpleItems
-                    ArrayList<Pair<ArrayList<Item>, Integer>> instances = getInstances(training, simpleItems, i);
+                    ArrayList<Pair<ArrayList<Item>, Integer>> instances = Utils.getInstances(training, simpleItems, i);
                     for (int j = 0; j < instances.size(); j++) {
                         // sort each arraylist of items
                         instances.get(j).getKey().sort(null);
@@ -244,8 +243,8 @@ public class BCEP_Model extends Model implements Serializable {
     public String[][] predict(InstanceSet test) {
         String[][] preds = null;
         try {
-            ArrayList<Item> simpleItems = getSimpleItems(test, minSupp, 0);
-            ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = getInstances(test, simpleItems, 0);
+            ArrayList<Item> simpleItems = Utils.getSimpleItems(test, minSupp, 0);
+            ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = Utils.getInstances(test, simpleItems, 0);
             String[] predictionsNoFilter = makePredictions(testInstances, getPatterns());
             String[] predictionsFilterGlobal = null;
             String[] predictionsFilterClass = null;
@@ -267,91 +266,6 @@ public class BCEP_Model extends Model implements Serializable {
 
     }
 
-//    @Override
-//    public ArrayList<HashMap<String, Double>> test(InstanceSet test) {
-//        try {
-//            // INITIALIZATION -------------------------------------------------------
-//            int[][] confusionMatrices = new int[getPatterns().size()][5];
-//            int[] classes = new int[getPatterns().size()];
-//            ArrayList<HashMap<String, Double>> qm;
-//            ArrayList<Item> simpleItems = getSimpleItems(test, minSupp, 0);
-//            ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = getInstances(test, simpleItems, 0);
-//            for (int i = 0; i < getPatterns().size(); i++) {
-//                classes[i] = getPatterns().get(i).getClase();
-//            }
-//            //----------------------------------------------------------------------
-//
-//            // Calculate the confusion matrix of each pattern to calculate the quality measures.
-//            int sumNvars = 0;
-//            for (int i = 0; i < getPatterns().size(); i++) {
-//                int tp = 0;
-//                int tn = 0;
-//                int fp = 0;
-//                int fn = 0;
-//                // for each instance
-//                for (int j = 0; j < testInstances.size(); j++) {
-//                    // If the pattern covers the example
-//                    if (getPatterns().get(i).covers(testInstances.get(j).getKey())) {
-//
-//                        if (getPatterns().get(i).getClase() == testInstances.get(j).getValue()) {
-//                            tp++;
-//                        } else {
-//                            fp++;
-//                        }
-//                    } else if (getPatterns().get(i).getClase() != testInstances.get(j).getValue()) {
-//                        tn++;
-//                    } else {
-//                        fn++;
-//                    }
-//
-//                }
-//
-//                confusionMatrices[i][0] = tp;
-//                confusionMatrices[i][1] = tn;
-//                confusionMatrices[i][2] = fp;
-//                confusionMatrices[i][3] = fn;
-//                confusionMatrices[i][4] = getPatterns().get(i).getItems().size();
-//            }
-//
-//            // CALCULATE HERE DESCRIPTIVE QUALITY MEASURES FOR EACH PATTERN
-//            qm = Utils.calculateMeasuresFromConfusionMatrix(confusionMatrices);
-//
-//            // FILTER HERE THE RULES: GETS THE BEST n RULES 
-//            ArrayList<HashMap<String, Double>> bestNRules = Utils.getBestNRulesBy((ArrayList<HashMap<String, Double>>) qm.clone(), "CONF", 3);
-//            for (HashMap<String, Double> rule : bestNRules) {
-//                int value = rule.get("RULE_NUMBER").intValue();
-//                patternsFilteredAllClasses.add(getPatterns().get(value));
-//            }
-//
-//            // NOW GET THE BEST N RULES FOR EACH CLASS
-//            ArrayList<HashMap<String, Double>> bestNRulesByClass = Utils.getBestNRulesByClass((ArrayList<HashMap<String, Double>>) qm.clone(), "CONF", 3, classes);
-//            for (HashMap<String, Double> rule : bestNRulesByClass) {
-//                int value = rule.get("RULE_NUMBER").intValue();
-//                patternsFilteredByClass.add(getPatterns().get(value));
-//            }
-//
-//            // Gets the Averaged results
-//            HashMap<String, Double> AvgNoFilter = Utils.AverageQualityMeasures(qm);
-//            HashMap<String, Double> AvgFilterAllRules = Utils.AverageQualityMeasures(bestNRules);
-//            HashMap<String, Double> AvgFilterByClass = Utils.AverageQualityMeasures(bestNRulesByClass);
-//
-//            ArrayList<HashMap<String, Double>> results = new ArrayList<>();
-//            results.add(AvgNoFilter);
-//            results.add(AvgFilterAllRules);
-//            results.add(AvgFilterByClass);
-//
-//            // CALCULATE HERE THE ACCURACY AND AUC OF THE MODEL (FILTERED BY CLASS OR GLOBAL AND NON FILTERED)
-//            Utils.calculatePrecisionMeasures(predict, test, results);
-//            // After that, add the auc and acc to the averaged quality measures hash map.
-//            // OPTIONAL: If you want, you can save the patterns and individual quality measures on a file.
-//
-//            return results;
-//        } catch (Exception ex) {
-//            Logger.getLogger(BCEP_Model.class.getName()).log(Level.SEVERE, null, ex);
-//            GUI.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
-//        }
-//        return null;
-//    }
 
     @Override
     public String toString() {
@@ -433,90 +347,13 @@ public class BCEP_Model extends Model implements Serializable {
 
     }
 
-//    public static void calculateAccuracy(InstanceSet testSet, int[] predictions) {
-//        // we consider class 0 as positive and class 1 as negative
-//        int tp = 0;
-//        int fp = 0;
-//        int tn = 0;
-//        int fn = 0;
-//
-//        // Calculate the confusion matrix.
-//        for (int i = 0; i < predictions.length; i++) {
-//            if (testSet.getOutputNumericValue(i, 0) == 0) {
-//                if (predictions[i] == 0) {
-//                    tp++;
-//                } else {
-//                    fn++;
-//                }
-//            } else if (predictions[i] == 0) {
-//                fp++;
-//            } else {
-//                tn++;
-//            }
-//        }
-//
-//        System.out.println("Test Accuracy: " + ((double) (tp + tn) / (double) (tp + tn + fp + fn)) * 100 + "%");
-//    }
-//
-//    public static void computeAccuracy(ArrayList<Pair<ArrayList<Item>, Integer>> testInstances, ArrayList<Pattern> patterns, InstanceSet test, int countD1, int countD2) {
-//        int[] predictions = new int[testInstances.size()];
-//        //Now, for each pattern
-//        for (int i = 0; i < testInstances.size(); i++) {
-//            // calculate the score for each class for classify:
-//            double scoreD1 = 0;
-//            double scoreD2 = 0;
-//            ArrayList<Integer> scoresD1 = new ArrayList<>();  // This is to calculate the base-score, that is the median
-//            ArrayList<Integer> scoresD2 = new ArrayList<>();
-//            // for each pattern mined
-//            for (int j = 0; j < patterns.size(); j++) {
-//                if (patterns.get(j).covers(testInstances.get(i).getKey())) {
-//                    // If the example is covered by the pattern.
-//                    // sum it support to the class of the pattern
-//                    if (testInstances.get(i).getValue() == 0) {
-//                        scoreD1 += patterns.get(j).getSupport();
-//                        scoresD1.add(patterns.get(j).getSupport());
-//                    } else {
-//                        scoreD2 += patterns.get(j).getSupport();
-//                        scoresD2.add(patterns.get(j).getSupport());
-//                    }
-//
-//                }
-//            }
-//
-//            // Now calculate the normalized score to make the prediction
-//            double medianD1 = median(scoresD1);
-//            double medianD2 = median(scoresD2);
-//
-//            if (medianD1 == 0) {
-//                scoreD1 = 0;
-//            } else {
-//                scoreD1 = scoreD1 / medianD1;
-//            }
-//
-//            if (medianD2 == 0) {
-//                scoreD2 = 0;
-//            } else {
-//                scoreD2 = scoreD2 / medianD2;
-//            }
-//
-//            // make the prediction:
-//            if (scoreD1 > scoreD2) {
-//                predictions[i] = 0;
-//            } else if (scoreD1 < scoreD2) {
-//                predictions[i] = 1;
-//            } else // In case of ties, the majority class is setted
-//            {
-//                if (countD1 < countD2) {
-//                    predictions[i] = 0;
-//                } else {
-//                    predictions[i] = 1;
-//                }
-//            }
-//        }
-//
-//        calculateAccuracy(test, predictions);
-//    }
 
+    /**
+     * Gets the next pattern of the candidate patterns.
+     * @param covered The list of covered items
+     * @param B The sets of candidates
+     * @return A Pattern.
+     */
     public Pattern next(ArrayList<Item> covered, ArrayList<Pattern> B) {
         // Z = {s in B && |s - covered| >= 1}
         if (B.size() == 1) {
@@ -575,6 +412,13 @@ public class BCEP_Model extends Model implements Serializable {
         }
     }
 
+    
+    /**
+     * It makes the predictions for a set of items.
+     * @param testInstances
+     * @param patterns
+     * @return 
+     */
     private String[] makePredictions(ArrayList<Pair<ArrayList<Item>, Integer>> testInstances, ArrayList<Pattern> patterns) {
         String[] predictions = new String[testInstances.size()];
         // for each instances on the test set

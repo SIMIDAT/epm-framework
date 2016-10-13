@@ -48,12 +48,12 @@ import utils.Utils;
 
 /**
  *
- * @author Ángel M. García-Vico
+ * @author Ángel M. García-Vico 
  * @version 1.0
  * @since JDK 1.8
  */
 public class Main {
-
+ 
     public static void main(String[] args) {
         try {
             String fully_qualified_name = "";

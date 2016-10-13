@@ -23,7 +23,6 @@
  */
 package epm_algorithms;
 
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,10 +35,15 @@ import keel.Dataset.InstanceSet;
 import utils.Pattern;
 
 /**
+ * The {@code Model} class implements the neccesary methods to learn and predict
+ * instances and also to read and save serialized objects. This <b> must be the
+ * superclass </b> of each algorithm included in the package and the methods 
+ * {@code learn()} and {@code predict} must be overriden.
  *
  * @author Ángel M. García-Vico
  * @version 1.0
  * @since JDK 1.8
+ *
  */
 public class Model implements Serializable {
 
@@ -84,7 +88,7 @@ public class Model implements Serializable {
     /**
      * Learns a model from training data, and saves it to a file. The patterns
      * obtained in the model must be saved on a class variable to make it
-     * accessible to "predict" and "test" methods.
+     * accessible to {@code predict()} and {@code test()} methods.
      *
      * @param training the training data
      * @param params the parameters of the algorithms
@@ -99,11 +103,9 @@ public class Model implements Serializable {
      * @return An array with the class predicted for each test instance for
      * unfiltered patterns, filtered global and filtered by class respectively.
      */
-    public String[][] predict(InstanceSet test)  {
+    public String[][] predict(InstanceSet test) {
         return null;
     }
-
-   
 
     /**
      * @return the fullyQualifiedName
@@ -132,7 +134,6 @@ public class Model implements Serializable {
 //    public void setMinorityClass(String minorityClass) {
 //        this.minorityClass = minorityClass;
 //    }
-
     /**
      * @return the patterns
      */
@@ -174,11 +175,5 @@ public class Model implements Serializable {
     public void setPatternsFilteredByClass(ArrayList<Pattern> patternsFilteredByClass) {
         this.patternsFilteredByClass = patternsFilteredByClass;
     }
-
-    
-
-    
-    
-    
 
 }

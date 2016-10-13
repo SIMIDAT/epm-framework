@@ -73,7 +73,7 @@
 
     <algorithm>
         <name>Tree-based JEP-C</name>
-        <class>bcep.BCEP_Model</class>
+        <class>tree_based_jep.TreeBasedJEP</class>
     </algorithm>
 
 

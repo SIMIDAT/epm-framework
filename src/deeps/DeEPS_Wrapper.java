@@ -25,7 +25,6 @@
 package deeps;
 
 import epm_algorithms.Model;
-import java.util.ArrayList;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 
