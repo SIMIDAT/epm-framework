@@ -30,12 +30,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Vector;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.util.Pair;
 import keel.Dataset.Attribute;
 import keel.Dataset.Attributes;
 import keel.Dataset.Instance;
@@ -53,12 +55,84 @@ public class Utils {
      * The maximum significance level for Fisher's exact test.
      */
     public static final Double SIGNIFICANCE_LEVEL = 0.1;
-
+    
+    
+    
+    /*  ======================================================
+                           COMPARATORS
+        ====================================================== */
+    
+     /**
+     * Sorts Items by frequency in descending order
+     */
+    public static Comparator<Item> frequency = (Item o1, Item o2) -> {
+        if ((o1.getD1count() + o1.getD2count()) < (o2.getD2count() + o2.getD1count())) {
+            return 1;
+        } else if ((o1.getD1count() + o1.getD2count()) > (o2.getD2count() + o2.getD1count())) {
+            return -1;
+        } else {
+            return 0;
+        }
+    };
+    
+    /**
+     * Sorts by ratio ordering
+     */
+    public static Comparator<Item> ratio = (Item o1, Item o2) -> {
+        double ratio1 = 0, ratio2 = 0;
+        if (o1.getD2count() != 0) ratio1 = o1.getD1count() / o1.getD2count();
+        if (o2.getD2count() != 0) ratio2 = o2.getD1count() / o2.getD2count();
+        
+        if(ratio1 < ratio2)
+            return 1;
+        else if(ratio1 > ratio2)
+            return -1;
+        else return 0;
+    };
+    /**
+     * Sorts by ratio inverse ordering
+     */
+    public static Comparator<Item> ratioInverse = (Item o1, Item o2) -> {
+        double ratio1 = 0, ratio2 = 0;
+        if (o1.getD2count() != 0) ratio1 = o1.getD1count() / o1.getD2count();
+        if (o2.getD2count() != 0) ratio2 = o2.getD1count() / o2.getD2count();
+        
+        if(ratio1 > ratio2)
+            return 1;
+        else if(ratio1 < ratio2)
+            return -1;
+        else return 0;
+    };
+    
+    
+    /**
+     * Least Probable in the Negative Class ordering.
+     */
+    public static Comparator<Item> LPNC = (Item o1, Item o2) -> {
+        if(o1.getD2count() > o2.getD2count()) return 1;
+        else if(o2.getD2count() < o2.getD2count()) return -1;
+        else return 0;
+    };
+    
+    
+    /**
+     * Least Probable in the Negative Class ordering.
+     */
+    public static Comparator<Item> MPPC = (Item o1, Item o2) -> {
+        if(o1.getD1count() < o2.getD1count()) return 1;
+        else if(o2.getD1count() > o2.getD1count()) return -1;
+        else return 0;
+    };
+            
+            
+    /* ============================================
+                    END OF COMPARATORS
+       ============================================     */
     /**
      * It generates the quality measures HashMap neccesary to be returned by the
      * test method.
      *
-     * @return
+     * @return A {@code HashMap<String, Double>} with the initialized quality measures.
      */
     public static HashMap<String, Double> generateQualityMeasuresHashMap() {
         HashMap<String, Double> qualityMeasures = new HashMap<>();
@@ -897,4 +971,119 @@ public class Utils {
         }
     }
 
+     /**
+     * Gets simple itemsets with a support higher than a threshold
+     *
+     * @param a
+     * @param minSupp
+     * @param positiveClass - The class to consider as positive. For multiclass
+     * problems, the others classes are considered as negative.
+     * @return
+     */
+    public static ArrayList<Item> getSimpleItems(InstanceSet a, double minSupp, int positiveClass) {
+        // Reads the KEEL instance set.
+
+        int countD1 = 0;   // counts of examples belonging to class D1 and D2.
+        int countD2 = 0;
+        ArrayList<Item> simpleItems = new ArrayList<>();
+        // get classes
+        ArrayList<String> classes;
+        try {
+            classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
+        } catch (NullPointerException ex) {
+            classes = new ArrayList<>(a.getAttributeDefinitions().getOutputAttribute(0).getNominalValuesList());
+        }
+        // Gets the count of examples for each class to calculate the growth rate.
+        for (int i = 0; i < a.getNumInstances(); i++) {
+            if (a.getInstance(i).getOutputNominalValuesInt(0) == positiveClass) {
+                countD1++;
+            } else {
+                countD2++;
+            }
+        }
+
+        // Get the attributes
+        Attribute[] attributes = Attributes.getInputAttributes();
+        int countId = 0;
+        // for each attribute
+        for (int i = 0; i < attributes.length; i++) {
+            // get nominal values of the attribute
+            ArrayList<String> nominalValues = new ArrayList<>(attributes[i].getNominalValuesList());
+            int countValueInD1 = 0;
+            int countValueInD2 = 0;
+            //for each nominal value
+            for (String value : nominalValues) {
+                // counts the times the value appear for each class
+                for (int j = 0; j < a.getNumInstances(); j++) {
+                    if (value.equals(a.getInputNominalValue(j, i))) {
+                        // If are equals, check the class and increment counters
+                        if (a.getInstance(j).getOutputNominalValuesInt(0) == positiveClass) {
+                            countValueInD1++;
+                        } else {
+                            countValueInD2++;
+                        }
+                    }
+                }
+                double suppD1 = (double) countValueInD1 / (double) countD1;
+                double suppD2 = (double) countValueInD2 / (double) countD2;
+                // now calculate the growth rate of the item.
+                double gr;
+                if (suppD1 < minSupp && suppD2 < minSupp) {
+                    gr = 0;
+                } else if ((suppD1 == 0 && suppD2 >= minSupp) || (suppD1 >= minSupp && suppD2 == 0)) {
+                    gr = Double.POSITIVE_INFINITY;
+                } else {
+                    gr = Math.max(suppD2 / suppD1, suppD1 / suppD2);
+                }
+
+                // Add the item to the list of simple items
+                if (gr > 0) {
+                    Item it = new Item(countId, value, attributes[i].getName(), gr);
+                    it.setD1count(countValueInD1);
+                    it.setD2count(countValueInD2);
+                    simpleItems.add(it);
+                    countId++;
+                }
+            }
+        }
+
+        return simpleItems;
+    }
+
+    /**
+     * Gets the instances of a dataset as set of Item class
+     *
+     * @param a
+     * @param simpleItems
+     * @return
+     */
+    public static ArrayList<Pair<ArrayList<Item>, Integer>> getInstances(InstanceSet a, ArrayList<Item> simpleItems, int positiveClass) {
+        String[] att_names = new String[Attributes.getInputAttributes().length];
+        ArrayList<Pair<ArrayList<Item>, Integer>> result = new ArrayList<>();
+        ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
+
+        for (int i = 0; i < att_names.length; i++) {
+            att_names[i] = Attributes.getAttribute(i).getName();
+        }
+
+        for (int i = 0; i < a.getNumInstances(); i++) {
+            ArrayList<Item> list = new ArrayList<>();
+            for (int j = 0; j < Attributes.getInputNumAttributes(); j++) {
+                // Add the item into the pattern
+                Item it = Item.find(simpleItems, att_names[j], a.getInputNominalValue(i, j));
+                if (it != null) {
+                    list.add(it);
+                }
+            }
+            // Add into the set of instances, the second element is the class
+            int clas = 0;
+            if (a.getInstance(i).getOutputNominalValuesInt(0) != positiveClass) {
+                clas = 1;
+            }
+            result.add(new Pair(list, clas));
+        }
+
+        return result;
+    }
+    
 }

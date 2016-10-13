@@ -36,7 +36,7 @@ public class Item implements Comparable<Item>, Serializable {
 
     private int D1count;             // Counts of the actual item in the node  for class 1
     private int D2count;             // Counts of the actual item in the node  for class 2
-    
+
     public static int NOMINAL_ITEM = 0;
     public static int REAL_ITEM = 1;
     public static int FUZZY_ITEM = 2;
@@ -91,6 +91,7 @@ public class Item implements Comparable<Item>, Serializable {
         this.valueFuzzy = null;
         this.type = NOMINAL_ITEM;
     }
+
     /**
      * Constructor for numeric variable
      *
@@ -149,7 +150,14 @@ public class Item implements Comparable<Item>, Serializable {
 
         //boolean c3 = this.growthRate == obj.growthRate;
         //boolean c4 = this.getItemID() == obj.getItemID();
-        boolean c5 = this.value.equals(obj.value);
+        boolean c5;
+        if (type == NOMINAL_ITEM) {
+            c5 = this.value.equals(obj.value);
+        } else if (type == REAL_ITEM) {
+            c5 = this.valueNum == obj.valueNum;
+        } else {
+            c5 = this.valueFuzzy.equals(obj.valueFuzzy);
+        }
         boolean c6 = this.variable.equals(obj.variable);
         return /*c3 && c4 &&*/ c5 && c6;
     }
@@ -169,10 +177,12 @@ public class Item implements Comparable<Item>, Serializable {
 
     @Override
     public String toString() {
-        if(type == NOMINAL_ITEM){
+        if (type == NOMINAL_ITEM) {
             return getVariable() + " = " + getValue();
-        } else if(type == FUZZY_ITEM){
+        } else if (type == FUZZY_ITEM) {
             return variable + " in (" + valueFuzzy.getX0() + ", " + valueFuzzy.getX1() + ", " + valueFuzzy.getX3() + ")";
+        } else if (type == REAL_ITEM) {
+            return variable + " = " + valueNum;
         }
         return "";
     }

@@ -274,5 +274,30 @@ public class Pattern implements Serializable {
     public void setALPHA(double ALPHA) {
         this.ALPHA = ALPHA;
     }
+    
+    public Pattern merge(Pattern other, int clas){
+        Pattern result = new Pattern(new ArrayList<Item>(), clas);
+        for(int i = 0; i < items.size(); i++){
+            result.getItems().add(this.getItems().get(i));
+        }
+        
+        for(int i = 0; i < other.getItems().size(); i++){
+            result.getItems().add(other.getItems().get(i));
+        }
+        
+        return result;
+    }
+    
+    
+    public Pattern difference(Pattern other, int clas){
+        Pattern result = new Pattern(new ArrayList<Item>(), clas);
+        for(int i = 0; i < items.size(); i++){
+            if(!other.items.contains(items.get(i))){
+                result.items.add(items.get(i));
+            }
+        }
+        
+        return result;
+    }
 
 }
