@@ -306,11 +306,75 @@ public class Pattern implements Serializable {
      */
     public Pattern reverse() {
         ArrayList<Item> its = new ArrayList<>();
-        for(int i = items.size() - 1; i <= 0; i--){
+        for (int i = items.size() - 1; i <= 0; i--) {
             its.add(items.get(i));
         }
-        
+
         return new Pattern(its, clase);
+    }
+
+    /**
+     * Adds an item to the pattern (without duplicates)
+     *
+     * @param it The item to be added
+     * @return {@code true} if the item has been inserted, {@code false}
+     * elsewhere.
+     */
+    public boolean add(Item it) {
+        if (!items.contains(it)) {
+            items.add(it);
+            return true;
+        }
+
+        return false;
+    }
+
+    
+    
+    /**
+     * Drops an item of the pattern
+     *
+     * @param it The item to be removed
+     * @return {@code  true} if the item is removed succesfully, {@code false}
+     * elsewhere.
+     */
+    public boolean drop(Item it) {
+        return items.remove(it);
+    }
+    
+    /**
+     * Joins the items of this pattern with {@code other}.
+     * @param other
+     * @return 
+     */
+    public Pattern merge(Pattern other){
+        Pattern result = new Pattern(new ArrayList<Item>(), clase);
+        
+        for(int i = 0; i < items.size(); i++){
+            result.add(items.get(i));
+        }
+        
+        for(int i = 0; i < other.items.size(); i++){
+            result.add(other.items.get(i));
+        }
+        return result;
+    }
+    
+    /**
+     * Gets the diference of this pattern with respect to {@code other} i.e., the items in {@code this} not contained in {@code other}
+     * @param other
+     * @return A new pattern with the difference.
+     */
+    public Pattern difference(Pattern other){
+        Pattern result = new Pattern(new ArrayList<Item>(), clase);
+        
+        for(int i = 0; i < items.size(); i++){
+            if(!other.items.contains(items.get(i))){
+                result.add(items.get(i));
+            }
+        }
+        
+        return result;
     }
 
 }

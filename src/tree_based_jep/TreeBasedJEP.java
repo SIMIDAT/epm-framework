@@ -154,7 +154,7 @@ public class TreeBasedJEP extends Model {
         int negativeClass = clas == 0 ? 1 : 0;
         Tree CTRoot = getFirstNode(node);
         Pattern aux = p.clone();
-        
+
         // for each node's children
         for (Tree target : node.getChildren()) {
             aux.getItems().add(target.getItem());
@@ -163,10 +163,11 @@ public class TreeBasedJEP extends Model {
                 // this is a JEP. Gets negative instances from this one.
                 ArrayList<Pattern> negativeInstances = findNegativeInstances(target, CTRoot.getItem(), negativeClass);
                 // Now, apply border_Diff if neccesary
-                if(negativeInstances.isEmpty()){
+                if (negativeInstances.isEmpty()) {
                     super.patterns.add(aux);
                 } else {
                     // apply border_diff
+
                 }
             }
         }
@@ -214,4 +215,22 @@ public class TreeBasedJEP extends Model {
 
         return next;
     }
+
+    private Pattern borderDiff(Pattern target, ArrayList<Pattern> border) {
+
+        Pattern result = new Pattern(new ArrayList<Item>(), 0);
+
+        //Join with the first border
+        result = result.merge(target.diference(border[0]));
+        Pattern
+
+        //Join with other borders
+        for (int i = 1; i < border.length; i++) {
+            result = result.merge(target.diference(border[i]));
+        }
+
+        return result;
+
+    }//
+
 }
