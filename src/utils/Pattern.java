@@ -48,8 +48,8 @@ public class Pattern implements Serializable {
         this.tra_measures = Utils.generateQualityMeasuresHashMap();
         this.tst_measures = Utils.generateQualityMeasuresHashMap();
     }
-    
-    public Pattern(ArrayList<Item> items,  int clase) {
+
+    public Pattern(ArrayList<Item> items, int clase) {
         this.items = new ArrayList<Item>(items);
         this.clase = clase;
         this.tra_measures = Utils.generateQualityMeasuresHashMap();
@@ -95,10 +95,10 @@ public class Pattern implements Serializable {
                         if (it.getValueFuzzy().Fuzzy((float) instance.getInputRealValues(i)) > 0) {
                             exists = true;
                         }
-                    } else if(it.getType() == Item.REAL_ITEM){
+                    } else if (it.getType() == Item.REAL_ITEM) {
                         double maxAlpha = it.getValueNum() + ALPHA;
                         double minAlpha = it.getValueNum() - ALPHA;
-                        if(instance.getInputRealValues(i) >= minAlpha && instance.getInputRealValues(i) <= maxAlpha ){
+                        if (instance.getInputRealValues(i) >= minAlpha && instance.getInputRealValues(i) <= maxAlpha) {
                             exists = true;
                         }
                     }
@@ -274,30 +274,43 @@ public class Pattern implements Serializable {
     public void setALPHA(double ALPHA) {
         this.ALPHA = ALPHA;
     }
-    
-    public Pattern merge(Pattern other, int clas){
+
+    public Pattern merge(Pattern other, int clas) {
         Pattern result = new Pattern(new ArrayList<Item>(), clas);
-        for(int i = 0; i < items.size(); i++){
+        for (int i = 0; i < items.size(); i++) {
             result.getItems().add(this.getItems().get(i));
         }
-        
-        for(int i = 0; i < other.getItems().size(); i++){
+
+        for (int i = 0; i < other.getItems().size(); i++) {
             result.getItems().add(other.getItems().get(i));
         }
-        
+
         return result;
     }
-    
-    
-    public Pattern difference(Pattern other, int clas){
+
+    public Pattern difference(Pattern other, int clas) {
         Pattern result = new Pattern(new ArrayList<Item>(), clas);
-        for(int i = 0; i < items.size(); i++){
-            if(!other.items.contains(items.get(i))){
+        for (int i = 0; i < items.size(); i++) {
+            if (!other.items.contains(items.get(i))) {
                 result.items.add(items.get(i));
             }
         }
-        
+
         return result;
+    }
+
+    /**
+     * Reverse the pattern
+     *
+     * @return
+     */
+    public Pattern reverse() {
+        ArrayList<Item> its = new ArrayList<>();
+        for(int i = items.size() - 1; i <= 0; i--){
+            its.add(items.get(i));
+        }
+        
+        return new Pattern(its, clase);
     }
 
 }

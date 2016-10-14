@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import javafx.util.Pair;
 import keel.Dataset.InstanceSet;
 import utils.Item;
+import utils.Pattern;
 import utils.Utils;
 
 /**
@@ -41,23 +42,21 @@ import utils.Utils;
  * @since JDK 1.8
  */
 public class TreeBasedJEP extends Model {
-    
+
     private Tree root;
-    
+
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
         generateTree(training, "frequency", 0, (float) 0.5);
-        for(int i = 0; i < root.getChildren().size(); i++){
-            Tree node = root.getChildren().get(i);
-        }
+        mineTree();
     }
 
     /**
      * Generates the tree that represents the dataset.
      *
      * @param training The training data
-     * @param mode The mode to sort the items: 
-     * <ul> 
+     * @param mode The mode to sort the items:
+     * <ul>
      * <li>"frequency"</li>
      * <li>"ratio"</li>
      * <li>"ratioInverse"</li>
@@ -85,25 +84,25 @@ public class TreeBasedJEP extends Model {
                 break;
             case "ratio":
                 simpleItems.sort(Utils.ratio);
-                  instances.forEach((t) -> {
+                instances.forEach((t) -> {
                     t.getKey().sort(Utils.ratio);
                 });
                 break;
             case "ratioInverse":
                 simpleItems.sort(Utils.ratioInverse);
-                  instances.forEach((t) -> {
+                instances.forEach((t) -> {
                     t.getKey().sort(Utils.ratioInverse);
                 });
                 break;
             case "LPNC":
                 simpleItems.sort(Utils.LPNC);
-                  instances.forEach((t) -> {
+                instances.forEach((t) -> {
                     t.getKey().sort(Utils.LPNC);
                 });
                 break;
             case "MPPC":
                 simpleItems.sort(Utils.MPPC);
-                  instances.forEach((t) -> {
+                instances.forEach((t) -> {
                     t.getKey().sort(Utils.MPPC);
                 });
                 break;
@@ -115,23 +114,27 @@ public class TreeBasedJEP extends Model {
                 sortedRatio.sort(Utils.ratio);
 
                 //gets the alpha simple items from frequency
-                int elements = (int) (sortedFrequency.size() * alpha);
+                int elements = (int) (sortedRatio.size() * alpha);
                 simpleItems.clear();
-                simpleItems.addAll(sortedFrequency.subList(0, elements));
-                sortedRatio.removeAll(simpleItems);
-                simpleItems.addAll(sortedRatio);  
+                simpleItems.addAll(sortedRatio.subList(0, elements));
+                sortedFrequency.removeAll(simpleItems);
+                simpleItems.addAll(sortedFrequency);
                 // Sort instances
                 instances.forEach((t) -> {
                     t.getKey().sort((o1, o2) -> {
                         int i1 = simpleItems.indexOf(o1);
                         int i2 = simpleItems.indexOf(o2);
-                        if(i1 < i2) return 1;
-                        else if(i1 > i2) return -1;
-                        else return 0;
+                        if (i1 < i2) {
+                            return 1;
+                        } else if (i1 > i2) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
                     });
                 });
         }
-        
+
         // Now that we have the instances sorted, generate the tree
         Tree.setSimpleItems(simpleItems);
         Tree.initializeNodeLinks(simpleItems.size());
@@ -142,5 +145,73 @@ public class TreeBasedJEP extends Model {
             root.insert_tree(inst.getKey(), inst.getValue());
         });
     }
-    
+
+    public void mineTree() {
+        mineTree(root, new Pattern(null, 0), 0);
+    }
+
+    private void mineTree(Tree node, Pattern p, int clas) {
+        int negativeClass = clas == 0 ? 1 : 0;
+        Tree CTRoot = getFirstNode(node);
+        Pattern aux = p.clone();
+        
+        // for each node's children
+        for (Tree target : node.getChildren()) {
+            aux.getItems().add(target.getItem());
+            // Check if pattern p is a potential JEP
+            if (target.getCount(clas) != 0 && target.getCount(negativeClass) == 0) {
+                // this is a JEP. Gets negative instances from this one.
+                ArrayList<Pattern> negativeInstances = findNegativeInstances(target, CTRoot.getItem(), negativeClass);
+                // Now, apply border_Diff if neccesary
+                if(negativeInstances.isEmpty()){
+                    super.patterns.add(aux);
+                } else {
+                    // apply border_diff
+                }
+            }
+        }
+    }
+
+    private ArrayList<Pattern> findNegativeInstances(Tree target, Item root, int clas) {
+        if (target.getNextEqual() == null) {
+            return null;
+        }
+
+        ArrayList<Pattern> result = new ArrayList<>();
+        Tree next = target.getNextEqual();
+        boolean end = true;
+        // create the possible JEP
+        do {
+            Tree aux = next;
+            end = true;
+            Pattern p = new Pattern(null, clas);
+            p.getItems().add(next.getItem());
+            while ((next = next.getParent()) != null) {
+                p.getItems().add(next.getItem());
+            }
+
+            if (p.getItems().get(p.getItems().size() - 1).equals(root)) {
+                // If the pattern obtained share the same component tree, add to the list of negative instances. But first, we need to reverse it
+                result.add(p.reverse());
+                end = false;
+            }
+
+        } while (!end);
+        return result;
+    }
+
+    /**
+     * Gets the root node of the node's component tree.
+     *
+     * @param node
+     * @return
+     */
+    private Tree getFirstNode(Tree node) {
+        Tree next = node;
+
+        while ((next = next.getParent()) != null) {
+        }
+
+        return next;
+    }
 }

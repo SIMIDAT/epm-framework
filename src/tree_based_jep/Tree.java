@@ -41,15 +41,26 @@ public class Tree {
         simpleItems = aSimpleItems;
     }
 
+    /**
+     * @return the node_link
+     */
+    public static ArrayList<Tree> getNode_link() {
+        return node_link;
+    }
+
     private boolean root;
     private ArrayList<Tree> children;
     private Item item;
     private int[] count;
     private Tree parent;  // link to the parent node.
-    
-    public static ArrayList<ArrayList<Tree>> node_link;
+    private Tree nextEqual;
+    private boolean visited;
+
+    private static ArrayList<Tree> node_link;
     private static ArrayList<Item> simpleItems;
+
     public Tree(Item item, int clas, int nClasses, Tree parent) {
+        visited = false;
         root = false;
         children = new ArrayList<>();
         this.item = item;
@@ -61,18 +72,26 @@ public class Tree {
         this.parent = parent;
     }
 
-    public static void initializeNodeLinks(int size){
+    public static void initializeNodeLinks(int size) {
         node_link = new ArrayList<>();
-        for(int i = 0; i < size; i++){
-            node_link.add(new ArrayList<>());
+        for (int i = 0; i < size; i++) {
+            getNode_link().add(null);
         }
     }
-    
-    public static void addInNodeLink(Tree node){
+
+    public static boolean addInNodeLink(Tree node) {
         int index = simpleItems.indexOf(node.item);
-        node_link.get(index).add(node);
+        if (getNode_link().get(index) == null) {
+            getNode_link().set(index, node);
+            return true;
+        }
+        return false;
     }
-    
+
+    public static int getIndexOf(Item a) {
+        return simpleItems.indexOf(a);
+    }
+
     /**
      * @return the root
      */
@@ -104,21 +123,22 @@ public class Tree {
     /**
      * @return the count
      */
-    public int[] getCount() {
-        return count;
+    public int getCount(int pos) {
+        return count[pos];
     }
 
     /**
      * @param count the count to set
      */
-    public void setCount(int[] count) {
-        this.count = count;
+    public void setCount(int pos, int value) {
+        this.count[pos] = value;
     }
-    
+
     /**
      * Inserts an instance into the tree
+     *
      * @param it The instances
-     * @param clas  The class of the instance
+     * @param clas The class of the instance
      */
     public void insert_tree(ArrayList<Item> it, int clas) {
         insert_tree(it, clas, this);
@@ -126,11 +146,13 @@ public class Tree {
 
     /**
      * Private function to insert an instance into the tree
+     *
      * @param it the instance
      * @param clas the class of the instance
      * @param node The node to insert the item.
      */
     private void insert_tree(ArrayList<Item> it, int clas, Tree node) {
+        this.nextEqual = null;
         // if "it" contains a child
         if (!it.isEmpty()) {
             ArrayList<Item> clone = (ArrayList<Item>) it.clone();
@@ -150,7 +172,15 @@ public class Tree {
                 node.children.add(t);
                 children_index = node.children.size() - 1;
                 // Add node the node-link structure
-                Tree.addInNodeLink(t);
+                if(!Tree.addInNodeLink(t)){
+                    // if there are an elemente on the node-head list, get the last element and set the nextEqual to this one.
+                    int index = simpleItems.indexOf(t.item);
+                    Tree first = node_link.get(index);
+                    while(first.getNextEqual() != null){
+                        first = first.getNextEqual();
+                    }
+                    first.nextEqual = t;
+                }
                 // TODO
             } else {
                 // node exists, incremets count of the children.
@@ -159,6 +189,34 @@ public class Tree {
             clone.remove(0);
             insert_tree(clone, clas, node.children.get(children_index));
         }
+    }
+
+    /**
+     * @return the visited
+     */
+    public boolean isVisited() {
+        return visited;
+    }
+
+    /**
+     * @param visited the visited to set
+     */
+    public void setVisited(boolean visited) {
+        this.visited = visited;
+    }
+
+    /**
+     * @return the nextEqual
+     */
+    public Tree getNextEqual() {
+        return nextEqual;
+    }
+
+    /**
+     * @return the parent
+     */
+    public Tree getParent() {
+        return parent;
     }
 
 }
