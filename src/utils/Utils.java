@@ -55,14 +55,11 @@ public class Utils {
      * The maximum significance level for Fisher's exact test.
      */
     public static final Double SIGNIFICANCE_LEVEL = 0.1;
-    
-    
-    
+
     /*  ======================================================
                            COMPARATORS
         ====================================================== */
-    
-     /**
+    /**
      * Sorts Items by frequency in descending order
      */
     public static Comparator<Item> frequency = (Item o1, Item o2) -> {
@@ -74,57 +71,74 @@ public class Utils {
             return 0;
         }
     };
-    
+
     /**
      * Sorts by ratio ordering
      */
     public static Comparator<Item> ratio = (Item o1, Item o2) -> {
         double ratio1 = 0, ratio2 = 0;
-        if (o1.getD2count() != 0) ratio1 = o1.getD1count() / o1.getD2count();
-        if (o2.getD2count() != 0) ratio2 = o2.getD1count() / o2.getD2count();
-        
-        if(ratio1 < ratio2)
+        if (o1.getD2count() != 0) {
+            ratio1 = o1.getD1count() / o1.getD2count();
+        }
+        if (o2.getD2count() != 0) {
+            ratio2 = o2.getD1count() / o2.getD2count();
+        }
+
+        if (ratio1 < ratio2) {
             return 1;
-        else if(ratio1 > ratio2)
+        } else if (ratio1 > ratio2) {
             return -1;
-        else return 0;
+        } else {
+            return 0;
+        }
     };
     /**
      * Sorts by ratio inverse ordering
      */
     public static Comparator<Item> ratioInverse = (Item o1, Item o2) -> {
         double ratio1 = 0, ratio2 = 0;
-        if (o1.getD2count() != 0) ratio1 = o1.getD1count() / o1.getD2count();
-        if (o2.getD2count() != 0) ratio2 = o2.getD1count() / o2.getD2count();
-        
-        if(ratio1 > ratio2)
+        if (o1.getD2count() != 0) {
+            ratio1 = o1.getD1count() / o1.getD2count();
+        }
+        if (o2.getD2count() != 0) {
+            ratio2 = o2.getD1count() / o2.getD2count();
+        }
+
+        if (ratio1 > ratio2) {
             return 1;
-        else if(ratio1 < ratio2)
+        } else if (ratio1 < ratio2) {
             return -1;
-        else return 0;
+        } else {
+            return 0;
+        }
     };
-    
-    
+
     /**
      * Least Probable in the Negative Class ordering.
      */
     public static Comparator<Item> LPNC = (Item o1, Item o2) -> {
-        if(o1.getD2count() > o2.getD2count()) return 1;
-        else if(o2.getD2count() < o2.getD2count()) return -1;
-        else return 0;
+        if (o1.getD2count() > o2.getD2count()) {
+            return 1;
+        } else if (o2.getD2count() < o2.getD2count()) {
+            return -1;
+        } else {
+            return 0;
+        }
     };
-    
-    
+
     /**
      * Least Probable in the Negative Class ordering.
      */
     public static Comparator<Item> MPPC = (Item o1, Item o2) -> {
-        if(o1.getD1count() < o2.getD1count()) return 1;
-        else if(o2.getD1count() > o2.getD1count()) return -1;
-        else return 0;
+        if (o1.getD1count() < o2.getD1count()) {
+            return 1;
+        } else if (o2.getD1count() > o2.getD1count()) {
+            return -1;
+        } else {
+            return 0;
+        }
     };
-            
-            
+
     /* ============================================
                     END OF COMPARATORS
        ============================================     */
@@ -132,7 +146,8 @@ public class Utils {
      * It generates the quality measures HashMap neccesary to be returned by the
      * test method.
      *
-     * @return A {@code HashMap<String, Double>} with the initialized quality measures.
+     * @return A {@code HashMap<String, Double>} with the initialized quality
+     * measures.
      */
     public static HashMap<String, Double> generateQualityMeasuresHashMap() {
         HashMap<String, Double> qualityMeasures = new HashMap<>();
@@ -346,8 +361,7 @@ public class Utils {
                     return 0;
                 }
             } else // If it is FPR, then the less, the better
-            {
-                if (o1.get(by) > o2.get(by)) {
+             if (o1.get(by) > o2.get(by)) {
                     return -1;
                 } else if (o1.get(by) < o2.get(by)) {
                     return 1;
@@ -358,7 +372,6 @@ public class Utils {
                 } else {
                     return 0;
                 }
-            }
         });
 
         // get the best n rules and return
@@ -411,8 +424,7 @@ public class Utils {
                         return 0;
                     }
                 } else // If it is FPR, then the less, the better
-                {
-                    if (o1.get(by) > o2.get(by)) {
+                 if (o1.get(by) > o2.get(by)) {
                         return -1;
                     } else if (o1.get(by) < o2.get(by)) {
                         return 1;
@@ -423,7 +435,6 @@ public class Utils {
                     } else {
                         return 0;
                     }
-                }
             });
         }
 
@@ -971,7 +982,7 @@ public class Utils {
         }
     }
 
-     /**
+    /**
      * Gets simple itemsets with a support higher than a threshold
      *
      * @param a
@@ -1009,13 +1020,14 @@ public class Utils {
         for (int i = 0; i < attributes.length; i++) {
             // get nominal values of the attribute
             ArrayList<String> nominalValues = new ArrayList<>(attributes[i].getNominalValuesList());
-            int countValueInD1 = 0;
-            int countValueInD2 = 0;
             //for each nominal value
             for (String value : nominalValues) {
+                int countValueInD1 = 0;
+                int countValueInD2 = 0;
                 // counts the times the value appear for each class
                 for (int j = 0; j < a.getNumInstances(); j++) {
-                    if (value.equals(a.getInputNominalValue(j, i))) {
+                    String p = a.getInputNominalValue(j, i);
+                    if (value.equals(p)) {
                         // If are equals, check the class and increment counters
                         if (a.getInstance(j).getOutputNominalValuesInt(0) == positiveClass) {
                             countValueInD1++;
@@ -1037,13 +1049,12 @@ public class Utils {
                 }
 
                 // Add the item to the list of simple items
-                if (gr > 0) {
-                    Item it = new Item(countId, value, attributes[i].getName(), gr);
-                    it.setD1count(countValueInD1);
-                    it.setD2count(countValueInD2);
-                    simpleItems.add(it);
-                    countId++;
-                }
+                Item it = new Item(countId, value, attributes[i].getName(), gr);
+                it.setD1count(countValueInD1);
+                it.setD2count(countValueInD2);
+                simpleItems.add(it);
+                countId++;
+
             }
         }
 
@@ -1085,5 +1096,5 @@ public class Utils {
 
         return result;
     }
-    
+
 }

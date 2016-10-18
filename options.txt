@@ -1,1 +1,1 @@
-/home/angel/KEEL DATASETS/mushroom
+/home/angel/classification/mushroom

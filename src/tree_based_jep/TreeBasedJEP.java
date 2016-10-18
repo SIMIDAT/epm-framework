@@ -47,6 +47,9 @@ public class TreeBasedJEP extends Model {
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
+        super.patterns = new ArrayList<>();
+        super.patternsFilteredAllClasses = new ArrayList<>();
+        super.patternsFilteredByClass = new ArrayList<>();
         generateTree(training, "frequency", 0, (float) 0.5);
         mineTree();
     }
@@ -124,9 +127,9 @@ public class TreeBasedJEP extends Model {
                     t.getKey().sort((o1, o2) -> {
                         int i1 = simpleItems.indexOf(o1);
                         int i2 = simpleItems.indexOf(o2);
-                        if (i1 < i2) {
+                        if (i1 > i2) {
                             return 1;
-                        } else if (i1 > i2) {
+                        } else if (i1 < i2) {
                             return -1;
                         } else {
                             return 0;
@@ -142,40 +145,55 @@ public class TreeBasedJEP extends Model {
         root.setRoot(true);
         instances.forEach((inst) -> {
             // Insert the item from the root.
-            root.insert_tree(inst.getKey(), inst.getValue());
+            root.insert_tree(inst.getKey(), inst.getValue(), simpleItems);
         });
     }
 
     public void mineTree() {
-        mineTree(root, new Pattern(null, 0), 0);
+        for (Tree componentTree : root.getChildren()) {
+            // mine the component tre
+            mineTree(componentTree, new Pattern(null, 0), 0);
+            // When mined the component tree, apply the "relocate_branches" procedure.
+            relocate_branches(componentTree);
+        }
     }
 
     private void mineTree(Tree node, Pattern p, int clas) {
-        int negativeClass = clas == 0 ? 1 : 0;
-        Tree CTRoot = getFirstNode(node);
-        Pattern aux = p.clone();
-
-        // for each node's children
-        for (Tree target : node.getChildren()) {
-            aux.getItems().add(target.getItem());
+        if (node != null) {
+            int negativeClass = clas == 0 ? 1 : 0;
+            Tree CTRoot = getFirstNode(node);
+            Pattern aux = p.clone();
+            // Add the node's item to the possible JEP
+            aux.add(node.getItem());
             // Check if pattern p is a potential JEP
-            if (target.getCount(clas) != 0 && target.getCount(negativeClass) == 0) {
+            if (node.getCount(clas) != 0 && node.getCount(negativeClass) == 0) {
                 // this is a JEP. Gets negative instances from this one.
-                ArrayList<Pattern> negativeInstances = findNegativeInstances(target, CTRoot.getItem(), negativeClass);
+                ArrayList<Pattern> negativeInstances = findNegativeInstances(node, CTRoot.getItem(), negativeClass);
                 // Now, apply border_Diff if neccesary
+
                 if (negativeInstances.isEmpty()) {
                     super.patterns.add(aux);
                 } else {
                     // apply border_diff
-
+                    Pattern borderDiff = borderDiff(aux, negativeInstances);
+                    if (!borderDiff.getItems().isEmpty()) {
+                        super.patterns.add(borderDiff);
+                    }
                 }
+
+            }
+
+            // Recursive call for each node's child
+            for (Tree child : node.getChildren()) {
+                mineTree(child, aux, clas);
             }
         }
+
     }
 
     private ArrayList<Pattern> findNegativeInstances(Tree target, Item root, int clas) {
         if (target.getNextEqual() == null) {
-            return null;
+            return new ArrayList<>();
         }
 
         ArrayList<Pattern> result = new ArrayList<>();
@@ -186,15 +204,19 @@ public class TreeBasedJEP extends Model {
             Tree aux = next;
             end = true;
             Pattern p = new Pattern(null, clas);
-            p.getItems().add(next.getItem());
-            while ((next = next.getParent()) != null) {
-                p.getItems().add(next.getItem());
+            p.add(next.getItem());
+            while (!aux.getParent().isRoot()) {
+                p.add(aux.getItem());
+                aux = aux.getParent();
             }
 
-            if (p.getItems().get(p.getItems().size() - 1).equals(root)) {
+            if (p.getItems().get(p.getItems().size() - 1).equals(root) && !p.getItems().get(0).equals(root)) {
                 // If the pattern obtained share the same component tree, add to the list of negative instances. But first, we need to reverse it
                 result.add(p.reverse());
-                end = false;
+                if (next.getNextEqual() != null) {
+                    next = next.getNextEqual();
+                    end = false;
+                }
             }
 
         } while (!end);
@@ -210,7 +232,8 @@ public class TreeBasedJEP extends Model {
     private Tree getFirstNode(Tree node) {
         Tree next = node;
 
-        while ((next = next.getParent()) != null) {
+        while (!next.getParent().isRoot()) {
+            next = next.getParent();
         }
 
         return next;
@@ -221,16 +244,28 @@ public class TreeBasedJEP extends Model {
         Pattern result = new Pattern(new ArrayList<Item>(), 0);
 
         //Join with the first border
-        result = result.merge(target.diference(border[0]));
-        Pattern
+        result = result.merge(target.difference(border.get(0)));
 
         //Join with other borders
-        for (int i = 1; i < border.length; i++) {
-            result = result.merge(target.diference(border[i]));
+        for (int i = 1; i < border.size(); i++) {
+            result = result.merge(target.difference(border.get(i)));
         }
 
         return result;
 
     }//
+
+    private void relocate_branches(Tree node) {
+        if (node != null) {
+            Tree nextEqual = node.getNextEqual();
+            if (nextEqual != null) {
+                nextEqual.setCount(0, nextEqual.getCount(0) + node.getCount(0));
+                nextEqual.setCount(1, nextEqual.getCount(1) + node.getCount(1));
+            }
+            for (Tree child : node.getChildren()) {
+                relocate_branches(child);
+            }
+        }
+    }
 
 }

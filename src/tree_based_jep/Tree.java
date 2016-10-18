@@ -139,9 +139,10 @@ public class Tree {
      *
      * @param it The instances
      * @param clas The class of the instance
+     * @param simpleItems The items ordered in descending order.
      */
-    public void insert_tree(ArrayList<Item> it, int clas) {
-        insert_tree(it, clas, this);
+    public void insert_tree(ArrayList<Item> it, int clas, ArrayList<Item> simpleItems) {
+        insert_tree(it, clas, this, simpleItems);
     }
 
     /**
@@ -151,7 +152,7 @@ public class Tree {
      * @param clas the class of the instance
      * @param node The node to insert the item.
      */
-    private void insert_tree(ArrayList<Item> it, int clas, Tree node) {
+    private void insert_tree(ArrayList<Item> it, int clas, Tree node, ArrayList<Item> simpleItems) {
         this.nextEqual = null;
         // if "it" contains a child
         if (!it.isEmpty()) {
@@ -170,7 +171,14 @@ public class Tree {
                 // add new children
                 Tree t = new Tree(it.get(0), clas, 2, node);
                 node.children.add(t);
-                children_index = node.children.size() - 1;
+                int a = simpleItems.indexOf(t.item);
+                // sort children according to the items order
+                node.children.sort((Tree o1,Tree o2) -> {
+                    int i1 = simpleItems.indexOf(o1.item);
+                    int i2 = simpleItems.indexOf(o2.item);
+                    if(i1 > i2) return 1; else if (i1 < i2) return -1; else return 0;
+                });
+                children_index = node.children.indexOf(t);
                 // Add node the node-link structure
                 if(!Tree.addInNodeLink(t)){
                     // if there are an elemente on the node-head list, get the last element and set the nextEqual to this one.
@@ -181,13 +189,13 @@ public class Tree {
                     }
                     first.nextEqual = t;
                 }
-                // TODO
+                
             } else {
                 // node exists, incremets count of the children.
                 node.children.get(children_index).count[clas]++;
             }
             clone.remove(0);
-            insert_tree(clone, clas, node.children.get(children_index));
+            insert_tree(clone, clas, node.children.get(children_index), simpleItems);
         }
     }
 

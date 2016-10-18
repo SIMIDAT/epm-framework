@@ -50,7 +50,11 @@ public class Pattern implements Serializable {
     }
 
     public Pattern(ArrayList<Item> items, int clase) {
-        this.items = new ArrayList<Item>(items);
+        if (items == null) {
+            this.items = new ArrayList<>();
+        } else {
+            this.items = new ArrayList<Item>(items);
+        }
         this.clase = clase;
         this.tra_measures = Utils.generateQualityMeasuresHashMap();
         this.tst_measures = Utils.generateQualityMeasuresHashMap();
@@ -306,7 +310,7 @@ public class Pattern implements Serializable {
      */
     public Pattern reverse() {
         ArrayList<Item> its = new ArrayList<>();
-        for (int i = items.size() - 1; i <= 0; i--) {
+        for (int i = items.size() - 1; i >= 0; i--) {
             its.add(items.get(i));
         }
 
@@ -329,8 +333,6 @@ public class Pattern implements Serializable {
         return false;
     }
 
-    
-    
     /**
      * Drops an item of the pattern
      *
@@ -341,39 +343,42 @@ public class Pattern implements Serializable {
     public boolean drop(Item it) {
         return items.remove(it);
     }
-    
+
     /**
      * Joins the items of this pattern with {@code other}.
+     *
      * @param other
-     * @return 
+     * @return
      */
-    public Pattern merge(Pattern other){
+    public Pattern merge(Pattern other) {
         Pattern result = new Pattern(new ArrayList<Item>(), clase);
-        
-        for(int i = 0; i < items.size(); i++){
+
+        for (int i = 0; i < items.size(); i++) {
             result.add(items.get(i));
         }
-        
-        for(int i = 0; i < other.items.size(); i++){
+
+        for (int i = 0; i < other.items.size(); i++) {
             result.add(other.items.get(i));
         }
         return result;
     }
-    
+
     /**
-     * Gets the diference of this pattern with respect to {@code other} i.e., the items in {@code this} not contained in {@code other}
+     * Gets the diference of this pattern with respect to {@code other} i.e.,
+     * the items in {@code this} not contained in {@code other}
+     *
      * @param other
      * @return A new pattern with the difference.
      */
-    public Pattern difference(Pattern other){
+    public Pattern difference(Pattern other) {
         Pattern result = new Pattern(new ArrayList<Item>(), clase);
-        
-        for(int i = 0; i < items.size(); i++){
-            if(!other.items.contains(items.get(i))){
+
+        for (int i = 0; i < items.size(); i++) {
+            if (!other.items.contains(items.get(i))) {
                 result.add(items.get(i));
             }
         }
-        
+
         return result;
     }
 
