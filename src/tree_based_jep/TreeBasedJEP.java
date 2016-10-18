@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import javafx.util.Pair;
+import keel.Dataset.Attribute;
+import keel.Dataset.Instance;
 import keel.Dataset.InstanceSet;
 import utils.Item;
 import utils.Pattern;
@@ -50,8 +52,60 @@ public class TreeBasedJEP extends Model {
         super.patterns = new ArrayList<>();
         super.patternsFilteredAllClasses = new ArrayList<>();
         super.patternsFilteredByClass = new ArrayList<>();
-        generateTree(training, "frequency", 0, (float) 0.5);
-        mineTree();
+        int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
+        // generate and mine the tree for each class
+        long init_time = System.currentTimeMillis();
+        for (int i = 0; i < numClasses; i++) {
+            generateTree(training, "frequency", i, (float) 0.3);
+            mineTree(i, -1);
+        }
+        for (Pattern p : super.patterns) {
+            System.out.println(p);
+        }
+        System.out.println(patterns.size());
+        System.out.println("Execution time: " + (System.currentTimeMillis() - init_time) / 1000.0 + " seconds");
+    }
+
+    @Override
+    public String[][] predict(InstanceSet test) {
+        String[][] result = new String[3][test.getNumInstances()];
+        result[0] = getPredictions(super.patterns, test);
+        result[1] = getPredictions(super.patterns, test);
+        result[2] = getPredictions(super.patterns, test);
+        return result;
+    }
+
+    /**
+     * Gets the class predictions for the test instances.
+     *
+     * @param patterns
+     * @param test
+     * @return
+     */
+    public String[] getPredictions(ArrayList<Pattern> patterns, InstanceSet test) {
+        Attribute[] attributes = test.getAttributeDefinitions().getInputAttributes();
+        ArrayList<String> predictions = new ArrayList<>();
+        float[] clasContrib = new float[test.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues()];
+
+        //For each test instance
+        for (Instance inst : test.getInstances()) {
+            for (int i = 0; i < clasContrib.length; i++) {
+                clasContrib[i] = 0;
+            }
+
+            // Checks the patterns that covers the instance for each class, and sum its support
+            for (Pattern pat : patterns) {
+                if (pat.covers(inst, attributes)) {
+                    clasContrib[pat.getClase()] += pat.getSupp();
+                }
+            }
+
+            // The max value wins and it is the value predicted.
+            predictions.add(test.getAttributeDefinitions().getOutputAttribute(0).getNominalValue(Utils.getIndexOfMaxValue(clasContrib)));
+        }
+
+        //return the array of predictions
+        return predictions.toArray(new String[0]);
     }
 
     /**
@@ -149,17 +203,17 @@ public class TreeBasedJEP extends Model {
         });
     }
 
-    public void mineTree() {
+    public void mineTree(int clas, int threshold) {
         for (Tree componentTree : root.getChildren()) {
             // mine the component tre
-            mineTree(componentTree, new Pattern(null, 0), 0);
+            mineTree(componentTree, new Pattern(new ArrayList<Item>(), clas), 0, threshold);
             // When mined the component tree, apply the "relocate_branches" procedure.
             relocate_branches(componentTree);
         }
     }
 
-    private void mineTree(Tree node, Pattern p, int clas) {
-        if (node != null) {
+    private void mineTree(Tree node, Pattern p, int clas, int threshold) {
+        if (node != null && (p.getItems().size() <= threshold || threshold == -1)) {
             int negativeClass = clas == 0 ? 1 : 0;
             Tree CTRoot = getFirstNode(node);
             Pattern aux = p.clone();
@@ -170,9 +224,12 @@ public class TreeBasedJEP extends Model {
                 // this is a JEP. Gets negative instances from this one.
                 ArrayList<Pattern> negativeInstances = findNegativeInstances(node, CTRoot.getItem(), negativeClass);
                 // Now, apply border_Diff if neccesary
-
                 if (negativeInstances.isEmpty()) {
-                    super.patterns.add(aux);
+                    // If there are no such negative transactions, adds as JEP a pattern with the first and last elements.
+                    ArrayList<Item> items = new ArrayList<>();
+                    items.add(aux.getItems().get(0));
+                    items.add(aux.getItems().get(aux.getItems().size() - 1));
+                    super.patterns.add(new Pattern(items, aux.getClase()));
                 } else {
                     // apply border_diff
                     Pattern borderDiff = borderDiff(aux, negativeInstances);
@@ -185,8 +242,9 @@ public class TreeBasedJEP extends Model {
 
             // Recursive call for each node's child
             for (Tree child : node.getChildren()) {
-                mineTree(child, aux, clas);
+                mineTree(child, aux, clas, threshold);
             }
+
         }
 
     }
@@ -210,7 +268,7 @@ public class TreeBasedJEP extends Model {
                 aux = aux.getParent();
             }
 
-            if (p.getItems().get(p.getItems().size() - 1).equals(root) && !p.getItems().get(0).equals(root)) {
+            if (p.getItems().get(p.getItems().size() - 1).equals(root)) {
                 // If the pattern obtained share the same component tree, add to the list of negative instances. But first, we need to reverse it
                 result.add(p.reverse());
                 if (next.getNextEqual() != null) {
@@ -255,6 +313,12 @@ public class TreeBasedJEP extends Model {
 
     }//
 
+    /**
+     * Apply the relocate branches procedure. This is, for each node of a
+     * component tree, sum to the next equal item their counts.
+     *
+     * @param node
+     */
     private void relocate_branches(Tree node) {
         if (node != null) {
             Tree nextEqual = node.getNextEqual();

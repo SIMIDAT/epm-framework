@@ -1097,4 +1097,64 @@ public class Utils {
         return result;
     }
 
+    /**
+     * Returns the index of the max element of an array, or the first occurrence
+     * of the max in this array in case that there exists mor than one maximum
+     * element.
+     *
+     * @param array
+     * @return
+     */
+    public static int getIndexOfMaxValue(float[] array) {
+        int maxIndex = -1;
+        float maxVal = Float.NEGATIVE_INFINITY;
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] > maxVal) {
+                maxIndex = i;
+                maxVal = array[i];
+            }
+        }
+        return maxIndex;
+    }
+
+    /**
+     * Returns the index of the max element of an array, or the first occurrence
+     * of the max in this array in case that there exists mor than one maximum
+     * element.
+     *
+     * @param array
+     * @return
+     */
+    public static int getIndexOfMaxValue(int[] array) {
+        int maxIndex = -1;
+        int maxVal = Integer.MIN_VALUE;
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] > maxVal) {
+                maxIndex = i;
+                maxVal = array[i];
+            }
+        }
+        return maxIndex;
+    }
+
+    /**
+     * Returns the index of the max element of an array, or the first occurrence
+     * of the max in this array in case that there exists mor than one maximum
+     * element.
+     *
+     * @param array
+     * @return
+     */
+    public static int getIndexOfMaxValue(double[] array) {
+        int maxIndex = -1;
+        double maxVal = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] > maxVal) {
+                maxIndex = i;
+                maxVal = array[i];
+            }
+        }
+        return maxIndex;
+    }
+
 }
