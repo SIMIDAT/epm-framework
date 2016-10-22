@@ -30,6 +30,7 @@ public class Pattern implements Serializable {
     private HashMap<String, Double> tst_measures;
     private double ALPHA;
 
+    @Override
     public Pattern clone() {
         Pattern result = new Pattern((ArrayList<Item>) this.items.clone(), this.support, this.clase);
         result.growthRate = this.growthRate;
@@ -39,6 +40,48 @@ public class Pattern implements Serializable {
         result.tst_measures = (HashMap<String, Double>) this.tst_measures.clone();
         result.setALPHA(this.getALPHA());
         return result;
+
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        if (other == this) {
+            return true;
+        }
+        if (!(other instanceof Pattern)) {
+            return false;
+        }
+
+        Pattern pat = (Pattern) other;
+        if (this.clase != pat.clase) {
+            return false;
+        }
+
+        // If contains this contains all items of other, is equal.
+        for (Item it : this.items) {
+            if (!pat.items.contains(it)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int i = 0;
+        for (Item it : items) {
+            if (it.getType() == Item.NOMINAL_ITEM) {
+                i += it.getVariable().hashCode() + it.getValue().hashCode();
+            } else if (it.getType() == Item.FUZZY_ITEM) {
+                i += it.getVariable().hashCode() + it.getValueFuzzy().hashCode();
+            } else {
+                i += it.getVariable().hashCode() + (int) (it.getValueNum() * 10000);
+            }
+        }
+        return i;
     }
 
     public Pattern(ArrayList<Item> items, int supp, int clase) {
@@ -84,6 +127,14 @@ public class Pattern implements Serializable {
         return true;
     }
 
+    /**
+     * Checks if the pattern covers a given instance, i.e., all this items are a
+     * subset of the given instance.
+     *
+     * @param instance
+     * @param inputAttrs
+     * @return
+     */
     public boolean covers(Instance instance, Attribute[] inputAttrs) {
         // for each item in the pattern
         for (Item it : items) {
@@ -279,6 +330,13 @@ public class Pattern implements Serializable {
         this.ALPHA = ALPHA;
     }
 
+    /**
+     * Performs the Union of this pattern with other
+     *
+     * @param other
+     * @param clas
+     * @return
+     */
     public Pattern merge(Pattern other, int clas) {
         Pattern result = new Pattern(new ArrayList<Item>(), clas);
         for (int i = 0; i < items.size(); i++) {
@@ -292,6 +350,14 @@ public class Pattern implements Serializable {
         return result;
     }
 
+    /**
+     * Perform the difference of this pattern with other, i.e., it return a
+     * pattern which elements are in this but not in other
+     *
+     * @param other
+     * @param clas
+     * @return
+     */
     public Pattern difference(Pattern other, int clas) {
         Pattern result = new Pattern(new ArrayList<Item>(), clas);
         for (int i = 0; i < items.size(); i++) {

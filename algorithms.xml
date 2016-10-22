@@ -74,6 +74,37 @@
     <algorithm>
         <name>Tree-based JEP-C</name>
         <class>tree_based_jep.TreeBasedJEP</class>
+        <parameter>
+            <name>Ordering</name>
+            <type>nominal</type>
+            <domain>
+                <item>frequency</item>
+                <item>ratio</item>
+                <item>ratioInverse</item>
+                <item>LPNC</item>
+                <item>MPPC</item>
+                <item>hybrid</item>
+            </domain>
+            <default>6</default>
+        </parameter>
+        <parameter>
+            <name>Alpha</name>
+            <type>real</type>
+            <domain>
+                <min>0</min>
+                <max>1</max>
+            </domain>
+            <default>0.3</default>
+        </parameter>
+        <parameter>
+            <name>Pattern Max Length</name>
+            <type>integer</type>
+            <domain>
+                <min>-1</min>
+                <max>99999999</max>
+            </domain>
+            <default>-1</default>
+        </parameter>
     </algorithm>
 
 

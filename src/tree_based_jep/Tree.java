@@ -48,6 +48,13 @@ public class Tree {
         return node_link;
     }
 
+    /**
+     * @return the simpleItems
+     */
+    public static ArrayList<Item> getSimpleItems() {
+        return simpleItems;
+    }
+
     private boolean root;
     private ArrayList<Tree> children;
     private Item item;
@@ -72,6 +79,10 @@ public class Tree {
         this.parent = parent;
     }
 
+    /**
+     * Initialise the node_link data structure
+     * @param size 
+     */
     public static void initializeNodeLinks(int size) {
         node_link = new ArrayList<>();
         for (int i = 0; i < size; i++) {
@@ -79,17 +90,24 @@ public class Tree {
         }
     }
 
+    /** 
+     * Adds the node at the end of the item's node link table.
+     * @param node
+     * @return 
+     */
     public static boolean addInNodeLink(Tree node) {
-        int index = simpleItems.indexOf(node.item);
-        if (getNode_link().get(index) == null) {
-            getNode_link().set(index, node);
-            return true;
+        int index = getSimpleItems().indexOf(node.item);
+        if (index > -1) {
+            if (getNode_link().get(index) == null) {
+                getNode_link().set(index, node);
+                return true;
+            }
         }
         return false;
     }
 
     public static int getIndexOf(Item a) {
-        return simpleItems.indexOf(a);
+        return getSimpleItems().indexOf(a);
     }
 
     /**
@@ -173,23 +191,29 @@ public class Tree {
                 node.children.add(t);
                 int a = simpleItems.indexOf(t.item);
                 // sort children according to the items order
-                node.children.sort((Tree o1,Tree o2) -> {
+                node.children.sort((Tree o1, Tree o2) -> {
                     int i1 = simpleItems.indexOf(o1.item);
                     int i2 = simpleItems.indexOf(o2.item);
-                    if(i1 > i2) return 1; else if (i1 < i2) return -1; else return 0;
+                    if (i1 > i2) {
+                        return 1;
+                    } else if (i1 < i2) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
                 });
                 children_index = node.children.indexOf(t);
                 // Add node the node-link structure
-                if(!Tree.addInNodeLink(t)){
+                if (!Tree.addInNodeLink(t)) {
                     // if there are an elemente on the node-head list, get the last element and set the nextEqual to this one.
                     int index = simpleItems.indexOf(t.item);
                     Tree first = node_link.get(index);
-                    while(first.getNextEqual() != null){
+                    while (first.getNextEqual() != null) {
                         first = first.getNextEqual();
                     }
                     first.nextEqual = t;
                 }
-                
+
             } else {
                 // node exists, incremets count of the children.
                 node.children.get(children_index).count[clas]++;
@@ -209,8 +233,8 @@ public class Tree {
     /**
      * @param visited the visited to set
      */
-    public void setVisited(boolean visited) {
-        this.visited = visited;
+    public void visited() {
+        this.visited = true;
     }
 
     /**

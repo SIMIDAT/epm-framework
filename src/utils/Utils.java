@@ -32,6 +32,9 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.function.BiConsumer;
@@ -78,10 +81,14 @@ public class Utils {
     public static Comparator<Item> ratio = (Item o1, Item o2) -> {
         double ratio1 = 0, ratio2 = 0;
         if (o1.getD2count() != 0) {
-            ratio1 = o1.getD1count() / o1.getD2count();
+            ratio1 = (double) o1.getD1count() / (double) o1.getD2count();
+        } else {
+            ratio1 = Double.POSITIVE_INFINITY;
         }
         if (o2.getD2count() != 0) {
-            ratio2 = o2.getD1count() / o2.getD2count();
+            ratio2 = (double) o2.getD1count() / (double) o2.getD2count();
+        } else {
+            ratio2 = Double.POSITIVE_INFINITY;
         }
 
         if (ratio1 < ratio2) {
@@ -98,10 +105,14 @@ public class Utils {
     public static Comparator<Item> ratioInverse = (Item o1, Item o2) -> {
         double ratio1 = 0, ratio2 = 0;
         if (o1.getD2count() != 0) {
-            ratio1 = o1.getD1count() / o1.getD2count();
+            ratio1 = (double) o1.getD1count() / (double) o1.getD2count();
+        } else {
+            ratio1 = Double.POSITIVE_INFINITY;
         }
         if (o2.getD2count() != 0) {
-            ratio2 = o2.getD1count() / o2.getD2count();
+            ratio2 = (double) o2.getD1count() / (double) o2.getD2count();
+        } else {
+            ratio2 = Double.POSITIVE_INFINITY;
         }
 
         if (ratio1 > ratio2) {
@@ -361,7 +372,8 @@ public class Utils {
                     return 0;
                 }
             } else // If it is FPR, then the less, the better
-             if (o1.get(by) > o2.get(by)) {
+            {
+                if (o1.get(by) > o2.get(by)) {
                     return -1;
                 } else if (o1.get(by) < o2.get(by)) {
                     return 1;
@@ -372,6 +384,7 @@ public class Utils {
                 } else {
                     return 0;
                 }
+            }
         });
 
         // get the best n rules and return
@@ -424,7 +437,8 @@ public class Utils {
                         return 0;
                     }
                 } else // If it is FPR, then the less, the better
-                 if (o1.get(by) > o2.get(by)) {
+                {
+                    if (o1.get(by) > o2.get(by)) {
                         return -1;
                     } else if (o1.get(by) < o2.get(by)) {
                         return 1;
@@ -435,6 +449,7 @@ public class Utils {
                     } else {
                         return 0;
                     }
+                }
             });
         }
 
@@ -1155,6 +1170,22 @@ public class Utils {
             }
         }
         return maxIndex;
+    }
+
+    /**
+     * Removes duplicated patterns of the original patterns set.
+     *
+     * @param original
+     * @return
+     */
+    public static ArrayList<Pattern> removeDuplicates(ArrayList<Pattern> original) {
+        HashSet<Pattern> distinct = new HashSet<>(original);
+        Iterator<Pattern> it = distinct.iterator();
+        ArrayList<Pattern> result = new ArrayList<>();
+        while (it.hasNext()) {
+            result.add((Pattern) it.next());
+        }
+        return result;
     }
 
 }

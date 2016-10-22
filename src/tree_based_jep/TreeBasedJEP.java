@@ -33,6 +33,7 @@ import javafx.util.Pair;
 import keel.Dataset.Attribute;
 import keel.Dataset.Instance;
 import keel.Dataset.InstanceSet;
+import sun.misc.REException;
 import utils.Item;
 import utils.Pattern;
 import utils.Utils;
@@ -46,6 +47,9 @@ import utils.Utils;
 public class TreeBasedJEP extends Model {
 
     private Tree root;
+    private String ordering;
+    private float alpha;
+    private int prune;
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
@@ -53,17 +57,21 @@ public class TreeBasedJEP extends Model {
         super.patternsFilteredAllClasses = new ArrayList<>();
         super.patternsFilteredByClass = new ArrayList<>();
         int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
+        ordering = params.get("Ordering");
+        alpha = Float.parseFloat(params.get("Alpha"));
+        prune = Integer.parseInt(params.get("Pattern Max Length"));
+
         // generate and mine the tree for each class
         long init_time = System.currentTimeMillis();
         for (int i = 0; i < numClasses; i++) {
-            generateTree(training, "frequency", i, (float) 0.3);
-            mineTree(i, -1);
+            // Generate Tree for class i and mine patterns of this tree
+            generateTree(training, ordering, i, alpha);
+            mineTree(i, prune);
         }
-        for (Pattern p : super.patterns) {
-            System.out.println(p);
-        }
-        System.out.println(patterns.size());
+        System.out.println("Removing duplicated patterns...");
+        patterns = Utils.removeDuplicates(patterns);
         System.out.println("Execution time: " + (System.currentTimeMillis() - init_time) / 1000.0 + " seconds");
+        System.out.println("Number of patterns: " + super.patterns.size());
     }
 
     @Override
@@ -163,7 +171,7 @@ public class TreeBasedJEP extends Model {
                     t.getKey().sort(Utils.MPPC);
                 });
                 break;
-            case "hibryd":
+            case "hybrid":
                 // Gets items ordenred by frequency and ratio.
                 ArrayList<Item> sortedFrequency = (ArrayList<Item>) simpleItems.clone();
                 ArrayList<Item> sortedRatio = (ArrayList<Item>) simpleItems.clone();
@@ -203,6 +211,11 @@ public class TreeBasedJEP extends Model {
         });
     }
 
+    /**
+     * Public method to mine the tree.
+     * @param clas The class to look for patterns
+     * @param threshold  The threshold to prune patterns (<= 0 means no prune)
+     */
     public void mineTree(int clas, int threshold) {
         for (Tree componentTree : root.getChildren()) {
             // mine the component tre
@@ -212,8 +225,16 @@ public class TreeBasedJEP extends Model {
         }
     }
 
+    /**
+     * Private and recursive method to mine the tree for JEPs
+     * @param node The actual node of the tree to mine
+     * @param p The actual pattern
+     * @param clas The class to look for patterns
+     * @param threshold The threshold to prune the tree (<= 0 means no prune)
+     */
     private void mineTree(Tree node, Pattern p, int clas, int threshold) {
-        if (node != null && (p.getItems().size() <= threshold || threshold == -1)) {
+        if (node != null && (p.getItems().size() <= threshold || threshold <= 0)) {
+            node.visited();
             int negativeClass = clas == 0 ? 1 : 0;
             Tree CTRoot = getFirstNode(node);
             Pattern aux = p.clone();
@@ -222,20 +243,26 @@ public class TreeBasedJEP extends Model {
             // Check if pattern p is a potential JEP
             if (node.getCount(clas) != 0 && node.getCount(negativeClass) == 0) {
                 // this is a JEP. Gets negative instances from this one.
-                ArrayList<Pattern> negativeInstances = findNegativeInstances(node, CTRoot.getItem(), negativeClass);
-                // Now, apply border_Diff if neccesary
-                if (negativeInstances.isEmpty()) {
-                    // If there are no such negative transactions, adds as JEP a pattern with the first and last elements.
-                    ArrayList<Item> items = new ArrayList<>();
-                    items.add(aux.getItems().get(0));
-                    items.add(aux.getItems().get(aux.getItems().size() - 1));
-                    super.patterns.add(new Pattern(items, aux.getClase()));
-                } else {
-                    // apply border_diff
-                    Pattern borderDiff = borderDiff(aux, negativeInstances);
-                    if (!borderDiff.getItems().isEmpty()) {
-                        super.patterns.add(borderDiff);
+                if (!node.getItem().equals(CTRoot.getItem())) {
+                    ArrayList<Pattern> negativeInstances = findNegativeInstances(node, CTRoot.getItem(), negativeClass);
+                    // Now, apply border_Diff if neccesary
+                    if (negativeInstances.isEmpty()) {
+                        // If there are no such negative transactions, adds as JEP a pattern with the first and last elements.
+                        ArrayList<Item> items = new ArrayList<>();
+                        items.add(aux.getItems().get(0));
+                        items.add(aux.getItems().get(aux.getItems().size() - 1));
+                        super.patterns.add(new Pattern(items, aux.getClase()));
+                    } else {
+                        // apply border_diff
+                        Pattern borderDiff = borderDiff(aux, negativeInstances);
+                        if (!borderDiff.getItems().isEmpty()) {
+                            super.patterns.add(borderDiff);
+                        }
                     }
+                } else {
+                    Pattern p1 = new Pattern(new ArrayList<Item>(), clas);
+                    p1.add(node.getItem());
+                    super.patterns.add(p1);
                 }
 
             }
@@ -249,37 +276,46 @@ public class TreeBasedJEP extends Model {
 
     }
 
+    /**
+     * Finds the negative instances related to {@code target} node, i.e., shares the same base node and the same root.
+     * @param target
+     * @param root
+     * @param clas
+     * @return 
+     */
     private ArrayList<Pattern> findNegativeInstances(Tree target, Item root, int clas) {
-        if (target.getNextEqual() == null) {
-            return new ArrayList<>();
-        }
-
+        Item it = target.getItem();
+        ArrayList<Tree> node_link = Tree.getNode_link();
+        int index = Tree.getSimpleItems().indexOf(it);
         ArrayList<Pattern> result = new ArrayList<>();
-        Tree next = target.getNextEqual();
-        boolean end = true;
-        // create the possible JEP
-        do {
-            Tree aux = next;
-            end = true;
-            Pattern p = new Pattern(null, clas);
-            p.add(next.getItem());
-            while (!aux.getParent().isRoot()) {
-                p.add(aux.getItem());
-                aux = aux.getParent();
-            }
 
-            if (p.getItems().get(p.getItems().size() - 1).equals(root)) {
-                // If the pattern obtained share the same component tree, add to the list of negative instances. But first, we need to reverse it
-                result.add(p.reverse());
-                if (next.getNextEqual() != null) {
-                    next = next.getNextEqual();
-                    end = false;
+        Tree aux = target.getNextEqual();
+        while (aux != null) {
+            if (!aux.isVisited()) {
+                // Search for instances using side links
+                if (getFirstNode(aux).getItem().equals(root) && !aux.equals(target)) {
+                    // If the node we are examining shares the root, is a negative instance.
+                    Pattern p = new Pattern(new ArrayList<Item>(), clas);
+                    Tree aux2 = aux;
+                    while (!aux2.getParent().isRoot()) {
+                        p.add(aux2.getItem());
+                        aux2 = aux2.getParent();
+                    }
+                    // add the reversed pattern
+                    result.add(p.reverse());
+                } else {
+                    // If the next does not share the same root, it means that
+                    // it is on another component tree, so, consecuent equals nodes not share this root anymore. So, prune.
+                    break;
                 }
             }
+            aux = aux.getNextEqual();
+        }
 
-        } while (!end);
         return result;
     }
+
+   
 
     /**
      * Gets the root node of the node's component tree.
@@ -297,9 +333,16 @@ public class TreeBasedJEP extends Model {
         return next;
     }
 
+    
+    /**
+     * Applies the border-diff procedure, i.e., it returns a patterns with the items in {@code target} not present in target.
+     * @param target
+     * @param border
+     * @return 
+     */
     private Pattern borderDiff(Pattern target, ArrayList<Pattern> border) {
 
-        Pattern result = new Pattern(new ArrayList<Item>(), 0);
+        Pattern result = new Pattern(new ArrayList<Item>(), target.getClase());
 
         //Join with the first border
         result = result.merge(target.difference(border.get(0)));

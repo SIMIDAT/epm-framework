@@ -1350,7 +1350,7 @@ public class GUI extends javax.swing.JFrame {
             } else if (ParametersPanel.getComponent(i) instanceof JSpinner) {
                 JSpinner element = (JSpinner) ParametersPanel.getComponent(i);
                 try {
-                    parameters.put(key, Integer.toString((Integer) element.getValue()));
+                    parameters.put(key.substring(0, key.length() - 2), Integer.toString((Integer) element.getValue()));
                 } catch (java.lang.ClassCastException ex) {
                     parameters.put(key.substring(0, key.length() - 2), Double.toString((Double) element.getValue()));
                 }

@@ -1,1 +1,1 @@
-/home/angel/classification/breast
+/home/angel/classification/chess
