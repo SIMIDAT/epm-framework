@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package utils;
+package sjep_classifier;
 
+import utils.*;
 import java.io.Serializable;
 import sjep_classifier.*;
 import java.util.ArrayList;
@@ -88,8 +89,8 @@ public class Pattern implements Serializable {
         this.items = new ArrayList<Item>(items);
         support = supp;
         this.clase = clase;
-        this.tra_measures = Utils.generateQualityMeasuresHashMap();
-        this.tst_measures = Utils.generateQualityMeasuresHashMap();
+        this.tra_measures = utils.Utils.generateQualityMeasuresHashMap();
+        this.tst_measures = utils.Utils.generateQualityMeasuresHashMap();
     }
 
     public Pattern(ArrayList<Item> items, int clase) {
@@ -99,8 +100,8 @@ public class Pattern implements Serializable {
             this.items = new ArrayList<Item>(items);
         }
         this.clase = clase;
-        this.tra_measures = Utils.generateQualityMeasuresHashMap();
-        this.tst_measures = Utils.generateQualityMeasuresHashMap();
+        this.tra_measures = utils.Utils.generateQualityMeasuresHashMap();
+        this.tst_measures = utils.Utils.generateQualityMeasuresHashMap();
     }
 
     /**

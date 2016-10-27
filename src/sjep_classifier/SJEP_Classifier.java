@@ -24,9 +24,6 @@ import java.util.logging.Logger;
 import javafx.util.Pair;
 import keel.Dataset.*;
 import org.core.*;
-import utils.CPTree;
-import utils.Item;
-import utils.Pattern;
 
 /**
  *
@@ -76,11 +73,11 @@ public class SJEP_Classifier {
             long t_ini = System.currentTimeMillis();
             // get simple itemsets to perform the ordering of the items and filter by gorwth rate
             // Class '0' is considered as positive
-            ArrayList<Item> simpleItems = utils.Utils.getSimpleItems(a, minSupp, 0);
+            ArrayList<Item> simpleItems = Utils.getSimpleItems(a, minSupp, 0);
             // sort items by growth rate 
             simpleItems.sort(null);
             // gets all instances removing those itemset that not appear on simpleItems
-            ArrayList<Pair<ArrayList<Item>, Integer>> instances = utils.Utils.getInstances(a, simpleItems, 0);
+            ArrayList<Pair<ArrayList<Item>, Integer>> instances = Utils.getInstances(a, simpleItems, 0);
             for (int i = 0; i < instances.size(); i++) {
                 // sort each arraylist of items
                 instances.get(i).getKey().sort(null);
@@ -114,7 +111,7 @@ public class SJEP_Classifier {
 
                     test.readSet(tst_file, false);
                     // Get the instances: It is not neccesary to sort that instances.
-                    testInstances = utils.Utils.getInstances(test, simpleItems, 0);
+                    testInstances = Utils.getInstances(test, simpleItems, 0);
                     // Writes the confusion matrix file in CSV format
                     pw = new PrintWriter(tra_file + "-CM.csv", "UTF-8");
                     pw.println("TP,FP,FN,TN"); // Prints the header
@@ -184,11 +181,11 @@ public class SJEP_Classifier {
                 System.out.println("Mining class: " + Attributes.getOutputAttribute(0).getNominalValue(i));
                 // Class 'i' is considered de positive class, the rest of classes correspond to the negative one.
                 // Get the simple items.
-                ArrayList<Item> simpleItems = utils.Utils.getSimpleItems(a, minSupp, i);
+                ArrayList<Item> simpleItems = Utils.getSimpleItems(a, minSupp, i);
                 // sort items by growth rate 
                 simpleItems.sort(null);
                 // gets all instances removing those itemset that not appear on simpleItems
-                ArrayList<Pair<ArrayList<Item>, Integer>> instances = utils.Utils.getInstances(a, simpleItems, i);
+                ArrayList<Pair<ArrayList<Item>, Integer>> instances = sjep_classifier.Utils.getInstances(a, simpleItems, i);
                 for (int j = 0; j < instances.size(); j++) {
                     // sort each arraylist of items
                     instances.get(j).getKey().sort(null);
@@ -243,8 +240,8 @@ public class SJEP_Classifier {
                     }
 
                     // Get the instances: It is not neccesary to sort that instances.
-                    ArrayList<Item> simpleItems = utils.Utils.getSimpleItems(test, minSupp, i);
-                    testInstances = utils.Utils.getInstances(test, simpleItems, i);
+                    ArrayList<Item> simpleItems = Utils.getSimpleItems(test, minSupp, i);
+                    testInstances = Utils.getInstances(test, simpleItems, i);
 
                     // Calculate the confusion matrix for each pattern to compute other quality measures
                     for (int j = 0; j < patterns.size(); j++) {

@@ -6,7 +6,9 @@
  * </p>
  */
 
-package utils;
+package sjep_classifier;
+
+import utils.*;
 
 public class Fuzzy {
     /**

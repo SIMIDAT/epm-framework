@@ -4,7 +4,9 @@
  * and open the template in the editor.
  */
 
-package utils;
+package sjep_classifier;
+
+import utils.*;
 
 /**
  *

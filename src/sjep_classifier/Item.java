@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package utils;
+package sjep_classifier;
 
+import utils.*;
 import exceptions.InvalidProbabilityException;
 import java.io.Serializable;
 import sjep_classifier.*;
