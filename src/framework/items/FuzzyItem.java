@@ -114,8 +114,12 @@ public class FuzzyItem extends Item {
 
     @Override
     public boolean covers(Item itemInstance) {
-        NumericItem other = (NumericItem) itemInstance;
-        return this.value.Fuzzy(((Double) other.getValue()).floatValue()) > 0;
+        if (itemInstance instanceof FuzzyItem) {
+            NumericItem other = (NumericItem) itemInstance;
+            return this.value.Fuzzy(((Double) other.getValue()).floatValue()) > 0;
+        } else {
+            return false;
+        }
     }
 
 }

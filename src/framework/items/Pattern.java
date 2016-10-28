@@ -80,7 +80,7 @@ public class Pattern implements Serializable {
             return false;
         }
 
-        // If contains this contains all items of other, is equal.
+        // If contains this pattern all items of other, is equal.
         for (Item it : this.items) {
             if (!pat.items.contains(it)) {
                 return false;
@@ -100,15 +100,15 @@ public class Pattern implements Serializable {
     }
 
     /**
-     * Returns whether a pattern covers an example
+     * Returns whether a pattern covers an example (viewed as a Pattern itself)
      *
      * @param instance
      * @return
      */
-    public boolean covers(ArrayList<Item> instance) {
+    public boolean covers(Pattern instance) {
         for (Item it : items) {
             boolean covered = false;
-            for (Item it2 : instance) {
+            for (Item it2 : instance.items) {
                 if (it.covers(it2)) {
                     covered = true;
                     break;
@@ -231,6 +231,15 @@ public class Pattern implements Serializable {
      */
     public boolean drop(Item it) {
         return items.remove(it);
+    }
+    
+    /**
+     * Returns the item at the {@code index} position
+     * @param index
+     * @return 
+     */
+    public Item get(int index){
+        return items.get(index);
     }
 
     /**

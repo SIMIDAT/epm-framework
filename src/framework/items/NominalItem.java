@@ -32,56 +32,58 @@ import java.util.Objects;
  * @since JDK 1.8
  */
 public class NominalItem extends Item {
-   
+
     protected String value;
-    
+
     /**
      * NominalItem constructor that it does not set the growthrate
+     *
      * @param variable
-     * @param value 
+     * @param value
      */
-    public NominalItem(String variable, String value){
+    public NominalItem(String variable, String value) {
         this.variable = variable;
         this.value = value;
         this.growthRate = 0;
     }
-    
+
     /**
      * NominalItem constructor that allows to set the growth rate of an item
+     *
      * @param variable
      * @param value
-     * @param growthRate 
+     * @param growthRate
      */
-    public NominalItem(String variable, String value, double growthRate){
+    public NominalItem(String variable, String value, double growthRate) {
         this.variable = variable;
         this.value = value;
         this.growthRate = growthRate;
     }
-    
+
     /**
      * Copy constructor of NominalItem
-     * @param orig 
+     *
+     * @param orig
      */
-    public NominalItem(NominalItem orig){
+    public NominalItem(NominalItem orig) {
         this.growthRate = orig.growthRate;
         this.value = orig.value;
         this.variable = orig.variable;
     }
 
-    
     @Override
     public int compareTo(Item o) {
         // lexicographicall order
         NominalItem a = (NominalItem) o;
-        if(this.getVariable().compareTo(a.getVariable()) == 0){
-            return this.getVariable().compareTo(a.getVariable());
-        } else {
+        if (this.getVariable().compareTo(a.getVariable()) == 0) {
             return this.getValue().compareTo(a.getValue());
+        } else {
+            return this.getVariable().compareTo(a.getVariable());
         }
     }
 
     @Override
-    
+
     public boolean equals(Object other) {
         NominalItem o = (NominalItem) other;
         return this.getVariable().equals(o.getVariable()) && this.getValue().equals(o.getValue());
@@ -95,8 +97,6 @@ public class NominalItem extends Item {
         return hash;
     }
 
-   
-
     @Override
     public String toString() {
         return this.getVariable() + " = " + this.getValue();
@@ -104,7 +104,11 @@ public class NominalItem extends Item {
 
     @Override
     public boolean covers(Item itemInstance) {
-        return this.equals(itemInstance);
+        if (itemInstance instanceof NominalItem) {
+            return this.equals(itemInstance);
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -113,5 +117,5 @@ public class NominalItem extends Item {
     public String getValue() {
         return value;
     }
-    
+
 }

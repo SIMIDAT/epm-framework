@@ -33,40 +33,42 @@ public class NumericItem extends Item {
 
     protected double value;
     protected double alpha;
-    
+
     /**
      * Constructor of NumericItem without growthrate
+     *
      * @param variable
      * @param value
-     * @param alpha 
+     * @param alpha
      */
-    public NumericItem(String variable, double value, double alpha){
+    public NumericItem(String variable, double value, double alpha) {
         super.variable = variable;
         this.value = value;
         this.alpha = alpha;
         super.growthRate = 0;
     }
-    
-    
+
     /**
      * Constructor of NumericItem with growthRate
+     *
      * @param variable
      * @param value
      * @param alpha
-     * @param growthRate 
+     * @param growthRate
      */
-    public NumericItem(String variable, double value, double alpha, double growthRate){
+    public NumericItem(String variable, double value, double alpha, double growthRate) {
         super.variable = variable;
         this.value = value;
         this.alpha = alpha;
         super.growthRate = growthRate;
     }
-    
+
     /**
      * Copy constructor
-     * @param orig 
+     *
+     * @param orig
      */
-    public NumericItem(NumericItem orig){
+    public NumericItem(NumericItem orig) {
         super.variable = orig.variable;
         super.growthRate = orig.growthRate;
         this.value = orig.value;
@@ -105,10 +107,14 @@ public class NumericItem extends Item {
 
     @Override
     public boolean covers(Item itemInstance) {
+        if (!(itemInstance instanceof NumericItem)) {
+            return false;
+        }
+
         NumericItem other = (NumericItem) itemInstance;
         double minBound = this.getValue() - getAlpha();
         double maxBound = this.getValue() + getAlpha();
-        
+
         return other.getValue() >= minBound && other.getValue() <= maxBound;
     }
 

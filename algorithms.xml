@@ -73,6 +73,7 @@
 
     <algorithm>
         <name>iEPMiner</name>
+        <class>algorithms.iepminer.IEPMiner</class>
     </algorithm>
 
     <algorithm>
