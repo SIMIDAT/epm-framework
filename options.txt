@@ -1,1 +1,1 @@
-/home/angel/classification/chess
+/media/angel/Datos/DATASETS/classification/mushroom

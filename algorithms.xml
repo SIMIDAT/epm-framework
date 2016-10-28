@@ -35,7 +35,7 @@
         
     <algorithm>
         <name>BCEP</name>
-        <class>bcep.BCEP_Model</class>
+        <class>algorithms.bcep.BCEP_Model</class>
         <parameter>
             <name>Minimum support</name>
             <type>real</type>
@@ -58,7 +58,7 @@
 
     <algorithm>
         <name>DeEPS</name>
-        <class>deeps.DeEPS_Wrapper</class>
+        <class>algorithms.deeps.DeEPS_Wrapper</class>
         <parameter>
             <name>ALPHA</name>
             <type>real</type>
@@ -72,8 +72,12 @@
 
 
     <algorithm>
+        <name>iEPMiner</name>
+    </algorithm>
+
+    <algorithm>
         <name>Tree-based JEP-C</name>
-        <class>tree_based_jep.TreeBasedJEP</class>
+        <class>algorithms.tree_based_jep.TreeBasedJEP</class>
         <parameter>
             <name>Ordering</name>
             <type>nominal</type>
@@ -115,13 +119,14 @@
     </algorithm>
 
 
+    
 
-
-
+<!--
     <algorithm>
         <name>DGPC</name>
     </algorithm>
-        
+-->
+
     <algorithm>
         <name>EvAEP</name>
         <class>evaep.EvAEP</class>
@@ -172,6 +177,11 @@
             <default>0.01</default>
         </parameter>
     </algorithm>
+    
+    <algorithm>
+        <name>EFEP-MOEA</name>
+    </algorithm>
+    
 </document>
 
 
