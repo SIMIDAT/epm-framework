@@ -111,19 +111,21 @@ public class Utils {
         data.setAttributesAsNonStatic();
         Attribute[] inputAttributes = data.getAttributeDefinitions().getInputAttributes();
         Attribute outputAttributes = data.getAttributeDefinitions().getOutputAttribute(0);
-        int[][] confusionMatrices = new int[model.getPatterns().size()][5];
+        int[][] confusionMatrices = new int[model.getPatterns().size()][6];
         for (int i = 0; i < model.getPatterns().size(); i++) {
             int tp = 0;
             int tn = 0;
             int fp = 0;
             int fn = 0;
             // for each instance
+            int examplesClass = 0;
             for (int j = 0; j < data.getNumInstances(); j++) {
                 // If the pattern covers the example
                 if (model.getPatterns().get(i).covers(data.getInstance(j), inputAttributes)) {
 
                     if (model.getPatterns().get(i).getClase() == outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
                         tp++;
+                        examplesClass++;
                     } else {
                         fp++;
                     }
@@ -131,6 +133,7 @@ public class Utils {
                     tn++;
                 } else {
                     fn++;
+                    examplesClass++;
                 }
 
             }
@@ -140,6 +143,7 @@ public class Utils {
             confusionMatrices[i][2] = fp;
             confusionMatrices[i][3] = fn;
             confusionMatrices[i][4] = model.getPatterns().get(i).getItems().size();
+            confusionMatrices[i][5] = examplesClass;
         }
 
         ArrayList<HashMap<String, Double>> qms = new ArrayList<>();
@@ -161,7 +165,12 @@ public class Utils {
             } else {
                 wracc = ((p + n) / P_N) * ((p / (p + n)) - (P / P_N));
             }
-
+            // Normalize WRACC
+            double div = ((Integer) confusionMatrices[i][5]).doubleValue() / ((Integer) data.getNumInstances()).doubleValue();
+            double minWRACC = (1 - div) * (0 - div);
+            double maxWRACC = (div) * (1 - div);
+            wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
+            
             // CONF
             double conf;
             if ((p + n) == 0) {
