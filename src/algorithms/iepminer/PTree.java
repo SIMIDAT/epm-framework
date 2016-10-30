@@ -124,8 +124,8 @@ public class PTree {
             PTree newNode = null;
             boolean exist = false;
             // Look on node's children for this item
-            for(int i = 0; i < node.childrens.size() && !exist; i++){
-                if(node.childrens.get(i).equals(new PTree(actual, false))){
+            for (int i = 0; i < node.childrens.size() && !exist; i++) {
+                if (node.childrens.get(i).equals(new PTree(actual, false))) {
                     exist = true;
                     index = i;
                 }
@@ -142,9 +142,9 @@ public class PTree {
                 // Adds the node in the tree
                 node.childrens.add(newNode);
                 // Sort the childrens according to the order
-                node.childrens.sort((PTree o1, PTree o2) -> {
-                    return o1.getItem().compareTo(o2.getItem());
-                });
+//                node.childrens.sort((PTree o1, PTree o2) -> {
+//                    return o1.getItem().compareTo(o2.getItem());
+//                });
                 newNodeInserted = true;
                 index = node.childrens.indexOf(newNode);
             } else {
@@ -156,7 +156,7 @@ public class PTree {
                     node.childrens.get(index).countD2++;
                 }
             }
-            
+
             // look if the item exist in the header table
             if (headerTable.contains(new HeaderTableEntry(actual, null))) {
                 // if exists, increment the global counts
@@ -233,4 +233,31 @@ public class PTree {
         this.node_link = node_link;
     }
 
+    
+    
+    /**
+     * Removes all subtree of this given node.
+     */
+    public void clear() {
+        clear(this);
+    }
+    
+    
+    /**
+     * Recursive function to remove all the subtree of this given node
+     * @param node 
+     */
+    private void clear(PTree node) {
+        // Go down to a leaf node.
+        if (!node.childrens.isEmpty()) {
+           for(int i = 0; i < node.childrens.size(); i++){
+               clear(node.childrens.get(i));
+           }
+        }
+        node.childrens.clear();
+    }
+
+    
+    
+    
 }

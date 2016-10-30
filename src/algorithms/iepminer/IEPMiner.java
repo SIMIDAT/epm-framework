@@ -42,16 +42,22 @@ public class IEPMiner extends Model {
 
     private PTree root;
     private ArrayList<Pattern> trainingInstances;
+    private int minimumSupport;
+    private double minimumGrowthRate;
+    private double minimumChiSquared;
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
-        root = new PTree(null, true);
         PTree.headerTable = new ArrayList<>();
         int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
         trainingInstances = new ArrayList<>();
+
+        // Mine patterns for each class
         for (int i = 0; i < numClasses; i++) {
             // gets the training instances
+            trainingInstances.clear();
             root = new PTree(null, true);
+
             for (Instance inst : training.getInstances()) {
                 Pattern p = new Pattern(new ArrayList<Item>(), inst.getOutputNominalValuesInt(0) == i ? 0 : 1);
                 for (int j = 0; j < training.getAttributeDefinitions().getInputNumAttributes(); j++) {
@@ -60,11 +66,98 @@ public class IEPMiner extends Model {
                 trainingInstances.add(p);
             }
             long t_ini = System.currentTimeMillis();
-            for(Pattern p : trainingInstances){
+            for (Pattern p : trainingInstances) {
                 root.insertTree(p);
             }
-            System.out.println("Time to build the tree: " + (System.currentTimeMillis() - t_ini) / 1000f);
+            System.out.println("Time to build the tree: " + (System.currentTimeMillis() - t_ini) / 1000f + " seconds.");
 
         }
+    }
+
+    /**
+     * It returns whether the given pattern is an iEP for the mining process.
+     * NOTE: It does not check condition 3 and 4 !
+     *
+     * @param pattern The pattern to check
+     * @param supp The support of the given pattern (i.e. the number of
+     * instances in the class we are looking for patterns)
+     * @param gr The growht rate of the pattern
+     * @return
+     */
+    public boolean is_iEP(int supp, double gr) {
+        if (supp < minimumSupport) { // Condition 1
+            return false;
+        }
+        if (gr < minimumGrowthRate) { // Condition 2
+            return false;
+        }
+        return true;
+    }
+    
+    
+    /**
+     * Calculates the chi-squared value and compares if the value obtained is greater than the given chi-squeared threshold.
+     * @param Y A vector with the counts in D1 and D2, respectively.
+     * @param X A vector with the counts in D1 and D2
+     * @return {@code true} is passes the test, {@code false} elsewhere.
+     */
+    public boolean chi(int[] Y, int[] X){
+        if(Y.length != 2 || X.length != 2) return false;
+        
+        float observedTable[][] = new float[2][2];
+        float expectedTable[][] = new float[2][2];
+        float totalSum = Y[0] + Y[1] + X[0] + X[1];
+        observedTable[0][0] = Y[0];
+        observedTable[0][1] = X[0];
+        observedTable[1][0] = Y[1];
+        observedTable[1][1] = X[1];
+        for(int i = 0; i < 2; i++){
+            for(int j = 0; j < 2; j++){
+                expectedTable[i][j] = Math.round(((observedTable[0][j] + observedTable[1][j]) * (observedTable[i][0] + observedTable[i][1])) / totalSum);
+            }
+        }
+        
+        float chiValue = 0;
+        for(int i = 0; i < 2; i++){
+            for(int j = 0; j < 2; j++){
+                chiValue += Math.pow(observedTable[i][j] - expectedTable[i][j], 2) / expectedTable[i][j];
+            }
+        }
+        
+        return chiValue > minimumChiSquared;
+    }
+    
+    
+    /**
+     * Public function to mine root tree
+     * @param root 
+     */
+    public void mineTree(PTree root, int clase){
+        ArrayList<Pattern> patternSet = new ArrayList<>();
+        for(int i = PTree.headerTable.size() - 1; i >= 0; i--){
+            ArrayList<Item> its = new ArrayList<>();
+            its.add(PTree.headerTable.get(i).item);
+            Pattern beta = new Pattern(its, clase);
+            // gets the counts for D1 and D2 for the header table to get support and gr.
+            double D1 = ((Integer) PTree.headerTable.get(i).count1).doubleValue();
+            double D2 = ((Integer) PTree.headerTable.get(i).count2).doubleValue();
+            if(is_iEP(PTree.headerTable.get(i).count1, D1 / D2)){
+                patternSet.add(beta);
+            }
+            
+            mineSubTree(beta);
+        }
+    }
+    
+    
+    /**
+     * Private and recursive function to mine the tree
+     * @param node 
+     */
+    private void mineSubTree(Pattern beta){
+        Item k = beta.get(beta.length() -1);
+        int positionItem = PTree.headerTable.indexOf(new HeaderTableEntry(k, null));
+        // Adjust the node links of k's subtrees and accumulate counts.
+        //PTree.headerTable.get(positionItem).headNodeLink;
     }
 }

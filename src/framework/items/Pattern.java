@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 import keel.Dataset.Attribute;
+import keel.Dataset.Attributes;
 import keel.Dataset.Instance;
 
 /**
@@ -296,6 +297,26 @@ public class Pattern implements Serializable {
      */
     public void setItems(ArrayList<Item> items) {
         this.items = items;
+    }
+    
+    /**
+     * Returns the number of items in the pattern
+     * @return 
+     */
+    public int length(){
+        return items.size();
+    }
+    
+    
+    @Override
+    public String toString(){
+        String result = "IF ";
+        for(int i = 0; i < items.size() -1; i++){
+            result += items.get(i).toString() + " AND ";
+        }
+        
+        result += items.get(items.size() -1).toString() + " THEN " + Attributes.getOutputAttribute(0).getNominalValue(clase);  
+        return result;
     }
 
 }
