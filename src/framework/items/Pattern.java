@@ -133,7 +133,7 @@ public class Pattern implements Serializable {
     public boolean covers(Instance instance, Attribute[] inputAttrs) {
         for (Item item : this.items) {
             boolean covered = false;
-            
+
             for (int i = 0; i < inputAttrs.length; i++) {
                 Item it;
                 if (inputAttrs[i].getType() == Attribute.NOMINAL) {
@@ -141,7 +141,7 @@ public class Pattern implements Serializable {
                 } else {
                     it = new NumericItem(inputAttrs[i].getName(), instance.getInputRealValues(i), 0);
                 }
-                
+
                 if (item.covers(it)) {
                     covered = true;
                     break;
@@ -233,13 +233,17 @@ public class Pattern implements Serializable {
     public boolean drop(Item it) {
         return items.remove(it);
     }
-    
+    public void drop(int i) {
+        items.remove(i);
+    }
+
     /**
      * Returns the item at the {@code index} position
+     *
      * @param index
-     * @return 
+     * @return
      */
-    public Item get(int index){
+    public Item get(int index) {
         return items.get(index);
     }
 
@@ -298,25 +302,35 @@ public class Pattern implements Serializable {
     public void setItems(ArrayList<Item> items) {
         this.items = items;
     }
-    
+
     /**
      * Returns the number of items in the pattern
-     * @return 
+     *
+     * @return
      */
-    public int length(){
+    public int length() {
         return items.size();
     }
-    
-    
+
     @Override
-    public String toString(){
+    public String toString() {
+        if(items.isEmpty()) return "Empty pattern";
         String result = "IF ";
-        for(int i = 0; i < items.size() -1; i++){
+        for (int i = 0; i < items.size() - 1; i++) {
             result += items.get(i).toString() + " AND ";
         }
-        
-        result += items.get(items.size() -1).toString() + " THEN " + Attributes.getOutputAttribute(0).getNominalValue(clase);  
+
+        result += items.get(items.size() - 1).toString() + " THEN " + Attributes.getOutputAttribute(0).getNominalValue(clase);
         return result;
+    }
+    
+    /**
+     * Gets the given training measure
+     * @param value
+     * @return 
+     */
+    public double getTraMeasure(String value) {
+        return tra_measures.get(value);
     }
 
 }

@@ -104,7 +104,7 @@ public class PTree {
         // Sorts the items in the pattern by lexycographicall order 
         // Rememeber that all items are of class NominalItem.
         pat.getItems().sort((o1, o2) -> {
-            return o1.compareTo(o2);
+            return -1 * o1.compareTo(o2);
         });
         insertTree(pat, this);
     }
@@ -118,7 +118,7 @@ public class PTree {
     private void insertTree(Pattern pat, PTree node) {
         if (!pat.getItems().isEmpty()) {
             Pattern p = (Pattern) pat.clone();
-            Item actual = p.get(0);
+            Item actual = p.get(p.length()-1);
             int index = -1;
             boolean newNodeInserted = false;
             PTree newNode = null;
@@ -142,9 +142,9 @@ public class PTree {
                 // Adds the node in the tree
                 node.childrens.add(newNode);
                 // Sort the childrens according to the order
-//                node.childrens.sort((PTree o1, PTree o2) -> {
-//                    return o1.getItem().compareTo(o2.getItem());
-//                });
+                node.childrens.sort((PTree o1, PTree o2) -> {
+                    return o1.getItem().compareTo(o2.getItem());
+                });
                 newNodeInserted = true;
                 index = node.childrens.indexOf(newNode);
             } else {
@@ -171,12 +171,14 @@ public class PTree {
                     headerTable.get(ind).addNodeLink(newNode);
                 }
             } else {
-                HeaderTableEntry entry = new HeaderTableEntry(actual, node);
-                if (p.getClase() == 0) {
-                    entry.count1++;
+                HeaderTableEntry entry;
+                if(newNodeInserted){
+                    entry = new HeaderTableEntry(actual, newNode);
                 } else {
-                    entry.count2++;
+                    entry = new HeaderTableEntry(actual, node);
                 }
+               entry.count1 += newNode.countD1;
+               entry.count2 += newNode.countD2;
                 // Add the entry in the table
                 headerTable.add(entry);
                 //Sort the table
@@ -186,7 +188,7 @@ public class PTree {
             }
 
             // Performs the recursive call removing the item of the pattern
-            p.getItems().remove(0);
+            p.getItems().remove(p.length() - 1);
             insertTree(p, node.childrens.get(index));
         }
     }
@@ -257,7 +259,31 @@ public class PTree {
         node.childrens.clear();
     }
 
+    public PTree getChildren(int pos){
+        return childrens.get(pos);
+    }
     
+    public int numChildren(){
+        return childrens.size();
+    }
     
+    /**
+     * Sets the nodes from {@code startIndex +1 } untill the end of the header table with counts equal to 0 and null node-links
+     * @param startIndex 
+     */
+    public static void cleanLinks(int startIndex){
+        if(startIndex + 1 < headerTable.size()){
+            for(int i = startIndex + 1; i < headerTable.size(); i++){
+                // remove all node links for this item
+                PTree aux = headerTable.get(i).headNodeLink;
+                while(aux != null){
+                    PTree aux2 = aux.node_link;
+                    aux.node_link = null;
+                    aux = aux2;
+                }
+                headerTable.set(i, new HeaderTableEntry(headerTable.get(i).item, null));
+            }
+        }
+    }
     
 }

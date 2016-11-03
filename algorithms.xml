@@ -74,6 +74,34 @@
     <algorithm>
         <name>iEPMiner</name>
         <class>algorithms.iepminer.IEPMiner</class>
+        <parameter>
+            <name>Minimum Support</name>
+            <type>real</type>
+            <domain>
+                <min>0</min>
+                <max>1</max>
+            </domain>
+            <default>0.01</default>
+        </parameter>
+        <parameter>
+             <name>Minimum Growth Rate</name>
+            <type>real</type>
+            <domain>
+                <min>0</min>
+                <max>10000000</max>
+            </domain>
+            <default>2</default>
+        </parameter>
+         <parameter>
+             <name>Minimum Chi-Squared</name>
+            <type>real</type>
+            <domain>
+                <min>0</min>
+                <max>10000</max>
+            </domain>
+            <default>3.84</default>
+        </parameter>
+        
     </algorithm>
 
     <algorithm>

@@ -49,7 +49,7 @@ public abstract class Item implements Comparable<Item>, Serializable {
     public int hashCode() {
         int hash = 7;
         hash = 17 * hash + Objects.hashCode(this.getVariable());
-        hash = 17 * hash + (int) (Double.doubleToLongBits(this.growthRate) ^ (Double.doubleToLongBits(this.growthRate) >>> 32));
+        //hash = 17 * hash + (int) (Double.doubleToLongBits(this.growthRate) ^ (Double.doubleToLongBits(this.growthRate) >>> 32));
         return hash;
     }
 

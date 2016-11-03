@@ -53,12 +53,23 @@ public class HeaderTableEntry {
      * The first node in the tree that contains the item.
      */
     public PTree headNodeLink;
-
+    
+    /**
+     * The last node in the tree that contains the item
+     */
+    public PTree tailNodeLink;
+    
+    /** 
+     * Constructor of an entry of the header table with its counts set to 0
+     * @param item The item to add
+     * @param node The first node that contains this item
+     */
     public HeaderTableEntry(Item item, PTree node) {
         this.item = item;
         this.count1 = 0;
         this.count2 = 0;
         this.headNodeLink = node;
+        this.tailNodeLink = node;
     }
 
     @Override
@@ -84,12 +95,20 @@ public class HeaderTableEntry {
      *
      * @param node
      */
-    public void addNodeLink(PTree node) {
+    public void addNodeLink(PTree node) {  
         PTree aux = headNodeLink;
-        while(aux.getNode_link() != null){
-            aux = aux.getNode_link();
+        if (aux != null) {
+            /*
+            while (aux.getNode_link() != null) {
+                aux = aux.getNode_link();
+            }
+
+            aux.setNode_link(node);*/
+            tailNodeLink.setNode_link(node);
+            tailNodeLink = node;
+        } else {
+            headNodeLink = node;
+            tailNodeLink = node;
         }
-        
-        aux.setNode_link(node);
     }
 }
