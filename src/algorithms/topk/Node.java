@@ -71,7 +71,10 @@ public class Node {
     
     public Object clone(){
         Node a = new Node();
-        a.items = (ArrayList<Entry>) this.getItems().clone();
+        a.items = new ArrayList<>();
+        for(int i = 0; i < this.itemNumber; i++){
+           a.items.add((Entry) this.items.get(i).clone());
+        }
         a.itemNumber = this.getItemNumber();
         return a;
     }
@@ -142,23 +145,22 @@ public class Node {
      * parent. Else, the function would cause an stack overflow.
      *
      * @param T1
-     * @param T2
      * @param supportRatio
      */
-    public void merge(Node T1, Node T2, HashMap<Item, Double> supportRatio) {
+    public void merge(Node T1, HashMap<Item, Double> supportRatio) {
         // for each T1.item do
         for (Entry item : T1.getItems()) {
             int pos = -1;
             // search T2 for T2.items[j] = T1.items[i]
-            if (T2.getItems().contains(item)) {
+            if (this.getItems().contains(item)) {
                 // is T2.items[j] found
-                pos = T2.getItems().indexOf(item);
-                T2.getItems().get(pos).setCountD1(T2.getItems().get(pos).getCountD1() + item.getCountD1());
-                T2.getItems().get(pos).setCountD2(T2.getItems().get(pos).getCountD2() + item.getCountD2());
+                pos = this.getItems().indexOf(item);
+                this.getItems().get(pos).setCountD1(this.getItems().get(pos).getCountD1() + item.getCountD1());
+                this.getItems().get(pos).setCountD2(this.getItems().get(pos).getCountD2() + item.getCountD2());
             } else {
                 // Insert T1.items[i] with it counts and child at the appropiate place of T2 obeyin the order
-                T2.getItems().add((Entry) item.clone());
-                T2.getItems().sort((o1, o2) -> {
+                this.getItems().add((Entry) item.clone());
+                this.getItems().sort((o1, o2) -> {
                     double gr1 = supportRatio.get(o1.getItem());
                     double gr2 = supportRatio.get(o2.getItem());
                     if (gr1 > gr2) {
@@ -169,18 +171,18 @@ public class Node {
                         return 0;
                     }
                 });
-                T2.itemNumber++;
-                pos = T2.getItems().indexOf(item);
+                this.itemNumber++;
+                pos = this.getItems().indexOf(item);
             }
             // If T1.items subtree is not empty
             if(item.getChild() != null){
                 // If T2.items[j] subtree is empty
-                if(T2.getItems().get(pos).getChild() == null){
-                    // create a new node as T2.items[j] subtree
-                    T2.getItems().get(pos).setChild(new Node());
+                if(this.getItems().get(pos).getChild() == null){
+                    // create a new node as this.items[j] subtree
+                    this.getItems().get(pos).setChild(new Node());
                 }
                 // recursive call
-                merge(item.getChild(), T2.getItems().get(pos).getChild(), supportRatio);
+                 this.items.get(pos).getChild().merge(item.getChild(), supportRatio);
             }
         }
     }

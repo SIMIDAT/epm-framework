@@ -21,51 +21,58 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package algorithms.topk;
 
 import framework.items.Item;
 
 /**
- *  Class to represent an entry on a CP-Tree node.
- * 
+ * Class to represent an entry on a CP-Tree node.
+ *
  * @author Ángel M. García-Vico
  * @version 1.0
  * @since JDK 1.8
  */
 public class Entry {
-    
+
     private Item item;
     private int countD1;
     private int countD2;
     private Node child;
-    
-    public Entry(Item item, int clas){
+
+    public Entry(Item item, int clas) {
         this.item = item;
         countD1 = countD2 = 0;
         child = null;
-        if(clas == 0) countD1++; else countD2++;
+        if (clas == 0) {
+            countD1++;
+        } else {
+            countD2++;
+        }
     }
 
-    
-    public boolean equals(Object other){
-        if(other instanceof Entry)
+    public boolean equals(Object other) {
+        if (other instanceof Entry) {
             return this.item.equals(((Entry) other).item);
-        else if(other instanceof Item)
+        } else if (other instanceof Item) {
             return this.item.equals(other);
-        
+        }
+
         return false;
     }
-    
+
     @Override
-    public Object clone(){
+    public Object clone() {
         Entry a = new Entry(this.item, 0);
         a.countD1 = this.countD1;
         a.countD2 = this.countD2;
-        a.child = (Node) this.child.clone();
+        if (child != null) {
+            a.child = (Node) this.child.clone();
+        } else {
+            this.child = null;
+        }
         return a;
     }
-    
+
     /**
      * @return the item
      */

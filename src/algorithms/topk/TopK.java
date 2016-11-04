@@ -158,9 +158,11 @@ public class TopK extends Model {
             } catch (Exception e) {
                 System.out.println("ALARMAAAAAAAA");
                 System.out.println(e);
+                e.printStackTrace();
                 System.exit(-1);
             }
             // Reset counter values
+            
             collectedNegPatterns = collectedPosPatterns = minNegCount = minPosCount = 0;
             itemCountsForD1.clear();
             itemCountsForD2.clear();
@@ -232,11 +234,11 @@ public class TopK extends Model {
 
     public void mineTree(Node node, Pattern alpha) {
         // for all i in t.items
-        for (int j = 0; j < node.getItemNumber(); j++) {
+        for (int j = 0; j < node.getItems().size(); j++) {
             Entry i = node.getItems().get(j);
             // if the subtree is not empty the merge
             if (i.getChild() != null) {
-                node.merge(i.getChild(), node, supportRatioPerItem);
+                node.merge(i.getChild(), supportRatioPerItem);
             }
             Pattern beta = alpha.clone();
             beta.add(i.getItem());
@@ -247,7 +249,7 @@ public class TopK extends Model {
                 HashMap<String, Double> m = new HashMap<>();
                 m.put("Supp", ((Integer) i.getCountD2()).doubleValue());
                 beta.setTra_measures(m);
-                topK_NegPatterns.add(beta);
+                topK_NegPatterns.add(beta.clone());
                 collectedNegPatterns++;
                 if (collectedNegPatterns >= k) {
                     // raise-count procedure
@@ -256,14 +258,14 @@ public class TopK extends Model {
             } else if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount, true)) {
                 beta.setClase(0);
                 HashMap<String, Double> m = new HashMap<>();
-                m.put("Supp", ((Integer) i.getCountD2()).doubleValue());
+                m.put("Supp", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
-                topK_PosPatterns.add(beta);
+                topK_PosPatterns.add(beta.clone());
                 collectedPosPatterns++;
                 if (collectedPosPatterns >= k) {
                     minPosCount = getPatternCount(topK_PosPatterns.peek(), true);
                 }
-            } else if (visitSubTree(beta)) {
+            } else if (visitSubTree(beta) && i.getChild() != null) {
                 mineTree(i.getChild(), beta);
             }
         }
