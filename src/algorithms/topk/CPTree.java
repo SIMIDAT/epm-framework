@@ -66,5 +66,9 @@ public class CPTree {
     public Node getRoot() {
         return root;
     }
+    
+    public void clear(){
+        root = new Node();
+    }
 
 }
