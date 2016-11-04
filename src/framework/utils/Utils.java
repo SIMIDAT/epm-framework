@@ -170,7 +170,7 @@ public class Utils {
             double minWRACC = (1 - div) * (0 - div);
             double maxWRACC = (div) * (1 - div);
             wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
-            
+
             // CONF
             double conf;
             if ((p + n) == 0) {
@@ -293,8 +293,7 @@ public class Utils {
                     return 0;
                 }
             } else // If it is FPR, then the less, the better
-            {
-                if (o1.get(by) > o2.get(by)) {
+             if (o1.get(by) > o2.get(by)) {
                     return -1;
                 } else if (o1.get(by) < o2.get(by)) {
                     return 1;
@@ -305,7 +304,6 @@ public class Utils {
                 } else {
                     return 0;
                 }
-            }
         });
 
         // get the best n rules and return
@@ -358,8 +356,7 @@ public class Utils {
                         return 0;
                     }
                 } else // If it is FPR, then the less, the better
-                {
-                    if (o1.get(by) > o2.get(by)) {
+                 if (o1.get(by) > o2.get(by)) {
                         return -1;
                     } else if (o1.get(by) < o2.get(by)) {
                         return 1;
@@ -370,7 +367,6 @@ public class Utils {
                     } else {
                         return 0;
                     }
-                }
             });
         }
 
@@ -1032,7 +1028,6 @@ public class Utils {
 //
 //        return result;
 //    }
-
     /**
      * Returns the index of the max element of an array, or the first occurrence
      * of the max in this array in case that there exists mor than one maximum
@@ -1111,16 +1106,35 @@ public class Utils {
 
     public static framework.items.Pattern castToNewPatternFormat(algorithms.bcep.Pattern oldPattern) {
         ArrayList<framework.items.Item> item = new ArrayList<>();
-        for(algorithms.bcep.Item it : oldPattern.getItems()){
-            if(it.getType() == algorithms.bcep.Item.NOMINAL_ITEM){
+        for (algorithms.bcep.Item it : oldPattern.getItems()) {
+            if (it.getType() == algorithms.bcep.Item.NOMINAL_ITEM) {
                 item.add(new NominalItem(it.getVariable(), it.getValue()));
-            } else if (it.getType() == algorithms.bcep.Item.REAL_ITEM){   
+            } else if (it.getType() == algorithms.bcep.Item.REAL_ITEM) {
                 item.add(new NumericItem(it.getVariable(), ((Float) it.getValueNum()).doubleValue(), oldPattern.getALPHA()));
             } else {
                 item.add(new FuzzyItem(it.getVariable(), it.getValueFuzzy()));
             }
         }
-        
+
         return new framework.items.Pattern(item, oldPattern.getClase());
+    }
+
+    public static ArrayList<Pattern> generatePatterns(InstanceSet set, int clas) {
+        ArrayList<Pattern> trainingInstances = new ArrayList<>();
+        for (Instance inst : set.getInstances()) {
+            Pattern p = new Pattern(new ArrayList<Item>(), inst.getOutputNominalValuesInt(0) == clas ? 0 : 1);
+            for (int j = 0; j < set.getAttributeDefinitions().getInputNumAttributes(); j++) {
+                if (!inst.getInputMissingValues(j)) {
+                    if(set.getAttributeDefinitions().getAttribute(j).getType() == Attribute.NOMINAL){
+                    p.add(new NominalItem(set.getAttributeDefinitions().getAttribute(j).getName(), inst.getInputNominalValues(j)));
+                    } else {
+                        p.add(new NumericItem(set.getAttributeDefinitions().getAttribute(j).getName(), inst.getInputRealValues(j), 0.1));
+                    }
+                }
+            }
+            trainingInstances.add(p);
+        }
+        
+        return trainingInstances;
     }
 }

@@ -1,1 +1,1 @@
-/media/angel/Datos/Descargas
+/home/angel/KEEL DATASETS/mushroom

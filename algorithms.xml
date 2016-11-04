@@ -145,6 +145,7 @@
 
     <algorithm>
         <name>Top-k minimal SJEPs</name>
+        <class>algorithms.topk.TopK</class>
     </algorithm>
 
 

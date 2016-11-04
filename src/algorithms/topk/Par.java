@@ -21,50 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package algorithms.topk;
 
-import framework.items.Item;
-import framework.items.Pattern;
-import java.util.HashMap;
-
 /**
- * CP-Tree data structure that allows to store information about the counts of a
- * two-class problem, it needs the information about the support-ratio for each
- * item that appear in the dataset to perform the sorting of the nodes
  *
- * @author Ángel M. García Vico <agvico@ujaen.es>
+ * @author Ángel M. García-Vico
  * @version 1.0
  * @since JDK 1.8
  */
-public class CPTree {
-
-    /**
-     * The root of the CPTree
-     */
-    private Node root;
-
-    /**
-     * Default constructor. Creates an empty root node.
-     */
-    public CPTree() {
-        root = new Node();
-    }
-
-    /**
-     * Adds this pattern on the CP-Tree. Updating the tree and its counts.
-     *
-     * @param pattern
-     * @param supportRatio The support-ratio values for each item in the dataset to perform sorting of nodes
-     */
-    public void insert(Pattern pattern, HashMap<Item, Double> supportRatio) {
-        getRoot().insert(pattern, getRoot(), supportRatio);
-    }
-
-    /**
-     * @return the root
-     */
-    public Node getRoot() {
-        return root;
-    }
-
+public class Par {
+    public int D1 = 0;
+    public int D2 = 0;
 }

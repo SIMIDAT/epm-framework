@@ -26,9 +26,11 @@ package algorithms.topk;
 import framework.items.Item;
 import framework.items.Pattern;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
- *
+ * Class that represent a node of the CP-Tree
+ * 
  * @author Ángel M. García Vico <agvico@ujaen.es>
  * @version 1.0
  * @since JDK 1.8
@@ -36,26 +38,16 @@ import java.util.ArrayList;
 public class Node {
 
     /**
-     * The item that represents this node
+     * The number of items in the node
      */
-    private Item item;
+    private int itemNumber;
 
     /**
-     * The number of instances for class 1 reaching this node from the root
+     * The set of node entry. Each entry contains an item, counts for D1 and D2,
+     * and a child Node.
      */
-    private int countD1;
+    private ArrayList<Entry> items;
 
-    /**
-     * The number of instances for class 2 reaching this node from the root
-     */
-    private int countD2;
-
-    /**
-     * The node subtrees
-     */
-    private ArrayList<Node> children;
-
-    
     /**
      * Creates a node with the given item, and start to 1 the counts of the
      * given class
@@ -64,59 +56,86 @@ public class Node {
      * @param clas
      */
     public Node(Item item, int clas) {
-        this.item = item;
-        if (clas == 0) {
-            this.countD1 = 1;
-            this.countD2 = 0;
-        } else {
-            this.countD1 = 0;
-            this.countD2 = 1;
-        }
-        this.children = new ArrayList<>();
+        this.items = new ArrayList<>();
+        this.items.add(new Entry(item, clas));
+        this.itemNumber = 1;
     }
 
-    @Override
+    /**
+     * Default constructor creates an empty node
+     */
+    public Node() {
+        this.items = new ArrayList<>();
+        this.itemNumber = 0;
+    }
+    
+    public Object clone(){
+        Node a = new Node();
+        a.items = (ArrayList<Entry>) this.getItems().clone();
+        a.itemNumber = this.getItemNumber();
+        return a;
+    }
+
+    /* @Override
     public boolean equals(Object other) {
         Node n = (Node) other;
         return n.item.equals(this.item);
-    }
-
-    
+    }*/
     /**
      * Adds the given pattern recursively on the tree and sum its counts
      *
      * @param p The pattern ordered in inverse order than the ordering given by
-     * < operator. 
-     * @param n The node where pattern will be inserted
+     * < operator. @pa ram n The node where pattern will be inserted
      */
-    public void insert(Pattern p, Node n) {
-        if (!p.getItems().isEmpty()) {
-            Item it = p.get(p.length() - 1);
+    public void insert(Pattern p, Node n, HashMap<Item, Double> supportRatio) {
 
-            if (n.children.contains(n)) {
-                // get the node and sum it counts
-                if (p.getClase() == 0) {
-                    n.children.get(n.children.indexOf(it)).countD1++;
+        Item it = p.get(p.length() - 1);
+        Entry check = new Entry(it, 0);
+        int index = 0;
+        if (n.getItems().contains(check)) {
+            // get the node and sum it counts
+            index = n.getItems().indexOf(check);
+        } else {
+            // Insert the item
+            n.getItems().add(new Entry(it, p.getClase()));
+            // incremen itemNumber
+            n.itemNumber++;
+            // sorts items and counts by support-ratio descending order
+            n.getItems().sort((o1, o2) -> {
+                double gr1 = supportRatio.get(o1.getItem());
+                double gr2 = supportRatio.get(o2.getItem());
+                if (gr1 > gr2) {
+                    return -1;
+                } else if (gr1 < gr2) {
+                    return 1;
                 } else {
-                    n.children.get(n.children.indexOf(it)).countD1++;
+                    return 0;
                 }
-            } else {
-                // Create the new node
-                Node newNode = new Node(it, p.getClase());
-                // Insert in the children of this node
-                n.children.add(newNode);
-                // sort by support-ratio descending order (TO-DO)
-                n.children.sort(null);
-            }
-
-            // Go down recursively
-            Pattern a = p.clone();
-            a.getItems().remove(a.length() - 1);
-            insert(a, n.children.get(n.children.indexOf(it)));
+            });
+            index = n.getItems().indexOf(check);
         }
+
+        // sum counts in D1 or D2
+        if (p.getClase() == 0) {
+            n.getItems().get(index).setCountD1(n.getItems().get(index).getCountD1() + 1);
+        } else {
+            n.getItems().get(index).setCountD2(n.getItems().get(index).getCountD2() + 1);
+        }
+
+        // Go down recursively
+        Pattern a = p.clone();
+        a.getItems().remove(a.length() - 1);
+        if (!a.getItems().isEmpty()) {
+            if (n.getItems().get(index).getChild() == null) {
+                // create a new node if subtree is empty
+                n.getItems().get(index).setChild(new Node());
+            }
+            insert(a, n.getItems().get(index).getChild(), supportRatio);
+        }
+
     }
 
-   /**
+    /**
      * Merges T1's nodes into T2. T2 is updated(including new-node generation
      * and existing-node changes, but no nodes deletion), while T1 remains
      * unchanged. The merge must be done T1 is the subtree and T2 is T1's
@@ -124,9 +143,59 @@ public class Node {
      *
      * @param T1
      * @param T2
+     * @param supportRatio
      */
-    public void merge(Node T1, Node T2){
-         /**/ // TO-DO
+    public void merge(Node T1, Node T2, HashMap<Item, Double> supportRatio) {
+        // for each T1.item do
+        for (Entry item : T1.getItems()) {
+            int pos = -1;
+            // search T2 for T2.items[j] = T1.items[i]
+            if (T2.getItems().contains(item)) {
+                // is T2.items[j] found
+                pos = T2.getItems().indexOf(item);
+                T2.getItems().get(pos).setCountD1(T2.getItems().get(pos).getCountD1() + item.getCountD1());
+                T2.getItems().get(pos).setCountD2(T2.getItems().get(pos).getCountD2() + item.getCountD2());
+            } else {
+                // Insert T1.items[i] with it counts and child at the appropiate place of T2 obeyin the order
+                T2.getItems().add((Entry) item.clone());
+                T2.getItems().sort((o1, o2) -> {
+                    double gr1 = supportRatio.get(o1.getItem());
+                    double gr2 = supportRatio.get(o2.getItem());
+                    if (gr1 > gr2) {
+                        return -1;
+                    } else if (gr1 < gr2) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                });
+                T2.itemNumber++;
+                pos = T2.getItems().indexOf(item);
+            }
+            // If T1.items subtree is not empty
+            if(item.getChild() != null){
+                // If T2.items[j] subtree is empty
+                if(T2.getItems().get(pos).getChild() == null){
+                    // create a new node as T2.items[j] subtree
+                    T2.getItems().get(pos).setChild(new Node());
+                }
+                // recursive call
+                merge(item.getChild(), T2.getItems().get(pos).getChild(), supportRatio);
+            }
+        }
     }
-    
+
+    /**
+     * @return the itemNumber
+     */
+    public int getItemNumber() {
+        return itemNumber;
+    }
+
+    /**
+     * @return the items
+     */
+    public ArrayList<Entry> getItems() {
+        return items;
+    }
 }
