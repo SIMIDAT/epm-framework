@@ -50,6 +50,12 @@ public class Entry {
         }
     }
 
+    public Entry(Item item) {
+        this.item = item;
+        countD1 = countD2 = 0;
+        child = null;
+    }
+
     public boolean equals(Object other) {
         if (other instanceof Entry) {
             return this.item.equals(((Entry) other).item);
@@ -65,11 +71,14 @@ public class Entry {
         Entry a = new Entry(this.item, 0);
         a.countD1 = this.countD1;
         a.countD2 = this.countD2;
+        /*
         if (child != null) {
             a.child = (Node) this.child.clone();
         } else {
             this.child = null;
-        }
+        }*/
+        a.child = new Node(this.item);
+        
         return a;
     }
 

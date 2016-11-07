@@ -125,7 +125,7 @@ public class TopK extends Model {
                 return 0;
             }
         });
-        k = 10;
+        k = 30;
 
         int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
         // Mine for each class separately 

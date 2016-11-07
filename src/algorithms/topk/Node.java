@@ -62,6 +62,15 @@ public class Node {
     }
 
     /**
+     * Creates a new node with the specified item inside it with its counts equal to zero.
+     * @param item 
+     */
+    public Node(Item item){
+        this.items = new ArrayList<>();
+        this.items.add(new Entry(item));
+        this.itemNumber = 1;
+    }
+    /**
      * Default constructor creates an empty node
      */
     public Node() {
@@ -138,7 +147,7 @@ public class Node {
     }
 
     /**
-     * Merges T1's nodes into T2. T2 is updated(including new-node generation
+     * Merges T1's nodes into {@code this}. {@code this} is updated(including new-node generation
      * and existing-node changes, but no nodes deletion), while T1 remains
      * unchanged. The merge must be done T1 is the subtree and T2 is T1's
      * parent. Else, the function would cause an stack overflow.
