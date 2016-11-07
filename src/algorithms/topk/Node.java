@@ -30,7 +30,7 @@ import java.util.HashMap;
 
 /**
  * Class that represent a node of the CP-Tree
- * 
+ *
  * @author Ángel M. García Vico <agvico@ujaen.es>
  * @version 1.0
  * @since JDK 1.8
@@ -68,12 +68,12 @@ public class Node {
         this.items = new ArrayList<>();
         this.itemNumber = 0;
     }
-    
-    public Object clone(){
+
+    public Object clone() {
         Node a = new Node();
         a.items = new ArrayList<>();
-        for(int i = 0; i < this.itemNumber; i++){
-           a.items.add((Entry) this.items.get(i).clone());
+        for (int i = 0; i < this.itemNumber; i++) {
+            a.items.add((Entry) this.items.get(i).clone());
         }
         a.itemNumber = this.getItemNumber();
         return a;
@@ -98,6 +98,12 @@ public class Node {
         if (n.getItems().contains(check)) {
             // get the node and sum it counts
             index = n.getItems().indexOf(check);
+            // sum counts in D1 or D2
+            if (p.getClase() == 0) {
+                n.getItems().get(index).setCountD1(n.getItems().get(index).getCountD1() + 1);
+            } else {
+                n.getItems().get(index).setCountD2(n.getItems().get(index).getCountD2() + 1);
+            }
         } else {
             // Insert the item
             n.getItems().add(new Entry(it, p.getClase()));
@@ -116,13 +122,6 @@ public class Node {
                 }
             });
             index = n.getItems().indexOf(check);
-        }
-
-        // sum counts in D1 or D2
-        if (p.getClase() == 0) {
-            n.getItems().get(index).setCountD1(n.getItems().get(index).getCountD1() + 1);
-        } else {
-            n.getItems().get(index).setCountD2(n.getItems().get(index).getCountD2() + 1);
         }
 
         // Go down recursively
@@ -175,14 +174,14 @@ public class Node {
                 pos = this.getItems().indexOf(item);
             }
             // If T1.items subtree is not empty
-            if(item.getChild() != null){
+            if (item.getChild() != null) {
                 // If T2.items[j] subtree is empty
-                if(this.getItems().get(pos).getChild() == null){
+                if (this.getItems().get(pos).getChild() == null) {
                     // create a new node as this.items[j] subtree
                     this.getItems().get(pos).setChild(new Node());
                 }
                 // recursive call
-                 this.items.get(pos).getChild().merge(item.getChild(), supportRatio);
+                this.items.get(pos).getChild().merge(item.getChild(), supportRatio);
             }
         }
     }
