@@ -57,7 +57,7 @@ public class CPTree {
      * @param supportRatio The support-ratio values for each item in the dataset to perform sorting of nodes
      */
     public void insert(Pattern pattern, HashMap<Item, Double> supportRatio) {
-        getRoot().insert(pattern, getRoot(), supportRatio);
+        root.insert(pattern, root, supportRatio);
     }
 
     /**

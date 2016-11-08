@@ -24,6 +24,7 @@
 package algorithms.topk;
 
 import framework.items.Item;
+import framework.items.NominalItem;
 import framework.items.Pattern;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +41,7 @@ public class Node {
     /**
      * The number of items in the node
      */
-    private int itemNumber;
+    protected int itemNumber;
 
     /**
      * The set of node entry. Each entry contains an item, counts for D1 and D2,
@@ -84,7 +85,7 @@ public class Node {
         for (int i = 0; i < this.itemNumber; i++) {
             a.items.add((Entry) this.items.get(i).clone());
         }
-        a.itemNumber = this.getItemNumber();
+        a.setItemNumber(this.getItemNumber());
         return a;
     }
 
@@ -127,7 +128,7 @@ public class Node {
                 } else if (gr1 < gr2) {
                     return 1;
                 } else {
-                    return 0;
+                    return -1 * ((NominalItem) o1.getItem()).compareTo(o2.getItem());
                 }
             });
             index = n.getItems().indexOf(check);
@@ -147,7 +148,7 @@ public class Node {
     }
 
     /**
-     * Merges T1's nodes into {@code this}. {@code this} is updated(including new-node generation
+     * Merges T1's nodes into {@code this}. {@code this} is updated (including new-node generation
      * and existing-node changes, but no nodes deletion), while T1 remains
      * unchanged. The merge must be done T1 is the subtree and T2 is T1's
      * parent. Else, the function would cause an stack overflow.
@@ -157,7 +158,10 @@ public class Node {
      */
     public void merge(Node T1, HashMap<Item, Double> supportRatio) {
         // for each T1.item do
-        for (Entry item : T1.getItems()) {
+        for (int i = 0; i < T1.itemNumber; i++) {
+            Entry item = T1.getItems().get(i);
+            //item.merged = true;
+            T1.getItems().get(i).merged =true;
             int pos = -1;
             // search T2 for T2.items[j] = T1.items[i]
             if (this.getItems().contains(item)) {
@@ -176,7 +180,7 @@ public class Node {
                     } else if (gr1 < gr2) {
                         return 1;
                     } else {
-                        return 0;
+                        return -1 * ((NominalItem) o1.getItem()).compareTo(o2.getItem());
                     }
                 });
                 this.itemNumber++;
@@ -207,5 +211,12 @@ public class Node {
      */
     public ArrayList<Entry> getItems() {
         return items;
+    }
+
+    /**
+     * @param itemNumber the itemNumber to set
+     */
+    public void setItemNumber(int itemNumber) {
+        this.itemNumber = itemNumber;
     }
 }

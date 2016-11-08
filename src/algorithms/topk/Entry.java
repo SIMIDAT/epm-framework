@@ -38,6 +38,7 @@ public class Entry {
     private int countD1;
     private int countD2;
     private Node child;
+    public boolean merged = false;
 
     public Entry(Item item, int clas) {
         this.item = item;
@@ -56,6 +57,7 @@ public class Entry {
         child = null;
     }
 
+    @Override
     public boolean equals(Object other) {
         if (other instanceof Entry) {
             return this.item.equals(((Entry) other).item);
@@ -68,17 +70,28 @@ public class Entry {
 
     @Override
     public Object clone() {
-        Entry a = new Entry(this.item, 0);
+        Entry a = new Entry(this.item);
         a.countD1 = this.countD1;
         a.countD2 = this.countD2;
+        a.merged = false;
         /*
         if (child != null) {
             a.child = (Node) this.child.clone();
         } else {
             this.child = null;
         }*/
-        a.child = new Node(this.item);
-        
+        if (this.child != null) {
+            // copy the child node, but setting counts for child.items[i] to 0 
+            a.child = new Node();
+            for(Entry entry : this.child.getItems()){
+                Entry copy = new Entry(entry.item);
+                a.child.getItems().add(copy);
+            }
+            a.child.setItemNumber(this.child.itemNumber);
+        } else {
+            a.child = null;
+        }
+
         return a;
     }
 

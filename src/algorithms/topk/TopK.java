@@ -25,6 +25,7 @@ package algorithms.topk;
 
 import framework.GUI.Model;
 import framework.items.Item;
+import framework.items.NominalItem;
 import framework.items.Pattern;
 import framework.utils.Utils;
 import java.math.BigInteger;
@@ -94,7 +95,8 @@ public class TopK extends Model {
      */
     private int k;
 
- 
+    private int calls = 0;
+
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
         tree = new CPTree();
@@ -125,7 +127,7 @@ public class TopK extends Model {
                 return 0;
             }
         });
-        k = 30;
+        k = 10;
 
         int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
         // Mine for each class separately 
@@ -146,15 +148,15 @@ public class TopK extends Model {
                     } else if (gr1 < gr2) {
                         return -1;
                     } else {
-                        return 0;
+                        return ((NominalItem) o1).compareTo(o2);
                     }
                 });
                 tree.insert(p, supportRatioPerItem);
             }
-
             // Mine the tree looking for Top-k SJEPs !
             try {
                 mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i));
+                System.out.println(calls);
             } catch (Exception e) {
                 System.out.println("ALARMAAAAAAAA");
                 System.out.println(e);
@@ -162,7 +164,7 @@ public class TopK extends Model {
                 System.exit(-1);
             }
             // Reset counter values
-            
+
             collectedNegPatterns = collectedPosPatterns = minNegCount = minPosCount = 0;
             itemCountsForD1.clear();
             itemCountsForD2.clear();
@@ -233,12 +235,15 @@ public class TopK extends Model {
     }
 
     public void mineTree(Node node, Pattern alpha) {
+        calls++;
         // for all i in t.items
         for (int j = 0; j < node.getItems().size(); j++) {
             Entry i = node.getItems().get(j);
             // if the subtree is not empty the merge
             if (i.getChild() != null) {
-                node.merge(i.getChild(), supportRatioPerItem);
+                if (!i.getChild().getItems().isEmpty()) {
+                    node.merge(i.getChild(), supportRatioPerItem);
+                }
             }
             Pattern beta = alpha.clone();
             beta.add(i.getItem());
@@ -368,4 +373,16 @@ public class TopK extends Model {
 
         return visit;
     }
+
+    private void lookMerges(Node root) {
+        if(root != null)
+        for(int i = 0; i < root.itemNumber; i++){
+            Entry a = root.getItems().get(i);
+            if(!a.merged){
+                System.out.println("ERRORRRRRR");
+            }
+            lookMerges(a.getChild());
+        }
+    }
+
 }
