@@ -113,7 +113,13 @@ public class TopK extends Model {
             } else if (supp1 < supp2) {
                 return 1;
             } else {
-                return 0;
+                if (o1.length() > o2.length()) {
+                    return -1;
+                } else if (o1.length() < o2.length()) {
+                    return 1;
+                } else {
+                    return -1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
+                }
             }
         });
         topK_PosPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
@@ -124,7 +130,13 @@ public class TopK extends Model {
             } else if (supp1 < supp2) {
                 return 1;
             } else {
-                return 0;
+                if (o1.length() > o2.length()) {
+                    return -1;
+                } else if (o1.length() < o2.length()) {
+                    return 1;
+                } else {
+                    return -1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
+                }
             }
         });
         k = 10;
@@ -163,8 +175,6 @@ public class TopK extends Model {
                 e.printStackTrace();
                 System.exit(-1);
             }
-            // Reset counter values
-
             collectedNegPatterns = collectedPosPatterns = minNegCount = minPosCount = 0;
             itemCountsForD1.clear();
             itemCountsForD2.clear();
@@ -238,13 +248,13 @@ public class TopK extends Model {
         calls++;
         // for all i in t.items
         for (int j = 0; j < node.getItems().size(); j++) {
-            Entry i = node.getItems().get(j);
             // if the subtree is not empty the merge
-            if (i.getChild() != null) {
-                if (!i.getChild().getItems().isEmpty()) {
-                    node.merge(i.getChild(), supportRatioPerItem);
+            if (node.getItems().get(j).getChild() != null) {
+                if (!node.getItems().get(j).getChild().getItems().isEmpty()) {
+                    node.merge(node.getItems().get(j).getChild(), supportRatioPerItem);
                 }
             }
+            Entry i = node.getItems().get(j);
             Pattern beta = alpha.clone();
             beta.add(i.getItem());
 
@@ -254,23 +264,23 @@ public class TopK extends Model {
                 HashMap<String, Double> m = new HashMap<>();
                 m.put("Supp", ((Integer) i.getCountD2()).doubleValue());
                 beta.setTra_measures(m);
-                topK_NegPatterns.add(beta.clone());
+                topK_NegPatterns.offer(beta.clone());
                 collectedNegPatterns++;
                 if (collectedNegPatterns >= k) {
                     // raise-count procedure
                     minNegCount = getPatternCount(topK_NegPatterns.peek(), false) + 1;
                 }
             } else if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount, true)) {
-                beta.setClase(0);
+                //beta.setClase(i);
                 HashMap<String, Double> m = new HashMap<>();
                 m.put("Supp", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
-                topK_PosPatterns.add(beta.clone());
+                topK_PosPatterns.offer(beta.clone());
                 collectedPosPatterns++;
                 if (collectedPosPatterns >= k) {
-                    minPosCount = getPatternCount(topK_PosPatterns.peek(), true);
+                    minPosCount = getPatternCount(topK_PosPatterns.peek(), true) + 1;
                 }
-            } else if (visitSubTree(beta) && i.getChild() != null) {
+            } else if (visitSubTree(beta, i) && i.getChild() != null) {
                 mineTree(i.getChild(), beta);
             }
         }
@@ -327,10 +337,11 @@ public class TopK extends Model {
 
         // Check minimality if the pattern is a JEP
         if (minimal && beta.length() > 1) {
+            int beta_count = getPatternCount(beta, true);
             for (Item it : beta.getItems()) {
                 Pattern other = beta.clone();
                 other.drop(it);
-                if (getPatternCount(beta, true) >= getPatternCount(other, true)) {
+                if (beta_count >= getPatternCount(other, true)) {
                     minimal = false;
                     break;
                 }
@@ -350,11 +361,19 @@ public class TopK extends Model {
         return minimal;
     }
 
-    public boolean visitSubTree(Pattern beta) {
-        boolean visit = true;
-        boolean minimalD1 = true;
-        boolean minimalD2 = true;
-        if (beta.length() > 1) {
+    public boolean visitSubTree(Pattern beta, Entry entry) {
+        boolean visit = false;
+        boolean minimalD1 = false;
+        boolean minimalD2 = false;
+        // check if child node has minimal counts
+        if (entry.getCountD1() >= minPosCount) {
+            minimalD1 = true;
+        }
+        if (entry.getCountD2() >= minNegCount) {
+            minimalD2 = true;
+        }
+        // check minimality of the pattern
+        if (beta.length() > 1 && (minimalD1 || minimalD2)) {
             for (Item it : beta.getItems()) {
                 Pattern other = beta.clone();
                 other.drop(it);
@@ -371,18 +390,7 @@ public class TopK extends Model {
             }
         }
 
-        return visit;
-    }
-
-    private void lookMerges(Node root) {
-        if(root != null)
-        for(int i = 0; i < root.itemNumber; i++){
-            Entry a = root.getItems().get(i);
-            if(!a.merged){
-                System.out.println("ERRORRRRRR");
-            }
-            lookMerges(a.getChild());
-        }
+        return minimalD1 || minimalD2;
     }
 
 }
