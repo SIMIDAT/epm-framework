@@ -146,6 +146,15 @@
     <algorithm>
         <name>Top-k minimal SJEPs</name>
         <class>algorithms.topk.TopK</class>
+        <parameter>
+            <name>K</name>
+            <type>integer</type>
+            <domain>
+                <min>1</min>
+                <max>9999999</max>
+            </domain>
+            <default>10</default>
+        </parameter>
     </algorithm>
 
 

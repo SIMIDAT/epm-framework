@@ -30,14 +30,11 @@ import framework.items.Pattern;
 import framework.utils.Utils;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Random;
 import java.util.Set;
-import java.util.function.BiFunction;
 import keel.Dataset.InstanceSet;
 
 /**
@@ -94,8 +91,8 @@ public class TopK extends Model {
      * The k value to get the top-k patterns
      */
     private int k;
-
-    private int calls = 0;
+    
+    
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
@@ -104,42 +101,25 @@ public class TopK extends Model {
         supportRatioPerItem = new HashMap<>();
         itemCountsForD1 = new HashMap<>();
         itemCountsForD2 = new HashMap<>();
+        k = Integer.parseInt(params.get("K"));
 
-        topK_NegPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
-            double supp1 = o1.getTraMeasure("Supp");
-            double supp2 = o2.getTraMeasure("Supp");
-            if (supp1 > supp2) {
-                return -1;
-            } else if (supp1 < supp2) {
-                return 1;
-            } else {
-                if (o1.length() > o2.length()) {
-                    return -1;
-                } else if (o1.length() < o2.length()) {
-                    return 1;
-                } else {
-                    return -1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
-                }
-            }
-        });
         topK_PosPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
             double supp1 = o1.getTraMeasure("Supp");
             double supp2 = o2.getTraMeasure("Supp");
             if (supp1 > supp2) {
-                return -1;
-            } else if (supp1 < supp2) {
                 return 1;
+            } else if (supp1 < supp2) {
+                return -1;
             } else {
                 if (o1.length() > o2.length()) {
-                    return -1;
-                } else if (o1.length() < o2.length()) {
                     return 1;
+                } else if (o1.length() < o2.length()) {
+                    return -1;
                 } else {
-                    return -1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
+                    return 1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
                 }
             }
         });
-        k = 10;
 
         int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
         // Mine for each class separately 
@@ -166,23 +146,20 @@ public class TopK extends Model {
                 tree.insert(p, supportRatioPerItem);
             }
             // Mine the tree looking for Top-k SJEPs !
-            try {
-                mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i));
-                System.out.println(calls);
-            } catch (Exception e) {
-                System.out.println("ALARMAAAAAAAA");
-                System.out.println(e);
-                e.printStackTrace();
-                System.exit(-1);
-            }
+            mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i));
+
+            // Clean auxiliar variables for the next class computation
             collectedNegPatterns = collectedPosPatterns = minNegCount = minPosCount = 0;
             itemCountsForD1.clear();
             itemCountsForD2.clear();
             countsPerItem.clear();
             supportRatioPerItem.clear();
             tree.clear();
+            // gets the top-k possitive patterns of the class
+            while (!topK_PosPatterns.isEmpty()) {
+                super.patterns.add(topK_PosPatterns.poll());
+            }
         }
-        System.out.println("EIIII ");
     }
 
     @Override
@@ -190,6 +167,11 @@ public class TopK extends Model {
         return null;
     }
 
+    /**
+     * Calculates the support ratio of the items to allow the sorting of the CP-Tree
+     * NOTE: THIS ONLY CALCULATES THE GROWTH RATE FOR THE POSITIVE CLASS! NOT THE REAL SUPPORT-RATIO!
+     * @param instances 
+     */
     public void getSupportRatioForItems(ArrayList<Pattern> instances) {
         // Get support ratio for the items (get counts)
         for (Pattern p : instances) {
@@ -213,15 +195,22 @@ public class TopK extends Model {
             double suppRatio;
             if (next.getValue().D1 == 0 && next.getValue().D2 == 0) {
                 suppRatio = 0;
-            } else if ((next.getValue().D1 != 0 && next.getValue().D2 == 0) || (next.getValue().D1 == 0 && next.getValue().D2 != 0)) {
+            } else if ((next.getValue().D1 != 0 && next.getValue().D2 == 0)) {
                 suppRatio = Double.POSITIVE_INFINITY;
             } else {
-                suppRatio = Math.max(((Integer) next.getValue().D1).doubleValue() / ((Integer) next.getValue().D2).doubleValue(), ((Integer) next.getValue().D2).doubleValue() / ((Integer) next.getValue().D1).doubleValue());
+                suppRatio = ((Integer) next.getValue().D1).doubleValue() / ((Integer) next.getValue().D2).doubleValue();
             }
             supportRatioPerItem.put(next.getKey(), suppRatio);
         }
     }
 
+    /**
+     * Gets the bit string of each single item for each class. This string
+     * represent an 1 at position k if the transaction k has that item for the
+     * class, or 0 elsewhere.
+     *
+     * @param instances
+     */
     public void getBitStrings(ArrayList<Pattern> instances) {
         Set<Item> keySet = countsPerItem.keySet();
         Iterator<Item> iterator = keySet.iterator();
@@ -245,10 +234,9 @@ public class TopK extends Model {
     }
 
     public void mineTree(Node node, Pattern alpha) {
-        calls++;
         // for all i in t.items
         for (int j = 0; j < node.getItems().size(); j++) {
-            // if the subtree is not empty the merge
+            // if the subtree is not empty then merge
             if (node.getItems().get(j).getChild() != null) {
                 if (!node.getItems().get(j).getChild().getItems().isEmpty()) {
                     node.merge(node.getItems().get(j).getChild(), supportRatioPerItem);
@@ -258,28 +246,19 @@ public class TopK extends Model {
             Pattern beta = alpha.clone();
             beta.add(i.getItem());
 
-            // if accept-pattern
-            if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minNegCount, false)) {
-                beta.setClase(1);
-                HashMap<String, Double> m = new HashMap<>();
-                m.put("Supp", ((Integer) i.getCountD2()).doubleValue());
-                beta.setTra_measures(m);
-                topK_NegPatterns.offer(beta.clone());
-                collectedNegPatterns++;
-                if (collectedNegPatterns >= k) {
-                    // raise-count procedure
-                    minNegCount = getPatternCount(topK_NegPatterns.peek(), false) + 1;
-                }
-            } else if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount, true)) {
+            // We are only looking for patterns on the positive class to allow multiclass problems.
+            if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount, true)) {
                 //beta.setClase(i);
                 HashMap<String, Double> m = new HashMap<>();
                 m.put("Supp", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
-                topK_PosPatterns.offer(beta.clone());
-                collectedPosPatterns++;
-                if (collectedPosPatterns >= k) {
-                    minPosCount = getPatternCount(topK_PosPatterns.peek(), true) + 1;
+
+                if (topK_PosPatterns.size() > k) {
+                    topK_PosPatterns.poll();
+                    minPosCount = (int) topK_PosPatterns.peek().getTraMeasure("Supp") + 1;
                 }
+                topK_PosPatterns.offer(beta.clone());
+
             } else if (visitSubTree(beta, i) && i.getChild() != null) {
                 mineTree(i.getChild(), beta);
             }
@@ -328,69 +307,59 @@ public class TopK extends Model {
         boolean minimal = false;
         // check if the patter is a JEP
         if (positiveClass) {
-            if (countD1 >= minCount && countD2 == 0) {
+            if (countD1 > minCount && countD2 == 0) {
                 minimal = true;
             }
-        } else if (countD2 >= minCount && countD1 == 0) {
+        } else if (countD2 > minCount && countD1 == 0) {
             minimal = true;
         }
 
         // Check minimality if the pattern is a JEP
         if (minimal && beta.length() > 1) {
-            int beta_count = getPatternCount(beta, true);
+            int beta_count = getPatternCount(beta, !positiveClass);
             for (Item it : beta.getItems()) {
                 Pattern other = beta.clone();
                 other.drop(it);
-                if (beta_count >= getPatternCount(other, true)) {
+                if (beta_count >= getPatternCount(other, !positiveClass)) {
                     minimal = false;
                     break;
                 }
-            }
-        }
-
-        // if the patter obtained is a minimal JEP, check if it is a top-k
-        if (minimal) {
-            if (positiveClass) {
-                if (collectedPosPatterns > this.k && countD1 < minCount) {
-                    minimal = false;
-                }
-            } else if (collectedNegPatterns > this.k && countD2 < minCount) {
-                minimal = false;
             }
         }
         return minimal;
     }
 
+    /**
+     * The visit-subtree routine. It checks whether a node subtree must be
+     * visited or not.
+     *
+     * @param beta The pattern to check
+     * @param entry The actual node
+     * @return
+     */
     public boolean visitSubTree(Pattern beta, Entry entry) {
-        boolean visit = false;
         boolean minimalD1 = false;
-        boolean minimalD2 = false;
         // check if child node has minimal counts
         if (entry.getCountD1() >= minPosCount) {
             minimalD1 = true;
         }
-        if (entry.getCountD2() >= minNegCount) {
-            minimalD2 = true;
-        }
+
         // check minimality of the pattern
-        if (beta.length() > 1 && (minimalD1 || minimalD2)) {
+        if (beta.length() > 1 && (minimalD1)) {
             for (Item it : beta.getItems()) {
                 Pattern other = beta.clone();
                 other.drop(it);
-                if (minimalD1 && getPatternCount(beta, true) >= getPatternCount(other, true)) {
+                if (minimalD1 && getPatternCount(beta, false) >= getPatternCount(other, false)) {
                     minimalD1 = false;
                 }
-                if (minimalD2 && getPatternCount(beta, false) >= getPatternCount(other, false)) {
-                    minimalD2 = false;
-                }
-                if (!(minimalD1 || minimalD2)) {
-                    visit = false;
+
+                if (!(minimalD1)) {
                     break;
                 }
             }
         }
 
-        return minimalD1 || minimalD2;
+        return minimalD1;
     }
 
 }
