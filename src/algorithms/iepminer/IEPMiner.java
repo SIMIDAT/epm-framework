@@ -103,8 +103,8 @@ public class IEPMiner extends Model {
                 PTree.headerTable.clear();
             }
             System.out.println("Time to finish mining: " + (System.currentTimeMillis() - t_start) / 1000f + " seconds.");
+            super.setPatterns(pruneEPs(super.patterns));
             System.out.println("Number of iEPs: " + patterns.size());
-            System.out.println("Global after prune number of iEPs: " + pruneEPs(super.patterns).size());
         } catch (IllegalActionException ex) {
             GUI.setInfoLearnTextError(ex.getReason());
         }
@@ -405,22 +405,7 @@ public class IEPMiner extends Model {
         return counts;
     }
 
-    /**
-     * Creates the power set of the given pattern
-     *
-     * @param p
-     * @param sets
-     */
-    public void powerSet(Pattern p, HashSet<Pattern> sets) {
-        if (!p.getItems().isEmpty()) {
-            sets.add(p);
-            for (int i = 0; i < p.length(); i++) {
-                Pattern g = p.clone();
-                g.drop(i);
-                powerSet(g, sets);
-            }
-        }
-    }
+ 
 
     @Override
     public String[][] predict(InstanceSet test) {
