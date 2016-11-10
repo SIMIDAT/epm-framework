@@ -1,1 +1,1 @@
-/home/angel/Descargas
+/media/angel/Datos/DATASETS/classification/mushroom

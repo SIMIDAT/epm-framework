@@ -763,9 +763,10 @@ public class GUI extends javax.swing.JFrame {
 
                     // Get learned patterns, filter, and calculate measures for training
                     ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
-                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                     Measures.add(filterPatterns.get(0));
                     Measures.add(filterPatterns.get(1));
+                    Measures.add(filterPatterns.get(2));
 
                     // Call predict method for ACC and AUC for training
                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
@@ -788,9 +789,10 @@ public class GUI extends javax.swing.JFrame {
                         System.out.println("Testing instances");
 
                         Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                        filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                        filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                         Measures.add(filterPatterns.get(0));
                         Measures.add(filterPatterns.get(1));
+                        Measures.add(filterPatterns.get(2));
 
                         args = new Class[1];
                         args[0] = InstanceSet.class;
@@ -1016,8 +1018,9 @@ public class GUI extends javax.swing.JFrame {
                             File[] files = dir.listFiles();
                             Arrays.sort(files);
                             HashMap<String, Double> QMsUnfiltered = Utils.generateQualityMeasuresHashMap();
-                            HashMap<String, Double> QMsGlobal = Utils.generateQualityMeasuresHashMap();
-                            HashMap<String, Double> QMsByClass = Utils.generateQualityMeasuresHashMap();
+                            HashMap<String, Double> QMsMinimal = Utils.generateQualityMeasuresHashMap();
+                            HashMap<String, Double> QMsMaximal = Utils.generateQualityMeasuresHashMap();
+                            HashMap<String, Double> QMsByMeasure = Utils.generateQualityMeasuresHashMap();
 
                             appendToPane(BatchOutput, "Executing " + dir.getName() + "...", Color.BLUE);
                             System.out.println("Executing..." + dir.getName() + "...");
@@ -1064,9 +1067,10 @@ public class GUI extends javax.swing.JFrame {
                                 // Call the test method. This method return in a hashmap the quality measures.
                                 // for unfiltered, filtered global, and filtered by class QMs.
                                 ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
-                                ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                                ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                                 Measures.add(filterPatterns.get(0));
                                 Measures.add(filterPatterns.get(1));
+                                Measures.add(filterPatterns.get(2));
 
                                 appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
                                 args = new Class[1];
@@ -1075,21 +1079,23 @@ public class GUI extends javax.swing.JFrame {
                                 String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
                                 // Calculate descriptive measures in test
                                 Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                                filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                                filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                                 Measures.add(filterPatterns.get(0));
                                 Measures.add(filterPatterns.get(1));
+                                Measures.add(filterPatterns.get(2));
                                 // Calculate predictions in test
                                 Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
 
                                 // Store the result to make the average result
                                 QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
-                                QMsGlobal = Utils.updateHashMap(QMsGlobal, Measures.get(1));
-                                QMsByClass = Utils.updateHashMap(QMsByClass, Measures.get(2));
+                                QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));
+                                QMsMaximal = Utils.updateHashMap(QMsMaximal, Measures.get(2));
+                                QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
 
                             }
 
                             // After finished the fold cross validation, make the average calculation of each quality measure.
-                            Utils.saveResults(dir, QMsUnfiltered, QMsGlobal, QMsByClass, NUM_FOLDS);
+                            Utils.saveResults(dir, QMsUnfiltered, QMsMinimal, QMsMaximal, QMsByMeasure, NUM_FOLDS);
 
                         }
 

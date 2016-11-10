@@ -30,10 +30,12 @@ import framework.GUI.Model;
 import framework.items.FuzzyItem;
 import framework.items.NominalItem;
 import framework.items.NumericItem;
+import framework.utils.cptree.Par;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -293,17 +295,17 @@ public class Utils {
                     return 0;
                 }
             } else // If it is FPR, then the less, the better
-             if (o1.get(by) > o2.get(by)) {
-                    return -1;
-                } else if (o1.get(by) < o2.get(by)) {
-                    return 1;
-                } else if (o1.get("NVAR") < o2.get("NVAR")) {
-                    return 1;
-                } else if (o1.get("NVAR") > o2.get("NVAR")) {
-                    return -1;
-                } else {
-                    return 0;
-                }
+            if (o1.get(by) > o2.get(by)) {
+                return -1;
+            } else if (o1.get(by) < o2.get(by)) {
+                return 1;
+            } else if (o1.get("NVAR") < o2.get("NVAR")) {
+                return 1;
+            } else if (o1.get("NVAR") > o2.get("NVAR")) {
+                return -1;
+            } else {
+                return 0;
+            }
         });
 
         // get the best n rules and return
@@ -356,17 +358,17 @@ public class Utils {
                         return 0;
                     }
                 } else // If it is FPR, then the less, the better
-                 if (o1.get(by) > o2.get(by)) {
-                        return -1;
-                    } else if (o1.get(by) < o2.get(by)) {
-                        return 1;
-                    } else if (o1.get("NVAR") < o2.get("NVAR")) {
-                        return 1;
-                    } else if (o1.get("NVAR") > o2.get("NVAR")) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
+                if (o1.get(by) > o2.get(by)) {
+                    return -1;
+                } else if (o1.get(by) < o2.get(by)) {
+                    return 1;
+                } else if (o1.get("NVAR") < o2.get("NVAR")) {
+                    return 1;
+                } else if (o1.get("NVAR") > o2.get("NVAR")) {
+                    return -1;
+                } else {
+                    return 0;
+                }
             });
         }
 
@@ -456,16 +458,17 @@ public class Utils {
      *
      * @param dir
      * @param QMsUnfiltered
-     * @param QMsGlobal
-     * @param QMsByClass
+     * @param QMsMinimal
+     * @param QMsMaximal
      * @param NUM_FOLDS
      */
-    public static void saveResults(File dir, HashMap<String, Double> QMsUnfiltered, HashMap<String, Double> QMsGlobal, HashMap<String, Double> QMsByClass, int NUM_FOLDS) {
+    public static void saveResults(File dir, HashMap<String, Double> QMsUnfiltered, HashMap<String, Double> QMsMinimal, HashMap<String, Double> QMsMaximal, HashMap<String, Double> QMsByMeasure, int NUM_FOLDS) {
 
         try {
             File measures1 = new File(dir.getAbsolutePath() + "/QM_Unfiltered.txt");
-            File measures2 = new File(dir.getAbsolutePath() + "/QM_FilteredALL.txt");
-            File measures3 = new File(dir.getAbsolutePath() + "/QM_FilteredBYCLASS.txt");
+            File measures2 = new File(dir.getAbsolutePath() + "/QM_MINIMALS.txt");
+            File measures3 = new File(dir.getAbsolutePath() + "/QM_MAXIMALS.txt");
+            File measures4 = new File(dir.getAbsolutePath() + "/QM_BYCONFIDENCE.txt");
             if (measures1.exists()) {
                 measures1.delete();
             }
@@ -475,9 +478,13 @@ public class Utils {
             if (measures3.exists()) {
                 measures3.delete();
             }
+            if (measures4.exists()) {
+                measures4.delete();
+            }
             measures1.createNewFile();
             measures2.createNewFile();
             measures3.createNewFile();
+            measures4.createNewFile();
 
             final PrintWriter w = new PrintWriter(measures1);
 
@@ -499,7 +506,7 @@ public class Utils {
             w.close();
             final PrintWriter w2 = new PrintWriter(measures2);
 
-            QMsGlobal.forEach(new BiConsumer<String, Double>() {
+            QMsMinimal.forEach(new BiConsumer<String, Double>() {
                 @Override
                 public void accept(String t, Double u) {
                     DecimalFormat sixDecimals = new DecimalFormat("0.000000");
@@ -515,7 +522,7 @@ public class Utils {
             w2.close();
             final PrintWriter w3 = new PrintWriter(measures3);
 
-            QMsByClass.forEach(new BiConsumer<String, Double>() {
+            QMsByMeasure.forEach(new BiConsumer<String, Double>() {
                 @Override
                 public void accept(String t, Double u) {
                     DecimalFormat sixDecimals = new DecimalFormat("0.000000");
@@ -529,6 +536,23 @@ public class Utils {
                 }
             });
             w3.close();
+            final PrintWriter w4 = new PrintWriter(measures3);
+
+            QMsByMeasure.forEach(new BiConsumer<String, Double>() {
+                @Override
+                public void accept(String t, Double u) {
+                    DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+                    if (!u.isNaN()) {
+                        u /= (double) NUM_FOLDS;
+                        // Here is where you must made all the operations with each averaged quality measure.
+                        w4.println(t + " ==> " + sixDecimals.format(u));
+                    } else {
+                        w4.println(t + " ==> --------");
+                    }
+                }
+            });
+            w4.close();
+
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -621,56 +645,132 @@ public class Utils {
     }
 
     /**
-     * It filters the original pattern set and gets the following pattern set:
+     * It filters the original pattern set and gets the following pattern sets:
      * <ul>
      * <li> A set with only MINIMAL patterns
      * <li> A set with only MAXIMAL patterns
-     * <li> A set with patterns with a given quality measures above the given threshold
+     * <li> A set with patterns with a given quality measures above the given
+     * threshold
      * </ul>
+     *
+     * Note: This function does not check the complete minimality or maximility
+     * of a pattern due to efficiency. Instead, it checks if the pattern is
+     * minimal or maximal in the local set of patterns.
      *
      * @param model The model where the patterns are stored.
      * @param by A quality measure, this string must match with a key of the
      * quality measures hashmap.
-     * @param nrules The number of rules to return.
+     * @param threshold The threshold in [1,0]
      * @return
      */
-    public static ArrayList<HashMap<String, Double>> filterPatterns(Model model, String by, int nrules) {
-        ArrayList<HashMap<String, Double>> qms = new ArrayList<>();
+    public static ArrayList<HashMap<String, Double>> filterPatterns(Model model, String by, float threshold) {
+
+        ArrayList<HashMap<String, Double>> qmsFil = new ArrayList<>();
+        ArrayList<HashMap<String, Double>> qmsMin = new ArrayList<>();
+        ArrayList<HashMap<String, Double>> qmsMax = new ArrayList<>();
+        ArrayList<Pattern> minimalPatterns = new ArrayList<>();
+        ArrayList<Pattern> maximalPatterns = new ArrayList<>();
+        ArrayList<Pattern> filteredPatterns = new ArrayList<>();
+
+        // Check minimal patterns. Sort according to the length
+        model.getPatterns().sort((o1, o2) -> {
+            if (o1.length() > o2.length()) {
+                return 1;
+            } else if (o1.length() < o2.length()) {
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+
+        // Phase 1: Check minimality
+        boolean[] marks = new boolean[model.getPatterns().size()];
         for (int i = 0; i < model.getPatterns().size(); i++) {
-            qms.add(model.getPatterns().get(i).getTra_measures());
+            Pattern p1 = model.getPatterns().get(i);
+            for (int j = i + 1; j < model.getPatterns().size(); j++) {
+                Pattern p2 = model.getPatterns().get(j);
+                if (!marks[j] && p1.length() < p2.length()) {
+                    if (p1.covers(p2)) { // if p1 covers p2 and gr(p2) < gr(p1) it means that p2 is not minimal.
+                        if (p1.getTraMeasure("GR") >= p2.getTraMeasure("GR")) {
+                            marks[j] = true;
+                        }
+                    }
+                }
+            }
         }
-        // Filter the rules
-        // Get best n rules
-        ArrayList<HashMap<String, Double>> bestNRulesBy = getBestNRulesBy(qms, by, nrules);
-        ArrayList<Pattern> bestPatterns = new ArrayList<>();
-        for (int i = 0; i < bestNRulesBy.size(); i++) {
-            bestPatterns.add(model.getPatterns().get(((Double) bestNRulesBy.get(i).get("RULE_NUMBER")).intValue()));
+        // retain those patterns with marks == false
+        for (int i = 0; i < marks.length; i++) {
+            if (!marks[i]) {
+                minimalPatterns.add(model.getPatterns().get(i));
+                qmsMin.add(model.getPatterns().get(i).getTra_measures());
+            }
         }
-        model.setPatternsFilteredMinimal(bestPatterns);
 
-        int[] classes = new int[model.getPatterns().size()];
-        for (int i = 0; i < classes.length; i++) {
-            classes[i] = model.getPatterns().get(i).getClase();
+        // Phase 2: check maximal patterns
+        marks = new boolean[model.getPatterns().size()];
+        for (int i = model.getPatterns().size() - 1; i >= 0; i--) {
+            Pattern p1 = model.getPatterns().get(i);
+            for (int j = i - 1; j >= 0; j--) {
+                Pattern p2 = model.getPatterns().get(j);
+                if (!marks[j] && p1.length() > p2.length()) {
+                    if (p2.covers(p1)) { // if p1 covers p2 and gr(p2) > gr(p1) it means that p2 is not maximal.
+                        if (p1.getTraMeasure("GR") >= p2.getTraMeasure("GR")) {
+                            marks[j] = true;
+                        }
+                    }
+                }
+            }
         }
-        ArrayList<HashMap<String, Double>> bestNRulesByClass = getBestNRulesByClass(qms, by, nrules, classes);
-        bestPatterns = new ArrayList<>();
-        for (int i = 0; i < bestNRulesByClass.size(); i++) {
-            bestPatterns.add(model.getPatterns().get(((Double) bestNRulesByClass.get(i).get("RULE_NUMBER")).intValue()));
+        // retain those patterns with marks == false
+        for (int i = 0; i < marks.length; i++) {
+            if (!marks[i]) {
+                maximalPatterns.add(model.getPatterns().get(i));
+                qmsMax.add(model.getPatterns().get(i).getTra_measures());
+            }
         }
-        model.setPatternsFilteredMaximal(bestPatterns);
 
-        HashMap<String, Double> AverageQualityMeasures = AverageQualityMeasures(bestNRulesBy);
-        HashMap<String, Double> AverageQualityMeasures1 = AverageQualityMeasures(bestNRulesByClass);
-        qms.clear();
-        qms.add(AverageQualityMeasures);
-        qms.add(AverageQualityMeasures1);
-        return qms;
+        // Phase 3: Filter patterns by the threshold of a quality measure
+        for (int i = 0; i < model.getPatterns().size(); i++) {
+            if (model.getPatterns().get(i).getTraMeasure(by) >= threshold) {
+                filteredPatterns.add(model.getPatterns().get(i));
+                qmsFil.add(model.getPatterns().get(i).getTra_measures());
+            }
+        }
+
+        //Phase 4: Sets the patterns in model, get the averaged results and return
+        model.setPatternsFilteredByMeasure(filteredPatterns);
+        model.setPatternsFilteredMinimal(minimalPatterns);
+        model.setPatternsFilteredMaximal(maximalPatterns);
+        HashMap<String, Double> AverageQualityMeasuresFiltered = AverageQualityMeasures(qmsFil);
+        HashMap<String, Double> AverageQualityMeasuresMin = AverageQualityMeasures(qmsMin);
+        HashMap<String, Double> AverageQualityMeasuresMax = AverageQualityMeasures(qmsMax);
+        qmsFil.clear();
+        qmsFil.add(AverageQualityMeasuresMin);
+        qmsFil.add(AverageQualityMeasuresMax);
+        qmsFil.add(AverageQualityMeasuresFiltered);
+
+        // Re-sort the patterns to be correctly copied to the input file
+        Comparator<Pattern> ruleNumberSort = (o1, o2) -> {
+            if (o1.getTraMeasure("RULE_NUMBER") > o2.getTraMeasure("RULE_NUMBER")) {
+                return 1;
+            } else if (o1.getTraMeasure("RULE_NUMBER") < o2.getTraMeasure("RULE_NUMBER")) {
+                return -1;
+            } else {
+                return 0;
+            }
+        };
+        model.getPatterns().sort(ruleNumberSort);
+        model.getPatternsFilteredByMeasure().sort(ruleNumberSort);
+        model.getPatternsFilteredMinimal().sort(ruleNumberSort);
+        model.getPatternsFilteredMaximal().sort(ruleNumberSort);
+        return qmsFil;
+
     }
 
     /**
      * Saves the results of the patterns sets in the given folder. This creates
-     * 4 files: RULES.txt, TRA_QUAC_NOFILTER.txt, TRA_QUAC_BEST.txt and
-     * TRA_QUAC_BESTCLASS.txt
+     * 5 files: RULES.txt, TRA_QUAC_NOFILTER.txt, TRA_QUAC_MINIMAL.txt and
+     * TRA_QUAC_MAXIMAL.txt and TRA_QUAC_CONFIDENCE.txt
      *
      * @param dir A folder to save the results.
      * @param model The model where the pattern are stored.
@@ -682,12 +782,14 @@ public class Utils {
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
         PrintWriter pw4 = null;
+        PrintWriter pw5 = null;
         try {
             // define the files to write
             pw1 = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
             pw2 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_NOFILTER.txt");
-            pw3 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_BEST.txt");
-            pw4 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_BESTCLASS.txt");
+            pw3 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MINIMAL.txt");
+            pw4 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MAXIMAL.txt");
+            pw5 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_CONFIDENCE.txt");
 
             DecimalFormat sixDecimals = new DecimalFormat("0.000000");
             // Write headers on file.
@@ -695,17 +797,20 @@ public class Utils {
             pw2.print("RULE_NUMBER\t\tN_VARS\t\t");
             pw3.print("RULE_NUMBER\t\tN_VARS\t\t");
             pw4.print("RULE_NUMBER\t\tN_VARS\t\t");
+            pw5.print("RULE_NUMBER\t\tN_VARS\t\t");
             for (Object key : keys) {
                 String k = (String) key;
                 if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                     pw2.print(k + "\t\t");
                     pw3.print(k + "\t\t");
                     pw4.print(k + "\t\t");
+                    pw5.print(k + "\t\t");
                 }
             }
             pw2.println();
             pw3.println();
             pw4.println();
+            pw5.println();
 
             // write rules and training qms for all rules
             for (int i = 0; i < model.getPatterns().size(); i++) {
@@ -782,6 +887,30 @@ public class Utils {
                     pw4.print(sixDecimals.format(Measures.get(2).get(k)) + "\t\t");
                 }
             }
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatternsFilteredByMeasure().size(); i++) {
+                pw5.print(model.getPatternsFilteredByMeasure().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw5.print(sixDecimals.format(model.getPatternsFilteredByMeasure().get(i).getTra_measures().get("NVAR")) + "\t\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw5.print("--------\t\t");
+                        } else {
+                            pw5.print(sixDecimals.format(model.getPatternsFilteredByMeasure().get(i).getTra_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw5.println();
+            }
+
+            pw5.print("--------\t\t--------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw5.print(sixDecimals.format(Measures.get(3).get(k)) + "\t\t");
+                }
+            }
 
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
@@ -790,13 +919,14 @@ public class Utils {
             pw2.close();
             pw3.close();
             pw4.close();
+            pw5.close();
         }
     }
 
     /**
      * Saves the results of the patterns sets in the given folder. This creates
-     * 3 files: TST_QUAC_NOFILTER.txt, TST_QUAC_BEST.txt and
-     * TST_QUAC_BESTCLASS.txt
+     * 3 files: TST_QUAC_NOFILTER.txt, TST_QUAC_MINIMAL.txt and
+     * TST_QUAC_MAXIMAL.txt and TST_QUAC_CONFIDENCE.txt
      *
      * @param dir A folder to save the results.
      * @param model The model where the pattern are stored.
@@ -808,12 +938,14 @@ public class Utils {
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
         PrintWriter pw4 = null;
+        PrintWriter pw5 = null;
         try {
             // define the files to write
             //  pw1 = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
             pw2 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_NOFILTER.txt");
-            pw3 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_BEST.txt");
-            pw4 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_BESTCLASS.txt");
+            pw3 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MINIMAL.txt");
+            pw4 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MAXIMAL.txt");
+            pw5 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_CONFIDENCE.txt");
 
             DecimalFormat sixDecimals = new DecimalFormat("0.000000");
             // Write headers on file.
@@ -821,17 +953,20 @@ public class Utils {
             pw2.print("RULE_NUMBER\t\tN_VARS\t\t");
             pw3.print("RULE_NUMBER\t\tN_VARS\t\t");
             pw4.print("RULE_NUMBER\t\tN_VARS\t\t");
+            pw5.print("RULE_NUMBER\t\tN_VARS\t\t");
             for (Object key : keys) {
                 String k = (String) key;
                 if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                     pw2.print(k + "\t\t");
                     pw3.print(k + "\t\t");
                     pw4.print(k + "\t\t");
+                    pw5.print(k + "\t\t");
                 }
             }
             pw2.println();
             pw3.println();
             pw4.println();
+            pw5.println();
 
             // write rules and training qms for all rules
             for (int i = 0; i < model.getPatterns().size(); i++) {
@@ -910,12 +1045,39 @@ public class Utils {
                 }
             }
 
+            // write rules and training qms for all rules
+            for (int i = 0; i < model.getPatternsFilteredByMeasure().size(); i++) {
+                pw5.print(model.getPatternsFilteredByMeasure().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw5.print(sixDecimals.format(model.getPatternsFilteredByMeasure().get(i).getTst_measures().get("NVAR")) + "\t\t");
+                for (Object key : keys) {
+                    String k = (String) key;
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                        if (k.equals("ACC") || k.equals("AUC")) {
+                            pw5.print("--------\t\t");
+                        } else {
+                            pw5.print(sixDecimals.format(model.getPatternsFilteredByMeasure().get(i).getTst_measures().get(k)) + "\t\t");
+                        }
+                    }
+                }
+                pw5.println();
+            }
+
+            // write mean results
+            pw5.print("--------\t\t--------\t\t");
+            for (Object key : keys) {
+                String k = (String) key;
+                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
+                    pw5.print(sixDecimals.format(Measures.get(3).get(k)) + "\t\t");
+                }
+            }
+
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             pw2.close();
             pw3.close();
             pw4.close();
+            pw5.close();
         }
     }
 
@@ -1072,7 +1234,7 @@ public class Utils {
         }
         return maxIndex;
     }
-    
+
     /**
      * Checks if the dataset is processable by the method, i.e. it checks if all
      * its attributes are nominal.
@@ -1145,8 +1307,8 @@ public class Utils {
             Pattern p = new Pattern(new ArrayList<Item>(), inst.getOutputNominalValuesInt(0) == clas ? 0 : 1);
             for (int j = 0; j < set.getAttributeDefinitions().getInputNumAttributes(); j++) {
                 if (!inst.getInputMissingValues(j)) {
-                    if(set.getAttributeDefinitions().getAttribute(j).getType() == Attribute.NOMINAL){
-                    p.add(new NominalItem(set.getAttributeDefinitions().getAttribute(j).getName(), inst.getInputNominalValues(j)));
+                    if (set.getAttributeDefinitions().getAttribute(j).getType() == Attribute.NOMINAL) {
+                        p.add(new NominalItem(set.getAttributeDefinitions().getAttribute(j).getName(), inst.getInputNominalValues(j)));
                     } else {
                         p.add(new NumericItem(set.getAttributeDefinitions().getAttribute(j).getName(), inst.getInputRealValues(j), 0.1));
                     }
@@ -1154,7 +1316,26 @@ public class Utils {
             }
             trainingInstances.add(p);
         }
-        
+
         return trainingInstances;
     }
+
+    /**
+     * Creates the power set of the given pattern. The result is stored in
+     * {@code sets}.
+     *
+     * @param p The super pattern which the power set is generated
+     * @param sets A HashSet where the result is stored.
+     */
+    public static void powerSet(Pattern p, HashSet<Pattern> sets) {
+        if (!p.getItems().isEmpty()) {
+            sets.add(p);
+            for (int i = 0; i < p.length(); i++) {
+                Pattern g = p.clone();
+                g.drop(i);
+                powerSet(g, sets);
+            }
+        }
+    }
+
 }
