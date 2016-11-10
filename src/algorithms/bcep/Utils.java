@@ -611,16 +611,16 @@ public class Utils {
             }
 
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredAllClass().size(); i++) {
-                pw3.print(model.getPatternsFilteredAllClass().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
-                pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTra_measures().get("NVAR")) + "\t");
+            for (int i = 0; i < model.getPatternsFilteredMinimal().size(); i++) {
+                pw3.print(model.getPatternsFilteredMinimal().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTra_measures().get("NVAR")) + "\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw3.print("--------\t\t");
                         } else {
-                            pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTra_measures().get(k)) + "\t\t");
+                            pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTra_measures().get(k)) + "\t\t");
                         }
                     }
                 }
@@ -636,16 +636,16 @@ public class Utils {
             }
 
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredByClass().size(); i++) {
-                pw4.print(model.getPatternsFilteredByClass().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
-                pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTra_measures().get("NVAR")) + "\t\t");
+            for (int i = 0; i < model.getPatternsFilteredMaximal().size(); i++) {
+                pw4.print(model.getPatternsFilteredMaximal().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTra_measures().get("NVAR")) + "\t\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw4.print("--------\t\t");
                         } else {
-                            pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTra_measures().get(k)) + "\t\t");
+                            pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTra_measures().get(k)) + "\t\t");
                         }
                     }
                 }
@@ -737,16 +737,16 @@ public class Utils {
             }
 
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredAllClass().size(); i++) {
-                pw3.print(model.getPatternsFilteredAllClass().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
-                pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTst_measures().get("NVAR")) + "\t");
+            for (int i = 0; i < model.getPatternsFilteredMinimal().size(); i++) {
+                pw3.print(model.getPatternsFilteredMinimal().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTst_measures().get("NVAR")) + "\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw3.print("--------\t\t");
                         } else {
-                            pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTst_measures().get(k)) + "\t\t");
+                            pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTst_measures().get(k)) + "\t\t");
                         }
                     }
                 }
@@ -762,16 +762,16 @@ public class Utils {
                 }
             }
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredByClass().size(); i++) {
-                pw4.print(model.getPatternsFilteredByClass().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
-                pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTst_measures().get("NVAR")) + "\t\t");
+            for (int i = 0; i < model.getPatternsFilteredMaximal().size(); i++) {
+                pw4.print(model.getPatternsFilteredMaximal().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTst_measures().get("NVAR")) + "\t\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw4.print("--------\t\t");
                         } else {
-                            pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTst_measures().get(k)) + "\t\t");
+                            pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTst_measures().get(k)) + "\t\t");
                         }
                     }
                 }

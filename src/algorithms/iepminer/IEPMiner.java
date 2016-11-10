@@ -23,15 +23,20 @@
  */
 package algorithms.iepminer;
 
+import framework.GUI.GUI;
 import framework.GUI.Model;
+import framework.exceptions.IllegalActionException;
 import framework.items.Item;
 import framework.items.NominalItem;
 import framework.items.Pattern;
+import framework.utils.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import keel.Dataset.Instance;
 import keel.Dataset.InstanceSet;
 import sun.misc.Queue;
@@ -53,51 +58,56 @@ public class IEPMiner extends Model {
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
-        // Catch Params
-        minimumSupport = (int) (training.getNumInstances() * Float.parseFloat(params.get("Minimum Support")));
-        minimumGrowthRate = Double.parseDouble(params.get("Minimum Growth Rate"));
-        minimumChiSquared = Double.parseDouble(params.get("Minimum Chi-Squared"));
+        try {
+            Utils.checkDataset();
+            // Catch Params
+            minimumSupport = (int) (training.getNumInstances() * Float.parseFloat(params.get("Minimum Support")));
+            minimumGrowthRate = Double.parseDouble(params.get("Minimum Growth Rate"));
+            minimumChiSquared = Double.parseDouble(params.get("Minimum Chi-Squared"));
 
-        // Algorithm begin
-        PTree.headerTable = new ArrayList<>();
-        int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
-        trainingInstances = new ArrayList<>();
-        patternSet = new ArrayList<>();
+            // Algorithm begin
+            PTree.headerTable = new ArrayList<>();
+            int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
+            trainingInstances = new ArrayList<>();
+            patternSet = new ArrayList<>();
 
-        // Mine patterns for each class
-        long t_start = System.currentTimeMillis();
-        for (int i = 0; i < numClasses; i++) {
-            System.out.println("Mining class " + (i + 1) + " of " + numClasses);
-            // gets the training instances
-            trainingInstances.clear();
-            root = new PTree(null, true);
-            for (Instance inst : training.getInstances()) {
-                Pattern p = new Pattern(new ArrayList<Item>(), inst.getOutputNominalValuesInt(0) == i ? 0 : 1);
-                for (int j = 0; j < training.getAttributeDefinitions().getInputNumAttributes(); j++) {
-                    if(!inst.getInputMissingValues(j))
-                    p.add(new NominalItem(training.getAttributeDefinitions().getAttribute(j).getName(), inst.getInputNominalValues(j)));
+            // Mine patterns for each class
+            long t_start = System.currentTimeMillis();
+            for (int i = 0; i < numClasses; i++) {
+                System.out.println("Mining class " + (i + 1) + " of " + numClasses);
+                // gets the training instances
+                trainingInstances.clear();
+                root = new PTree(null, true);
+                for (Instance inst : training.getInstances()) {
+                    Pattern p = new Pattern(new ArrayList<Item>(), inst.getOutputNominalValuesInt(0) == i ? 0 : 1);
+                    for (int j = 0; j < training.getAttributeDefinitions().getInputNumAttributes(); j++) {
+                        if (!inst.getInputMissingValues(j)) {
+                            p.add(new NominalItem(training.getAttributeDefinitions().getAttribute(j).getName(), inst.getInputNominalValues(j)));
+                        }
+                    }
+                    trainingInstances.add(p);
                 }
-                trainingInstances.add(p);
+                long t_ini = System.currentTimeMillis();
+                for (Pattern p : trainingInstances) {
+                    root.insertTree(p);
+                }
+                System.out.println("Time to build the tree: " + (System.currentTimeMillis() - t_ini) / 1000f + " seconds.");
+                t_ini = System.currentTimeMillis();
+                mineTree(root, i);
+                System.out.println("Time to mine the tree: " + (System.currentTimeMillis() - t_ini) / 1000f + " seconds.");
+                //ArrayList<Pattern> iEPs = pruneEPs(patternSet);
+                super.patterns.addAll(patternSet);
+                //iEPs.clear();
+                patternSet.clear();
+                PTree.cleanLinks(-1);
+                PTree.headerTable.clear();
             }
-            long t_ini = System.currentTimeMillis();
-            for (Pattern p : trainingInstances) {
-                root.insertTree(p);
-            }
-            System.out.println("Time to build the tree: " + (System.currentTimeMillis() - t_ini) / 1000f + " seconds.");
-            t_ini = System.currentTimeMillis();
-            mineTree(root, i);
-            System.out.println("Time to mine the tree: " + (System.currentTimeMillis() - t_ini) / 1000f + " seconds.");
-            //ArrayList<Pattern> iEPs = pruneEPs(patternSet);
-            super.patterns.addAll(patternSet);
-            //iEPs.clear();
-            patternSet.clear();
-            PTree.cleanLinks(-1);
-            PTree.headerTable.clear();
+            System.out.println("Time to finish mining: " + (System.currentTimeMillis() - t_start) / 1000f + " seconds.");
+            System.out.println("Number of iEPs: " + patterns.size());
+            System.out.println("Global after prune number of iEPs: " + pruneEPs(super.patterns).size());
+        } catch (IllegalActionException ex) {
+            GUI.setInfoLearnTextError(ex.getReason());
         }
-        System.out.println("Time to finish mining: " + (System.currentTimeMillis() - t_start) / 1000f + " seconds.");
-        System.out.println("Number of iEPs: " + patterns.size());
-        System.out.println("Global after prune number of iEPs: " + pruneEPs(super.patterns).size());
-        System.exit(0);
     }
 
     /**
@@ -179,6 +189,7 @@ public class IEPMiner extends Model {
             }
             HashMap<String, Double> measures = new HashMap<>();
             measures.put("GR", gr);
+            measures.put("SUPP", D1);
             beta.setTra_measures(measures);
             if (is_iEP(PTree.headerTable.get(i).count1, gr)) {
                 patternSet.add(beta);
@@ -234,6 +245,7 @@ public class IEPMiner extends Model {
             }
             HashMap<String, Double> measures = new HashMap<>();
             measures.put("GR", gr);
+            measures.put("SUPP", D1);
             gamma.setTra_measures(measures);
 
             int[] Y = {(int) D1, (int) D2};
@@ -323,8 +335,8 @@ public class IEPMiner extends Model {
                 newSet.add(patternSet.get(i));
             }
         }
-        
-       /* System.out.println(newSet.size());
+
+        /* System.out.println(newSet.size());
         
         // check in the reduced patterns set for patterns that accomplish with condition 3
          patternSet.clear();
@@ -354,7 +366,7 @@ public class IEPMiner extends Model {
                 patternSet.add(newSet.get(i));
             }
         }
-        */
+         */
         //return patternSet;
         return newSet;
     }
@@ -378,7 +390,7 @@ public class IEPMiner extends Model {
 //            }
 //        }
         //return next;
-        return chi(Y,X) >= minimumChiSquared; // return condition 2
+        return chi(Y, X) >= minimumChiSquared; // return condition 2
     }
 
     public int[] getCounts(Pattern p) {
@@ -408,5 +420,15 @@ public class IEPMiner extends Model {
                 powerSet(g, sets);
             }
         }
+    }
+
+    @Override
+    public String[][] predict(InstanceSet test) {
+        String[][] result = new String[4][test.getNumInstances()];
+        result[0] = super.getPredictions(super.patterns, test);
+        result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
+        result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
+        result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        return result;
     }
 }

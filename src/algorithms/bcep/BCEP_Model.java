@@ -39,7 +39,6 @@ import javafx.util.Pair;
 import keel.Dataset.Attributes;
 import keel.Dataset.Instance;
 
-import static algorithms.sjep_classifier.SJEP_Classifier.minSupp;
 
 
 /**
@@ -52,6 +51,7 @@ public class BCEP_Model extends Model implements Serializable {
     
     float[] classProbabilities;
     ArrayList<Item> simpleItems;
+    float minSupp;
 
     public BCEP_Model() {
         super.setFullyQualifiedName("bcep.BCEP_Model");
@@ -66,7 +66,7 @@ public class BCEP_Model extends Model implements Serializable {
 
             int countD1 = 0;
             int countD2 = 0;
-            float minSupp = Float.parseFloat(params.get("Minimum support"));
+            minSupp = Float.parseFloat(params.get("Minimum support"));
             float minGR = Float.parseFloat(params.get("Minimum GrowthRate"));
             ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
             classProbabilities = new float[classes.size()];
@@ -256,11 +256,11 @@ public class BCEP_Model extends Model implements Serializable {
             String[] predictionsFilterGlobal = null;
             String[] predictionsFilterClass = null;
 
-            if (getPatternsFilteredAllClass() != null) {
-                predictionsFilterGlobal = makePredictions(testInstances, Utils.castToOldatternFormat(getPatternsFilteredAllClass()));
+            if (getPatternsFilteredMinimal() != null) {
+                predictionsFilterGlobal = makePredictions(testInstances, Utils.castToOldatternFormat(getPatternsFilteredMinimal()));
             }
-            if (getPatternsFilteredByClass() != null) {
-                predictionsFilterClass = makePredictions(testInstances, Utils.castToOldatternFormat(getPatternsFilteredByClass()));
+            if (getPatternsFilteredMaximal() != null) {
+                predictionsFilterClass = makePredictions(testInstances, Utils.castToOldatternFormat(getPatternsFilteredMaximal()));
             }
 
             String[][] preds1 = {predictionsNoFilter, predictionsFilterGlobal, predictionsFilterClass};

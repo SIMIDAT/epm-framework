@@ -23,11 +23,14 @@
  */
 package algorithms.topk;
 
+import framework.GUI.GUI;
 import framework.GUI.Model;
+import framework.exceptions.IllegalActionException;
 import framework.items.Item;
 import framework.items.NominalItem;
 import framework.items.Pattern;
 import framework.utils.Utils;
+import framework.utils.cptree.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +38,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import keel.Dataset.InstanceSet;
 
 /**
@@ -91,86 +96,96 @@ public class TopK extends Model {
      * The k value to get the top-k patterns
      */
     private int k;
-    
-    
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
-        tree = new CPTree();
-        countsPerItem = new HashMap<>();
-        supportRatioPerItem = new HashMap<>();
-        itemCountsForD1 = new HashMap<>();
-        itemCountsForD2 = new HashMap<>();
-        k = Integer.parseInt(params.get("K"));
+        try {
+            Utils.checkDataset();
+            tree = new CPTree();
+            countsPerItem = new HashMap<>();
+            supportRatioPerItem = new HashMap<>();
+            itemCountsForD1 = new HashMap<>();
+            itemCountsForD2 = new HashMap<>();
+            k = Integer.parseInt(params.get("K"));
 
-        topK_PosPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
-            double supp1 = o1.getTraMeasure("Supp");
-            double supp2 = o2.getTraMeasure("Supp");
-            if (supp1 > supp2) {
-                return 1;
-            } else if (supp1 < supp2) {
-                return -1;
-            } else {
-                if (o1.length() > o2.length()) {
+            topK_PosPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
+                double supp1 = o1.getTraMeasure("SUPP");
+                double supp2 = o2.getTraMeasure("SUPP");
+                if (supp1 > supp2) {
                     return 1;
-                } else if (o1.length() < o2.length()) {
+                } else if (supp1 < supp2) {
                     return -1;
                 } else {
-                    return 1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
-                }
-            }
-        });
-
-        int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
-        // Mine for each class separately 
-        for (int i = 0; i < numClasses; i++) {
-            // Retrieve training patterns
-            ArrayList<Pattern> instances = Utils.generatePatterns(training, i);
-            // get the support ratio for each item
-            getSupportRatioForItems(instances);
-            getBitStrings(instances);
-            // Fill the tree
-            for (Pattern p : instances) {
-                // Sort the pattern according to the support-ratio inverse ordering for efficiency
-                p.getItems().sort((o1, o2) -> {
-                    double gr1 = supportRatioPerItem.get(o1);
-                    double gr2 = supportRatioPerItem.get(o2);
-                    if (gr1 > gr2) {
+                    if (o1.length() > o2.length()) {
                         return 1;
-                    } else if (gr1 < gr2) {
+                    } else if (o1.length() < o2.length()) {
                         return -1;
                     } else {
-                        return ((NominalItem) o1).compareTo(o2);
+                        return 1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
                     }
-                });
-                tree.insert(p, supportRatioPerItem);
-            }
-            // Mine the tree looking for Top-k SJEPs !
-            mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i));
+                }
+            });
 
-            // Clean auxiliar variables for the next class computation
-            collectedNegPatterns = collectedPosPatterns = minNegCount = minPosCount = 0;
-            itemCountsForD1.clear();
-            itemCountsForD2.clear();
-            countsPerItem.clear();
-            supportRatioPerItem.clear();
-            tree.clear();
-            // gets the top-k possitive patterns of the class
-            while (!topK_PosPatterns.isEmpty()) {
-                super.patterns.add(topK_PosPatterns.poll());
+            int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
+            // Mine for each class separately
+            for (int i = 0; i < numClasses; i++) {
+                // Retrieve training patterns
+                ArrayList<Pattern> instances = Utils.generatePatterns(training, i);
+                // get the support ratio for each item
+                getSupportRatioForItems(instances);
+                getBitStrings(instances);
+                // Fill the tree
+                for (Pattern p : instances) {
+                    // Sort the pattern according to the support-ratio inverse ordering for efficiency
+                    p.getItems().sort((o1, o2) -> {
+                        double gr1 = supportRatioPerItem.get(o1);
+                        double gr2 = supportRatioPerItem.get(o2);
+                        if (gr1 > gr2) {
+                            return 1;
+                        } else if (gr1 < gr2) {
+                            return -1;
+                        } else {
+                            return ((NominalItem) o1).compareTo(o2);
+                        }
+                    });
+                    tree.insert(p, supportRatioPerItem);
+                }
+                // Mine the tree looking for Top-k SJEPs !
+                mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i));
+
+                // Clean auxiliar variables for the next class computation
+                collectedNegPatterns = collectedPosPatterns = minNegCount = minPosCount = 0;
+                itemCountsForD1.clear();
+                itemCountsForD2.clear();
+                countsPerItem.clear();
+                supportRatioPerItem.clear();
+                tree.clear();
+                // gets the top-k possitive patterns of the class
+                while (!topK_PosPatterns.isEmpty()) {
+                    super.patterns.add(topK_PosPatterns.poll());
+                }
             }
+        } catch (IllegalActionException ex) {
+            GUI.setInfoLearnTextError(ex.getReason());
         }
     }
 
     @Override
     public String[][] predict(InstanceSet test) {
-        return null;
+        String[][] result = new String[4][test.getNumInstances()];
+        result[0] = super.getPredictions(super.patterns, test);
+        result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
+        result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
+        result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        return result;
     }
 
     /**
-     * Calculates the support ratio of the items to allow the sorting of the CP-Tree
-     * NOTE: THIS ONLY CALCULATES THE GROWTH RATE FOR THE POSITIVE CLASS! NOT THE REAL SUPPORT-RATIO!
-     * @param instances 
+     * Calculates the support ratio of the items to allow the sorting of the
+     * CP-Tree NOTE: THIS ONLY CALCULATES THE GROWTH RATE FOR THE POSITIVE
+     * CLASS! NOT THE REAL SUPPORT-RATIO!
+     *
+     * @param instances
      */
     public void getSupportRatioForItems(ArrayList<Pattern> instances) {
         // Get support ratio for the items (get counts)
@@ -250,12 +265,12 @@ public class TopK extends Model {
             if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount, true)) {
                 //beta.setClase(i);
                 HashMap<String, Double> m = new HashMap<>();
-                m.put("Supp", ((Integer) i.getCountD1()).doubleValue());
+                m.put("SUPP", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
 
                 if (topK_PosPatterns.size() > k) {
                     topK_PosPatterns.poll();
-                    minPosCount = (int) topK_PosPatterns.peek().getTraMeasure("Supp") + 1;
+                    minPosCount = (int) topK_PosPatterns.peek().getTraMeasure("SUPP") + 1;
                 }
                 topK_PosPatterns.offer(beta.clone());
 

@@ -518,8 +518,8 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
      */
     public void executeTrain() {
 //        super.patterns = new ArrayList<>();
-//        super.patternsFilteredAllClasses = new ArrayList<>();
-//        super.patternsFilteredByClass = new ArrayList<>();
+//        super.patternsFilteredMinimal = new ArrayList<>();
+//        super.patternsFilteredMaximal = new ArrayList<>();
         ArrayList<Pattern> patt = new ArrayList<>();
         try {
             modelTime = ((double) System.currentTimeMillis() - initialTime) / 1000.0;
@@ -587,11 +587,11 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
             Logger.getLogger(LazyAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
         }
         //fill rules filteredAll and filteredByClass
-        for (Pattern pat : super.patternsFilteredAllClasses) {
+        for (Pattern pat : super.patternsFilteredMinimal) {
             int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
             rulesFilterAll.add(rules.get(index));
         }
-        for (Pattern pat : super.patternsFilteredByClass) {
+        for (Pattern pat : super.patternsFilteredMaximal) {
             int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
             rulesFilterByClass.add(rules.get(index));
         }

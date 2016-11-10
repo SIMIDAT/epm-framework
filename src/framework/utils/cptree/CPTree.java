@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package algorithms.topk;
+package framework.utils.cptree;
 
+import algorithms.topk.*;
 import framework.items.Item;
 import framework.items.Pattern;
 import java.util.HashMap;

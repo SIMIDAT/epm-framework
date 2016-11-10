@@ -54,8 +54,8 @@ public class TreeBasedJEP extends Model {
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
         super.patterns = new ArrayList<>();
-        super.patternsFilteredAllClasses = new ArrayList<>();
-        super.patternsFilteredByClass = new ArrayList<>();
+        super.patternsFilteredMinimal = new ArrayList<>();
+        super.patternsFilteredMaximal = new ArrayList<>();
         int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
         ordering = params.get("Ordering");
         alpha = Float.parseFloat(params.get("Alpha"));
@@ -76,10 +76,11 @@ public class TreeBasedJEP extends Model {
 
     @Override
     public String[][] predict(InstanceSet test) {
-        String[][] result = new String[3][test.getNumInstances()];
+        String[][] result = new String[4][test.getNumInstances()];
         result[0] = getPredictions(super.patterns, test);
-        result[1] = getPredictions(super.patterns, test);
-        result[2] = getPredictions(super.patterns, test);
+        result[1] = getPredictions(super.patternsFilteredMinimal, test);
+        result[2] = getPredictions(super.patternsFilteredMaximal, test);
+        result[3] = getPredictions(super.patternsFilteredByMeasure, test);
         return result;
     }
 

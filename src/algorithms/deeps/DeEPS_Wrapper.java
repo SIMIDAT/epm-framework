@@ -47,8 +47,8 @@ public class DeEPS_Wrapper extends Model{
     
     @Override
     public String[][] predict(InstanceSet test){
-        algorithm.setPatternsFilteredAllClass(super.getPatternsFilteredAllClass());
-        algorithm.setPatternsFilteredByClass(super.getPatternsFilteredByClass());
+        algorithm.setPatternsFilteredMinimal(super.getPatternsFilteredMinimal());
+        algorithm.setPatternsFilteredMaximal(super.getPatternsFilteredMaximal());
         return algorithm.executeTest(test);
     }
    

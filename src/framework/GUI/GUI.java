@@ -602,30 +602,30 @@ public class GUI extends javax.swing.JFrame {
             SwingWorker worker = new SwingWorker() {
                 @Override
                 protected Object doInBackground() throws Exception {
-                  
-                        //First: instantiate the class selected with th fully qualified name of the read model
-                        Object model = Model.readModel(ModelPath1.getText());
-                        Class clase = Class.forName(((Model) model).getFullyQualifiedName());
-                        //Object newObject = clase.newInstance();
 
-                        // Second: get the argument class
-                        Class[] args = new Class[1];
-                        args[0] = InstanceSet.class;
+                    //First: instantiate the class selected with th fully qualified name of the read model
+                    Object model = Model.readModel(ModelPath1.getText());
+                    Class clase = Class.forName(((Model) model).getFullyQualifiedName());
+                    //Object newObject = clase.newInstance();
 
-                        // Third: Get the method 'learn' of the class and invoke it.
-                        String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(model, test);
-                        for (int i = 0; i < predictions[0].length; i++) {
-                            if (test.getAttributeDefinitions().getOutputAttributes() != null) {
-                                appendToPane(PredictionsPanel, test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i], Color.BLUE, false);
-                                preds += test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i] + "\n";
-                            } else {
-                                appendToPane(PredictionsPanel, predictions[0][i], Color.BLUE, false);
-                                preds += predictions[0][i] + "\n";
-                            }
+                    // Second: get the argument class
+                    Class[] args = new Class[1];
+                    args[0] = InstanceSet.class;
+
+                    // Third: Get the method 'learn' of the class and invoke it.
+                    String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(model, test);
+                    for (int i = 0; i < predictions[0].length; i++) {
+                        if (test.getAttributeDefinitions().getOutputAttributes() != null) {
+                            appendToPane(PredictionsPanel, test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i], Color.BLUE, false);
+                            preds += test.getOutputNominalValue(i, 0) + "  -  " + predictions[0][i] + "\n";
+                        } else {
+                            appendToPane(PredictionsPanel, predictions[0][i], Color.BLUE, false);
+                            preds += predictions[0][i] + "\n";
                         }
-                        PredictionsPanel.setEditable(false);
-                        ;
+                    }
+                    PredictionsPanel.setEditable(false);
                     
+
                     return null;
                 }
 
@@ -635,17 +635,18 @@ public class GUI extends javax.swing.JFrame {
                         get();
                     } catch (InterruptedException ex) {
                         Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                        ex.printStackTrace();
                     } catch (ExecutionException ex) {
                         appendToPane(PredictionsPanel, "An unexpected error has ocurred: " + ex.getCause().toString(), Color.red);
+                        ex.printStackTrace();
                     }
                 }
-                
-                
 
             };
             worker.execute();
         } catch (IllegalActionException ex) {
             appendToPane(PredictionsPanel, ex.getReason(), Color.red);
+            ex.printStackTrace();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -727,9 +728,9 @@ public class GUI extends javax.swing.JFrame {
                 protected Object doInBackground() throws Exception {
                     // Reads training and test file
                     Attributes.clearAll();
-                    try{
+                    try {
                         training.readSet(rutaTra.getText(), true);
-                    } catch(DatasetException | HeaderFormatException | NullPointerException ex){
+                    } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                         throw new IllegalActionException("ERROR: Format error on training file.");
                     }
                     training.setAttributesAsNonStatic();
@@ -745,8 +746,9 @@ public class GUI extends javax.swing.JFrame {
                     Class clase = Class.forName(actual_fully_qualified_class);
                     newObject = clase.newInstance();
                     ((Model) newObject).patterns = new ArrayList<>();
-                    ((Model) newObject).patternsFilteredAllClasses = new ArrayList<>();
-                    ((Model) newObject).patternsFilteredByClass = new ArrayList<>();
+                    ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
+                    ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
+                    ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
 
                     // Second: get the argument class
                     Class[] args = new Class[2];
@@ -756,8 +758,9 @@ public class GUI extends javax.swing.JFrame {
                     System.out.println("Learning Model...");
                     // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
                     clase.getMethod("learn", args).invoke(newObject, training, params);
-
+                    appendToPane(ExecutionInfoLearn, "Filtering patterns and calculating descriptive measures...", Color.BLUE);
                     System.out.println("Filtering patterns and calculating descriptive measures...");
+
                     // Get learned patterns, filter, and calculate measures for training
                     ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
                     ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
@@ -765,6 +768,7 @@ public class GUI extends javax.swing.JFrame {
                     Measures.add(filterPatterns.get(1));
 
                     // Call predict method for ACC and AUC for training
+                    appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
                     System.out.println("Calculating precision for training...");
                     args = new Class[1];
                     args[0] = InstanceSet.class;
@@ -772,6 +776,7 @@ public class GUI extends javax.swing.JFrame {
                     Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
                     // Save training measures in a file.
                     System.out.println("Save results in a file...");
+                    appendToPane(ExecutionInfoLearn, "Save result in a file...", Color.BLUE);
                     Utils.saveTraining(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures);
                     appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
                     System.out.println("Done learning model.");
@@ -818,25 +823,28 @@ public class GUI extends javax.swing.JFrame {
                         get();
                     } catch (InterruptedException ex) {
                         Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                        ex.printStackTrace();
                     } catch (ExecutionException ex) {
                         Throwable cause = ex.getCause();
-                        if(cause instanceof IllegalActionException){
+                        if (cause instanceof IllegalActionException) {
                             appendToPane(ExecutionInfoLearn, ((IllegalActionException) cause).getReason(), Color.red);
                         } else {
                             appendToPane(ExecutionInfoLearn, "An unexpected error has ocurred: " + cause.toString(), Color.red);
                         }
+                        ex.printStackTrace();
                     }
                 }
 
             };
 
             worker.execute();
-           
 
         } catch (IllegalActionException ex) {
             appendToPane(ExecutionInfoLearn, ex.getReason(), Color.red);
+            ex.printStackTrace();
         } catch (Exception ex) {
             appendToPane(ExecutionInfoLearn, ex.getMessage(), Color.red);
+            ex.printStackTrace();
         }
 
 
@@ -971,6 +979,7 @@ public class GUI extends javax.swing.JFrame {
 
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                appendToPane(BatchOutput, "ERROR: Folder " + lastDirectory.getAbsolutePath() + " Not found", Color.red);
             } finally {
                 pw.close();
             }
@@ -1038,47 +1047,44 @@ public class GUI extends javax.swing.JFrame {
 
                                 // Execute the method
                                 //First: instantiate the class selected with the fully qualified name
-                               
-                                    Object newObject;
-                                    Class clase = Class.forName(actual_fully_qualified_class);
-                                    newObject = clase.newInstance();
+                                Object newObject;
+                                Class clase = Class.forName(actual_fully_qualified_class);
+                                newObject = clase.newInstance();
 
-                                    // Second: get the argument class
-                                    Class[] args = new Class[2];
-                                    args[0] = InstanceSet.class;
-                                    args[1] = HashMap.class;
+                                // Second: get the argument class
+                                Class[] args = new Class[2];
+                                args[0] = InstanceSet.class;
+                                args[1] = HashMap.class;
 
-                                    // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
-                                    clase.getMethod("learn", args).invoke(newObject, training, params);
-                                    // Get learned patterns, filter, and calculate measures
-                                    //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
+                                // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                                clase.getMethod("learn", args).invoke(newObject, training, params);
+                                // Get learned patterns, filter, and calculate measures
+                                //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
 
-                                    // Call the test method. This method return in a hashmap the quality measures.
-                                    // for unfiltered, filtered global, and filtered by class QMs.
-                                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
-                                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
-                                    Measures.add(filterPatterns.get(0));
-                                    Measures.add(filterPatterns.get(1));
+                                // Call the test method. This method return in a hashmap the quality measures.
+                                // for unfiltered, filtered global, and filtered by class QMs.
+                                ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                                ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                                Measures.add(filterPatterns.get(0));
+                                Measures.add(filterPatterns.get(1));
 
-                                    appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
-                                    args = new Class[1];
-                                    args[0] = InstanceSet.class;
-                                    // Call predict method
-                                    String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
-                                    // Calculate descriptive measures in test
-                                    Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
-                                    Measures.add(filterPatterns.get(0));
-                                    Measures.add(filterPatterns.get(1));
-                                    // Calculate predictions in test
-                                    Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
+                                appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
+                                args = new Class[1];
+                                args[0] = InstanceSet.class;
+                                // Call predict method
+                                String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
+                                // Calculate descriptive measures in test
+                                Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
+                                filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                                Measures.add(filterPatterns.get(0));
+                                Measures.add(filterPatterns.get(1));
+                                // Calculate predictions in test
+                                Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
 
-                                    // Store the result to make the average result
-                                    QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
-                                    QMsGlobal = Utils.updateHashMap(QMsGlobal, Measures.get(1));
-                                    QMsByClass = Utils.updateHashMap(QMsByClass, Measures.get(2));
-
-                              
+                                // Store the result to make the average result
+                                QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
+                                QMsGlobal = Utils.updateHashMap(QMsGlobal, Measures.get(1));
+                                QMsByClass = Utils.updateHashMap(QMsByClass, Measures.get(2));
 
                             }
 
@@ -1099,17 +1105,19 @@ public class GUI extends javax.swing.JFrame {
                         get();
                     } catch (InterruptedException ex) {
                         Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                        ex.printStackTrace();
                     } catch (ExecutionException ex) {
                         appendToPane(BatchOutput, "An unexpected error has ocurred: " + ex.getCause().toString(), Color.red);
+                        ex.printStackTrace();
                     }
                 }
-                
-                
+
             };
             work.execute();
 
         } catch (IllegalActionException ex) {
             appendToPane(BatchOutput, ex.getReason(), Color.red);
+            ex.printStackTrace();
         }
 
 

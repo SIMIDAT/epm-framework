@@ -23,6 +23,7 @@
  */
 package framework.GUI;
 
+import framework.utils.Utils;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,11 +34,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 import framework.items.Pattern;
+import keel.Dataset.Attribute;
+import keel.Dataset.Instance;
 
 /**
  * The {@code Model} class implements the neccesary methods to learn and predict
  * instances and also to read and save serialized objects. This <b> must be the
- * superclass </b> of each algorithm included in the package and the methods 
+ * superclass </b> of each algorithm included in the package and the methods
  * {@code learn()} and {@code predict} must be overriden.
  *
  * @author Ángel M. García-Vico
@@ -49,10 +52,11 @@ public class Model implements Serializable {
 
     private String fullyQualifiedName;
     //private String minorityClass;
-    
+
     protected ArrayList<Pattern> patterns;
-    protected ArrayList<Pattern> patternsFilteredAllClasses; // Patterns filtered by the best n rules of a given qm
-    protected ArrayList<Pattern> patternsFilteredByClass; // Patterns filtered by the best n rules of each class
+    protected ArrayList<Pattern> patternsFilteredMinimal; // Minimal Patterns
+    protected ArrayList<Pattern> patternsFilteredMaximal; // Maximal Patterns
+    protected ArrayList<Pattern> patternsFilteredByMeasure; // Patterns filtered by a given quality measure
 
     /**
      * Saves the current model to a .ser file extension.
@@ -108,6 +112,40 @@ public class Model implements Serializable {
     }
 
     /**
+     * The default method to predict an instance. It is based on the apportation
+     * of support each pattern that covers an instance do
+     *
+     * @param patterns
+     * @param test
+     * @return
+     */
+    public String[] getPredictions(ArrayList<framework.items.Pattern> patterns, InstanceSet test) {
+        Attribute[] attributes = test.getAttributeDefinitions().getInputAttributes();
+        ArrayList<String> predictions = new ArrayList<>();
+        float[] clasContrib = new float[test.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues()];
+
+        //For each test instance
+        for (Instance inst : test.getInstances()) {
+            for (int i = 0; i < clasContrib.length; i++) {
+                clasContrib[i] = 0;
+            }
+
+            // Checks the patterns that covers the instance for each class, and sum its support
+            for (framework.items.Pattern pat : patterns) {
+                if (pat.covers(inst, attributes)) {
+                    clasContrib[pat.getClase()] += pat.getTra_measures().get("SUPP");
+                }
+            }
+
+            // The max value wins and it is the value predicted.
+            predictions.add(test.getAttributeDefinitions().getOutputAttribute(0).getNominalValue(Utils.getIndexOfMaxValue(clasContrib)));
+        }
+
+        //return the array of predictions
+        return predictions.toArray(new String[0]);
+    }
+
+    /**
      * @return the fullyQualifiedName
      */
     public String getFullyQualifiedName() {
@@ -151,29 +189,43 @@ public class Model implements Serializable {
     /**
      * @return the patternsFilteredAllClass
      */
-    public ArrayList<Pattern> getPatternsFilteredAllClass() {
-        return patternsFilteredAllClasses;
+    public ArrayList<Pattern> getPatternsFilteredMinimal() {
+        return patternsFilteredMinimal;
     }
 
     /**
      * @param patternsFilteredAllClass the patternsFilteredAllClass to set
      */
-    public void setPatternsFilteredAllClass(ArrayList<Pattern> patternsFilteredAllClass) {
-        this.patternsFilteredAllClasses = patternsFilteredAllClass;
+    public void setPatternsFilteredMinimal(ArrayList<Pattern> patternsFilteredAllClass) {
+        this.patternsFilteredMinimal = patternsFilteredAllClass;
     }
 
     /**
-     * @return the patternsFilteredByClass
+     * @return the patternsFilteredMaximal
      */
-    public ArrayList<Pattern> getPatternsFilteredByClass() {
-        return patternsFilteredByClass;
+    public ArrayList<Pattern> getPatternsFilteredMaximal() {
+        return patternsFilteredMaximal;
     }
 
     /**
-     * @param patternsFilteredByClass the patternsFilteredByClass to set
+     * @param patternsFilteredMaximal the patternsFilteredMaximal to set
      */
-    public void setPatternsFilteredByClass(ArrayList<Pattern> patternsFilteredByClass) {
-        this.patternsFilteredByClass = patternsFilteredByClass;
+    public void setPatternsFilteredMaximal(ArrayList<Pattern> patternsFilteredMaximal) {
+        this.patternsFilteredMaximal = patternsFilteredMaximal;
+    }
+
+    /**
+     * @return the patternsFilteredByMeasure
+     */
+    public ArrayList<Pattern> getPatternsFilteredByMeasure() {
+        return patternsFilteredByMeasure;
+    }
+
+    /**
+     * @param patternsFilteredByMeasure the patternsFilteredByMeasure to set
+     */
+    public void setPatternsFilteredByMeasure(ArrayList<Pattern> patternsFilteredByMeasure) {
+        this.patternsFilteredByMeasure = patternsFilteredByMeasure;
     }
 
 }

@@ -1,433 +1,320 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * The MIT License
+ *
+ * Copyright 2016 angel.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package algorithms.sjep_classifier;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import framework.GUI.GUI;
+import framework.GUI.Model;
+import framework.exceptions.IllegalActionException;
+import framework.items.Item;
+import framework.items.NominalItem;
+import framework.items.Pattern;
+import framework.utils.Utils;
+import framework.utils.cptree.*;
+import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.util.Pair;
-import keel.Dataset.*;
-import org.core.*;
+import keel.Dataset.InstanceSet;
 
 /**
+ * A class that represents the classic SJEP-Classifier method that mines all
+ * SJEPs with a support higher than a threshold
  *
- * @author angel
+ * @author Ángel M. García-Vico
+ * @version 1.0
+ * @since JDK 1.8
  */
-public class SJEP_Classifier {
-
-    public static String tra_file, tst_file, nombre_alg;
-    public static double minSupp;
+public class SJEP_Classifier extends Model {
 
     /**
-     * @param args the command line arguments
+     * The root of the CP-Tree
      */
-    public static void main(String[] args) {
-        // TODO code application logic here
+    private CPTree tree;
+    /**
+     * The counts in D1 and D2 for each individual item
+     */
+    private HashMap<Item, Par> countsPerItem;
+    /**
+     * The support ratio for each individual item
+     */
+    private HashMap<Item, Double> supportRatioPerItem;
+    /**
+     * The bit string representation for those items that appear in D1. An "1"
+     * at bit position k means that this Item appear in the transaction number k
+     */
+    private HashMap<Item, BigInteger> itemCountsForD1;
+    /**
+     * The bit string representation for those items that appear in D2. An "1"
+     * at bit position k means that this Item appear in the transaction number k
+     */
+    private HashMap<Item, BigInteger> itemCountsForD2;
+    /**
+     * The priority queue where top-k positive patterns are stored.
+     */
+    private PriorityQueue<Pattern> topK_PosPatterns;
 
-        InstanceSet a = new InstanceSet();
-        int countD1 = 0;
-        int countD2 = 0;
+    /**
+     * The minimum count for positive instances
+     */
+    private int minPosCount = 0;
 
-        // Reads parameters
-        ReadParameters(args[0]);
-
-        if (!nombre_alg.equalsIgnoreCase("sjep-c")) {
-            System.out.println("Algorithm is not SJEP-C. Aborting...");
-            System.exit(-1);
-        }
-        // Reads the original dataset
+    @Override
+    public void learn(InstanceSet training, HashMap<String, String> params) {
         try {
-            a.readSet(tra_file, true);
-            ArrayList<String> classes = new ArrayList<>(Attributes.getOutputAttribute(0).getNominalValuesList());
-            // Gets the count of examples for each class to calculate the growth rate.
-            for (int i = 0; i < a.getNumInstances(); i++) {
-                if (classes.indexOf(a.getInstance(i).getOutputNominalValues(0)) == 0) {
-                    countD1++;
+            Utils.checkDataset();
+            tree = new CPTree();
+            countsPerItem = new HashMap<>();
+            supportRatioPerItem = new HashMap<>();
+            itemCountsForD1 = new HashMap<>();
+            itemCountsForD2 = new HashMap<>();
+            minPosCount = (int) (Float.parseFloat(params.get("Min Support")) * (float) training.getNumInstances());
+
+            topK_PosPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
+                double supp1 = o1.getTraMeasure("SUPP");
+                double supp2 = o2.getTraMeasure("SUPP");
+                if (supp1 > supp2) {
+                    return 1;
+                } else if (supp1 < supp2) {
+                    return -1;
                 } else {
-                    countD2++;
-                }
-            }
-
-        } catch (DatasetException | HeaderFormatException ex) {
-            Logger.getLogger(SJEP_Classifier.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        if (Attributes.getOutputAttribute(0).getNumNominalValues() <= 2) {
-            // Normal Execution (BINARY PROBLEM)
-            long t_ini = System.currentTimeMillis();
-            // get simple itemsets to perform the ordering of the items and filter by gorwth rate
-            // Class '0' is considered as positive
-            ArrayList<Item> simpleItems = Utils.getSimpleItems(a, minSupp, 0);
-            // sort items by growth rate 
-            simpleItems.sort(null);
-            // gets all instances removing those itemset that not appear on simpleItems
-            ArrayList<Pair<ArrayList<Item>, Integer>> instances = Utils.getInstances(a, simpleItems, 0);
-            for (int i = 0; i < instances.size(); i++) {
-                // sort each arraylist of items
-                instances.get(i).getKey().sort(null);
-            }
-
-            System.out.println("Loading the CP-Tree...");
-            // Create the CP-Tree
-            CPTree tree = new CPTree(countD1, countD2);
-            // Add the instances on the CP-Tree
-            for (Pair<ArrayList<Item>, Integer> inst : instances) {
-                tree.insertTree(inst.getKey(), inst.getValue());
-            }
-
-            System.out.println("Mining SJEPs...");
-            // Perform mining
-            ArrayList<Pattern> patterns = tree.mineTree(minSupp);
-
-            if (patterns.size() == 0) {
-                System.out.println("NO SJEPs FOUND");
-            } else {
-                try {
-                    PrintWriter pw = new PrintWriter(tra_file + "-Patterns.csv");
-                    for (int i = 0; i < patterns.size(); i++) {
-                        pw.println(patterns.get(i).toString());
-                    }
-                    System.out.println("Testing patterns...");
-                    // pattern TESTING here
-                    // First, reads the test set
-                    InstanceSet test = new InstanceSet();
-                    ArrayList<Pair<ArrayList<Item>, Integer>> testInstances;
-
-                    test.readSet(tst_file, false);
-                    // Get the instances: It is not neccesary to sort that instances.
-                    testInstances = Utils.getInstances(test, simpleItems, 0);
-                    // Writes the confusion matrix file in CSV format
-                    pw = new PrintWriter(tra_file + "-CM.csv", "UTF-8");
-                    pw.println("TP,FP,FN,TN"); // Prints the header
-
-                    // Calculate the confusion matrix for each pattern to compute other quality measures
-                    for (int i = 0; i < patterns.size(); i++) {
-                        int tp = 0;
-                        int tn = 0;
-                        int fp = 0;
-                        int fn = 0;
-                        // for each instance
-                        for (int j = 0; j < testInstances.size(); j++) {
-                            // If the pattern covers the example
-                            if (patterns.get(i).covers(testInstances.get(j).getKey())) {
-
-                                if (patterns.get(i).getClase() == testInstances.get(j).getValue()) {
-                                    tp++;
-                                } else {
-                                    fp++;
-                                }
-                            } else if (patterns.get(i).getClase() != testInstances.get(j).getValue()) {
-                                tn++;
-                            } else {
-                                fn++;
-                            }
-
-                        }
-                        // Saves on the file
-                        pw.println(tp + "," + fp + "," + fn + "," + tn);
-                    }
-                    // close the writer
-                    pw.close();
-
-                    // Show statistics
-                    System.out.println("================ STATISTICS =====================");
-                    System.out.println("SJEPs found: " + patterns.size());
-                    // Calculate the test accuracy:
-                    computeAccuracy(testInstances, patterns, test, countD1, countD2);
-                } catch (DatasetException | HeaderFormatException ex) {
-                    Logger.getLogger(SJEP_Classifier.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(SJEP_Classifier.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-            }
-            System.out.println("Execution time: " + (double) (System.currentTimeMillis() - t_ini) / 1000.0 + " seconds");
-
-        } else {
-            // MULTICLASS EXECUTION
-            // For multi-class, mining using the OVA (One-vs-All) binarization technique.
-            long t_ini = System.currentTimeMillis();
-            // Here we store all patterns, each position of the ArrayList corresponds with patterns
-            // of the class at position 'i'.
-            ArrayList<ArrayList<Pattern>> allPatterns = new ArrayList<>();
-            // Execute the mining algorithm k times, with k the number of classes.
-            for (int i = 0; i < Attributes.getOutputAttribute(0).getNumNominalValues(); i++) {
-                // count the number of examples in the new binarized dataset
-                countD1 = countD2 = 0;
-                for (int j = 0; j < a.getNumInstances(); j++) {
-                    if (a.getInstance(i).getOutputNominalValuesInt(0) == i) {
-                        countD1++;
+                    if (o1.length() > o2.length()) {
+                        return 1;
+                    } else if (o1.length() < o2.length()) {
+                        return -1;
                     } else {
-                        countD2++;
+                        return 1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
                     }
                 }
+            });
 
-                System.out.println("Mining class: " + Attributes.getOutputAttribute(0).getNominalValue(i));
-                // Class 'i' is considered de positive class, the rest of classes correspond to the negative one.
-                // Get the simple items.
-                ArrayList<Item> simpleItems = Utils.getSimpleItems(a, minSupp, i);
-                // sort items by growth rate 
-                simpleItems.sort(null);
-                // gets all instances removing those itemset that not appear on simpleItems
-                ArrayList<Pair<ArrayList<Item>, Integer>> instances = algorithms.sjep_classifier.Utils.getInstances(a, simpleItems, i);
-                for (int j = 0; j < instances.size(); j++) {
-                    // sort each arraylist of items
-                    instances.get(j).getKey().sort(null);
-                }
-
-                System.out.println("Loading the CP-Tree...");
-                // Create the CP-Tree
-                CPTree tree = new CPTree(countD1, countD2);
-                // Add the instances on the CP-Tree
-                for (Pair<ArrayList<Item>, Integer> inst : instances) {
-                    tree.insertTree(inst.getKey(), inst.getValue());
-                }
-
-                System.out.println("Mining SJEPs...");
-                // Perform mining
-                ArrayList<Pattern> patterns = tree.mineTree(minSupp);
-                // remove those patterns with class != 0 and change the value of the class
-                Iterator it = patterns.iterator();
-                while (it.hasNext()) {
-                    Pattern next = (Pattern) it.next();
-                    if (next.getClase() != 0) {
-                        it.remove();
-                    } else {
-                        next.setClase(i);
-                    }
-                }
-                allPatterns.add(patterns);
-            }
-
-            /* ========================
-             PATTERNS TEST
-             ========================
-             */
-            System.out.println("Testing patterns...");
-            // pattern TESTING here
-            // First, reads the test set
-            InstanceSet test = new InstanceSet();
-            ArrayList<Pair<ArrayList<Item>, Integer>> testInstances;
-
-            try {
-                PrintWriter pw = new PrintWriter(tra_file + "-Patterns.csv");
-                PrintWriter CMpw = new PrintWriter(tra_file + "-CM.csv", "UTF-8");
-                CMpw.println("TP,FP,FN,TN"); // Prints the header
-                test.readSet(tst_file, false);
-                // We have in 'allPatterns' an array with patterns of each class.
-                // Now, we determine the confusion matrix of each pattern.
-                for (int i = 0; i < allPatterns.size(); i++) {
-                    ArrayList<Pattern> patterns = allPatterns.get(i);
-
-                    for (int j = 0; j < patterns.size(); j++) {
-                        pw.println(patterns.get(j).toString());
-                    }
-
-                    // Get the instances: It is not neccesary to sort that instances.
-                    ArrayList<Item> simpleItems = Utils.getSimpleItems(test, minSupp, i);
-                    testInstances = Utils.getInstances(test, simpleItems, i);
-
-                    // Calculate the confusion matrix for each pattern to compute other quality measures
-                    for (int j = 0; j < patterns.size(); j++) {
-                        int tp = 0;
-                        int tn = 0;
-                        int fp = 0;
-                        int fn = 0;
-                        // for each instance
-                        for (int k = 0; k < testInstances.size(); k++) {
-                            // class '0' is considered the positive class (which is marked as the 'i' index
-                            // If the pattern covers the example
-                            if (patterns.get(j).covers(testInstances.get(k).getKey())) {
-
-                                if (patterns.get(j).getClase() == testInstances.get(k).getValue()) {
-                                    tp++;
-                                } else {
-                                    fp++;
-                                }
-                            } else if (patterns.get(j).getClase() != testInstances.get(k).getValue()) {
-                                tn++;
-                            } else {
-                                fn++;
-                            }
+            int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
+            // Mine for each class separately
+            for (int i = 0; i < numClasses; i++) {
+                // Retrieve training patterns
+                ArrayList<Pattern> instances = Utils.generatePatterns(training, i);
+                // get the support ratio for each item
+                getSupportRatioForItems(instances);
+                //getBitStrings(instances);
+                // Fill the tree
+                for (Pattern p : instances) {
+                    // Sort the pattern according to the support-ratio inverse ordering for efficiency
+                    p.getItems().sort((o1, o2) -> {
+                        double gr1 = supportRatioPerItem.get(o1);
+                        double gr2 = supportRatioPerItem.get(o2);
+                        if (gr1 > gr2) {
+                            return 1;
+                        } else if (gr1 < gr2) {
+                            return -1;
+                        } else {
+                            return ((NominalItem) o1).compareTo(o2);
                         }
-                        // Saves on the file
-                        CMpw.println(tp + "," + fp + "," + fn + "," + tn);
-                    }
-
+                    });
+                    tree.insert(p, supportRatioPerItem);
                 }
+                // Mine the tree looking for SJEPs !
+                mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i));
 
-                // close the writer
-                pw.close();
-                CMpw.close();
-                // Show statistics
-                System.out.println("================ STATISTICS =====================");
-                int sum = 0;
-                for (ArrayList<Pattern> patterns : allPatterns) {
-                    sum += patterns.size();
+                // Clean auxiliar variables for the next class computation
+                itemCountsForD1.clear();
+                itemCountsForD2.clear();
+                countsPerItem.clear();
+                supportRatioPerItem.clear();
+                tree.clear();
+                // gets the SJEP possitive patterns of the class
+                while (!topK_PosPatterns.isEmpty()) {
+                    super.patterns.add(topK_PosPatterns.poll());
                 }
-                System.out.println("SJEPs found: " + sum);
-            } catch (FileNotFoundException | DatasetException | HeaderFormatException | UnsupportedEncodingException ex) {
-                Logger.getLogger(SJEP_Classifier.class.getName()).log(Level.SEVERE, null, ex);
             }
-            System.out.println("Execution time: " + (double) (System.currentTimeMillis() - t_ini) / 1000.0 + " seconds");
-
-        }
-
-    }
-
-   
-
-    public static double median(ArrayList<Integer> values) {
-        if (values.size() > 1) {
-            int middle = values.size() >>> 1;
-            if (middle % 2 == 1) {
-                return values.get(middle);
-            } else {
-                return (values.get(middle - 1) + values.get(middle)) / 2.0;
-            }
-        } else {
-            if (values.size() == 1) {
-                return values.get(0);
-            }
-            return 0;
+        } catch (IllegalActionException ex) {
+            GUI.setInfoLearnTextError(ex.getReason());
         }
     }
 
-    public static void calculateAccuracy(InstanceSet testSet, int[] predictions) {
-        // we consider class 0 as positive and class 1 as negative
-        int tp = 0;
-        int fp = 0;
-        int tn = 0;
-        int fn = 0;
+    @Override
+    public String[][] predict(InstanceSet test) {
+        String[][] result = new String[4][test.getNumInstances()];
+        result[0] = super.getPredictions(super.patterns, test);
+        result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
+        result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
+        result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        return result;
+    }
 
-        // Calculate the confusion matrix.
-        for (int i = 0; i < predictions.length; i++) {
-            if (testSet.getOutputNumericValue(i, 0) == 0) {
-                if (predictions[i] == 0) {
-                    tp++;
+    /**
+     * Calculates the support ratio of the items to allow the sorting of the
+     * CP-Tree NOTE: THIS ONLY CALCULATES THE GROWTH RATE FOR THE POSITIVE
+     * CLASS! NOT THE REAL SUPPORT-RATIO!
+     *
+     * @param instances
+     */
+    public void getSupportRatioForItems(ArrayList<Pattern> instances) {
+        // Get support ratio for the items (get counts)
+        for (Pattern p : instances) {
+            for (Item it : p.getItems()) {
+                if (!countsPerItem.containsKey(it)) {
+                    countsPerItem.put(it, new Par());
+                }
+
+                if (p.getClase() == 0) {
+                    countsPerItem.get(it).D1++;
                 } else {
-                    fn++;
-                }
-            } else if (predictions[i] == 0) {
-                fp++;
-            } else {
-                tn++;
-            }
-        }
-
-        System.out.println("Test Accuracy: " + ((double) (tp + tn) / (double) (tp + tn + fp + fn)) * 100 + "%");
-    }
-
-    public static void computeAccuracy(ArrayList<Pair<ArrayList<Item>, Integer>> testInstances, ArrayList<Pattern> patterns, InstanceSet test, int countD1, int countD2) {
-        int[] predictions = new int[testInstances.size()];
-        //Now, for each pattern
-        for (int i = 0; i < testInstances.size(); i++) {
-            // calculate the score for each class for classify:
-            double scoreD1 = 0;
-            double scoreD2 = 0;
-            ArrayList<Integer> scoresD1 = new ArrayList<>();  // This is to calculate the base-score, that is the median
-            ArrayList<Integer> scoresD2 = new ArrayList<>();
-            // for each pattern mined
-            for (int j = 0; j < patterns.size(); j++) {
-                if (patterns.get(j).covers(testInstances.get(i).getKey())) {
-                    // If the example is covered by the pattern.
-                    // sum it support to the class of the pattern
-                    if (testInstances.get(i).getValue() == 0) {
-                        scoreD1 += patterns.get(j).getSupport();
-                        scoresD1.add(patterns.get(j).getSupport());
-                    } else {
-                        scoreD2 += patterns.get(j).getSupport();
-                        scoresD2.add(patterns.get(j).getSupport());
-                    }
-
+                    countsPerItem.get(it).D2++;
                 }
             }
-
-            // Now calculate the normalized score to make the prediction
-            double medianD1 = median(scoresD1);
-            double medianD2 = median(scoresD2);
-
-            if (medianD1 == 0) {
-                scoreD1 = 0;
+        }
+        // Get support ratio for the items (get support ratio)
+        Set<Map.Entry<Item, Par>> entrySet = countsPerItem.entrySet();
+        Iterator<Map.Entry<Item, Par>> iterator = entrySet.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Item, Par> next = iterator.next();
+            double suppRatio;
+            if (next.getValue().D1 == 0 && next.getValue().D2 == 0) {
+                suppRatio = 0;
+            } else if ((next.getValue().D1 != 0 && next.getValue().D2 == 0)) {
+                suppRatio = Double.POSITIVE_INFINITY;
             } else {
-                scoreD1 = scoreD1 / medianD1;
+                suppRatio = ((Integer) next.getValue().D1).doubleValue() / ((Integer) next.getValue().D2).doubleValue();
             }
+            supportRatioPerItem.put(next.getKey(), suppRatio);
+        }
+    }
 
-            if (medianD2 == 0) {
-                scoreD2 = 0;
-            } else {
-                scoreD2 = scoreD2 / medianD2;
-            }
-
-            // make the prediction:
-            if (scoreD1 > scoreD2) {
-                predictions[i] = 0;
-            } else if (scoreD1 < scoreD2) {
-                predictions[i] = 1;
-            } else // In case of ties, the majority class is setted
-            if (countD1 < countD2) {
-                predictions[i] = 0;
-            } else {
-                predictions[i] = 1;
-            }
+    /**
+     * Gets the bit string of each single item for each class. This string
+     * represent an 1 at position k if the transaction k has that item for the
+     * class, or 0 elsewhere.
+     *
+     * @param instances
+     */
+    public void getBitStrings(ArrayList<Pattern> instances) {
+        Set<Item> keySet = countsPerItem.keySet();
+        Iterator<Item> iterator = keySet.iterator();
+        while (iterator.hasNext()) {
+            Item it = iterator.next();
+            // set bits to zero
+            BigInteger a = BigInteger.ZERO;
+            itemCountsForD1.put(it, a);
+            itemCountsForD2.put(it, a);
         }
 
-        calculateAccuracy(test, predictions);
-    }
-
-    public void computeAccuracyMulticlass(ArrayList<Pair<ArrayList<Item>, Integer>> testInstances, ArrayList<Pattern> patterns, InstanceSet test) {
-
-    }
-
-    public static void ReadParameters(String nFile) {
-        try {
-            int nl;
-            String fichero, linea, tok;
-            StringTokenizer lineasFichero, tokens;
-            fichero = File.readFile(nFile);
-            //fichero = fichero.toLowerCase() + "\n ";
-            lineasFichero = new StringTokenizer(fichero, "\n\r");
-
-            for (nl = 0, linea = lineasFichero.nextToken(); lineasFichero.hasMoreTokens(); linea = lineasFichero.nextToken()) {
-                nl++;
-                tokens = new StringTokenizer(linea, " ,\t");
-                if (tokens.hasMoreTokens()) {
-                    tok = tokens.nextToken();
-                    if (tok.equalsIgnoreCase("algorithm")) {
-                        nombre_alg = Utils.getParamString(tokens);
-                    } else if (tok.equalsIgnoreCase("minsupp")) {
-                        minSupp = Double.parseDouble(Utils.getParamString(tokens));
-                    } else if (tok.equalsIgnoreCase("training")) {
-                        tra_file = Utils.getParamString(tokens);
-                    } else if (tok.equalsIgnoreCase("test")) {
-                        tst_file = Utils.getParamString(tokens);
-                    } else {
-                        throw new IOException("Syntax error on line " + nl + ": [" + tok + "]\n");
-                    }
+        for (int i = 0; i < instances.size(); i++) {
+            for (Item it : instances.get(i).getItems()) {
+                if (instances.get(i).getClase() == 0) {
+                    itemCountsForD1.put(it, itemCountsForD1.get(it).setBit(i));
+                } else {
+                    itemCountsForD2.put(it, itemCountsForD2.get(it).setBit(i));
                 }
             }
-        } catch (FileNotFoundException e) {
-            System.err.println(e + " Parameter file");
-        } catch (IOException e) {
-            System.err.println(e + "Aborting program");
-            System.exit(-1);
         }
+    }
+
+    public void mineTree(Node node, Pattern alpha) {
+        // for all i in t.items
+        for (int j = 0; j < node.getItems().size(); j++) {
+            // if the subtree is not empty then merge
+            if (node.getItems().get(j).getChild() != null) {
+                if (!node.getItems().get(j).getChild().getItems().isEmpty()) {
+                    node.merge(node.getItems().get(j).getChild(), supportRatioPerItem);
+                }
+            }
+            Entry i = node.getItems().get(j);
+            Pattern beta = alpha.clone();
+            beta.add(i.getItem());
+
+            // We are looking for patterns only on the positive class to allow multiclass problems.
+            if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount)) {
+                //beta.setClase(i);
+                HashMap<String, Double> m = new HashMap<>();
+                m.put("SUPP", ((Integer) i.getCountD1()).doubleValue());
+                beta.setTra_measures(m);
+                topK_PosPatterns.offer(beta.clone());
+
+            } else if (visitSubTree(beta, i) && i.getChild() != null) {
+                mineTree(i.getChild(), beta);
+            }
+        }
+    }
+
+    /**
+     * Gets the pattern counts for D1 (or D2 if forD1 == false) using the bit
+     * strings
+     *
+     * @param p
+     * @param forD1
+     * @return
+     */
+    public int getPatternCount(Pattern p, boolean forD1) {
+        BigInteger a;
+        if (forD1) {
+            a = itemCountsForD1.get(p.get(0));
+        } else {
+            a = itemCountsForD2.get(p.get(0));
+        }
+
+        for (int i = 1; i < p.length(); i++) {
+            if (forD1) {
+                a = a.and(itemCountsForD1.get(p.get(i)));
+            } else {
+                a = a.and(itemCountsForD2.get(p.get(i)));
+            }
+        }
+        return a.bitCount();
+    }
+
+    /**
+     * The accept-pattern routine that accepts the inclusion of a top-k pattern
+     * in the given result.
+     *
+     * @param beta The pattern to check
+     * @param countD1 The counts for D1
+     * @param countD2 The counts for D2
+     * @param minCount The minimum count value
+     * @param positiveClass {@code true} to look for incluse into the positive
+     * class, {@code false} into the negative one.
+     * @return
+     */
+    public boolean acceptPattern(Pattern beta, int countD1, int countD2, int minCount) {
+        // check if the patter is a JEP
+        return countD1 > minCount && countD2 == 0;
+    }
+
+    /**
+     * The visit-subtree routine. It checks whether a node subtree must be
+     * visited or not.
+     *
+     * @param beta The pattern to check
+     * @param entry The actual node
+     * @return
+     */
+    public boolean visitSubTree(Pattern beta, Entry entry) {
+        // check if child node has minimal counts
+        return entry.getCountD1() >= minPosCount;
     }
 
 }

@@ -22,7 +22,9 @@
  * THE SOFTWARE.
  */
 
-package algorithms.topk;
+package framework.utils.cptree;
+
+import algorithms.topk.*;
 
 /**
  *

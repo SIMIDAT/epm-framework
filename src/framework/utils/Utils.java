@@ -621,7 +621,12 @@ public class Utils {
     }
 
     /**
-     * It gets the nrules best rules of a patterns set.
+     * It filters the original pattern set and gets the following pattern set:
+     * <ul>
+     * <li> A set with only MINIMAL patterns
+     * <li> A set with only MAXIMAL patterns
+     * <li> A set with patterns with a given quality measures above the given threshold
+     * </ul>
      *
      * @param model The model where the patterns are stored.
      * @param by A quality measure, this string must match with a key of the
@@ -641,7 +646,7 @@ public class Utils {
         for (int i = 0; i < bestNRulesBy.size(); i++) {
             bestPatterns.add(model.getPatterns().get(((Double) bestNRulesBy.get(i).get("RULE_NUMBER")).intValue()));
         }
-        model.setPatternsFilteredAllClass(bestPatterns);
+        model.setPatternsFilteredMinimal(bestPatterns);
 
         int[] classes = new int[model.getPatterns().size()];
         for (int i = 0; i < classes.length; i++) {
@@ -652,7 +657,7 @@ public class Utils {
         for (int i = 0; i < bestNRulesByClass.size(); i++) {
             bestPatterns.add(model.getPatterns().get(((Double) bestNRulesByClass.get(i).get("RULE_NUMBER")).intValue()));
         }
-        model.setPatternsFilteredByClass(bestPatterns);
+        model.setPatternsFilteredMaximal(bestPatterns);
 
         HashMap<String, Double> AverageQualityMeasures = AverageQualityMeasures(bestNRulesBy);
         HashMap<String, Double> AverageQualityMeasures1 = AverageQualityMeasures(bestNRulesByClass);
@@ -729,16 +734,16 @@ public class Utils {
             }
 
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredAllClass().size(); i++) {
-                pw3.print(model.getPatternsFilteredAllClass().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
-                pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTra_measures().get("NVAR")) + "\t");
+            for (int i = 0; i < model.getPatternsFilteredMinimal().size(); i++) {
+                pw3.print(model.getPatternsFilteredMinimal().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTra_measures().get("NVAR")) + "\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw3.print("--------\t\t");
                         } else {
-                            pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTra_measures().get(k)) + "\t\t");
+                            pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTra_measures().get(k)) + "\t\t");
                         }
                     }
                 }
@@ -754,16 +759,16 @@ public class Utils {
             }
 
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredByClass().size(); i++) {
-                pw4.print(model.getPatternsFilteredByClass().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
-                pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTra_measures().get("NVAR")) + "\t\t");
+            for (int i = 0; i < model.getPatternsFilteredMaximal().size(); i++) {
+                pw4.print(model.getPatternsFilteredMaximal().get(i).getTra_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTra_measures().get("NVAR")) + "\t\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw4.print("--------\t\t");
                         } else {
-                            pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTra_measures().get(k)) + "\t\t");
+                            pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTra_measures().get(k)) + "\t\t");
                         }
                     }
                 }
@@ -855,16 +860,16 @@ public class Utils {
             }
 
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredAllClass().size(); i++) {
-                pw3.print(model.getPatternsFilteredAllClass().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
-                pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTst_measures().get("NVAR")) + "\t");
+            for (int i = 0; i < model.getPatternsFilteredMinimal().size(); i++) {
+                pw3.print(model.getPatternsFilteredMinimal().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTst_measures().get("NVAR")) + "\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw3.print("--------\t\t");
                         } else {
-                            pw3.print(sixDecimals.format(model.getPatternsFilteredAllClass().get(i).getTst_measures().get(k)) + "\t\t");
+                            pw3.print(sixDecimals.format(model.getPatternsFilteredMinimal().get(i).getTst_measures().get(k)) + "\t\t");
                         }
                     }
                 }
@@ -880,16 +885,16 @@ public class Utils {
                 }
             }
             // write rules and training qms for all rules
-            for (int i = 0; i < model.getPatternsFilteredByClass().size(); i++) {
-                pw4.print(model.getPatternsFilteredByClass().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
-                pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTst_measures().get("NVAR")) + "\t\t");
+            for (int i = 0; i < model.getPatternsFilteredMaximal().size(); i++) {
+                pw4.print(model.getPatternsFilteredMaximal().get(i).getTst_measures().get("RULE_NUMBER") + "\t\t");
+                pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTst_measures().get("NVAR")) + "\t\t");
                 for (Object key : keys) {
                     String k = (String) key;
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
                             pw4.print("--------\t\t");
                         } else {
-                            pw4.print(sixDecimals.format(model.getPatternsFilteredByClass().get(i).getTst_measures().get(k)) + "\t\t");
+                            pw4.print(sixDecimals.format(model.getPatternsFilteredMaximal().get(i).getTst_measures().get(k)) + "\t\t");
                         }
                     }
                 }
@@ -1066,6 +1071,21 @@ public class Utils {
             }
         }
         return maxIndex;
+    }
+    
+    /**
+     * Checks if the dataset is processable by the method, i.e. it checks if all
+     * its attributes are nominal.
+     *
+     * @throws framework.exceptions.IllegalActionException
+     */
+    public static void checkDataset() throws framework.exceptions.IllegalActionException {
+        for (int i = 0; i < Attributes.getInputNumAttributes(); i++) {
+            if (Attributes.getAttribute(i).getType() != Attribute.NOMINAL) {
+                throw new framework.exceptions.IllegalActionException("ERROR: The dataset must contain only nominal attributes. Please, discretize the real ones.");
+            }
+        }
+
     }
 
     /**
