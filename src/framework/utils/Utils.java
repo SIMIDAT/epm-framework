@@ -171,7 +171,7 @@ public class Utils {
             double minWRACC = (1 - div) * (0 - div);
             double maxWRACC = (div) * (1 - div);
             wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
-     
+
             // CONF
             double conf;
             if ((p + n) == 0) {
@@ -401,7 +401,6 @@ public class Utils {
         double sumSUPP = 0.0;
         double sumFISHER = 0.0;
         double sumNVAR = 0.0;
-        double sumNumRules = 0.0;
 
         for (HashMap<String, Double> a : measures) {
             sumWRACC += a.get("WRACC");
@@ -412,7 +411,6 @@ public class Utils {
             sumSUPDIFF += a.get("SUPDIFF");
             sumSUPP += a.get("SUPP");
             sumNVAR += a.get("NVAR");
-            sumNumRules += a.get("NRULES");
             if (a.get("GR") > 1) {
                 sumGR++;
             }
@@ -431,7 +429,7 @@ public class Utils {
         result.put("NVAR", sumNVAR / (double) measures.size());
         result.put("GR", sumGR / (double) measures.size());
         result.put("FISHER", sumFISHER / (double) measures.size());
-        result.put("NRULES", sumNumRules / (double) measures.size());
+        result.put("NRULES", (double) measures.size());
         result.put("RULE_NUMBER", Double.NaN);
 
         return result;
