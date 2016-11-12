@@ -110,9 +110,11 @@ public class Main {
                     //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
 
                     ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
-                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                     Measures.add(filterPatterns.get(0));
                     Measures.add(filterPatterns.get(1));
+                    Measures.add(filterPatterns.get(2));
+                    
                     // Call predict method for ACC and AUC for training
                     System.out.println("Calculating precision for training...");
                     arg = new Class[1];
@@ -126,9 +128,10 @@ public class Main {
                     System.out.println("Testing instances...");
 
                     Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 3);
+                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                     Measures.add(filterPatterns.get(0));
                     Measures.add(filterPatterns.get(1));
+                    Measures.add(filterPatterns.get(2));
 
                     arg = new Class[1];
                     arg[0] = InstanceSet.class;
