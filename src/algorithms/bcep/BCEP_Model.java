@@ -39,8 +39,6 @@ import javafx.util.Pair;
 import keel.Dataset.Attributes;
 import keel.Dataset.Instance;
 
-
-
 /**
  *
  * @author Ángel M. García-Vico
@@ -48,7 +46,7 @@ import keel.Dataset.Instance;
  * @since JDK 1.8
  */
 public class BCEP_Model extends Model implements Serializable {
-    
+
     float[] classProbabilities;
     ArrayList<Item> simpleItems;
     float minSupp;
@@ -59,7 +57,7 @@ public class BCEP_Model extends Model implements Serializable {
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
- 
+
         try {
             // First, check if the dataset has the correct format.
             checkDataset();
@@ -81,7 +79,6 @@ public class BCEP_Model extends Model implements Serializable {
                     countD2++;
                 }
             }
-          
 
             //Gets class probabilities
             for (Instance inst : training.getInstances()) {
@@ -119,7 +116,7 @@ public class BCEP_Model extends Model implements Serializable {
                 // System.out.println("Mining SJEPs...");
                 // Perform mining
                 ArrayList<Pattern> mineTree = tree.mineTree(minSupp);
-           
+
                 ArrayList<Pair<ArrayList<Item>, Integer>> inst = Utils.getInstances(training, simpleItems, 0);
                 for (Pattern pat : mineTree) {
                     pat.calculateMeasures(training);
@@ -134,12 +131,12 @@ public class BCEP_Model extends Model implements Serializable {
                 }
                 aux = pruneEPs(aux, inst);
                 /**/ // CONVERT bcep.Pattern to utils.Pattern and set Model.patterns
-                for(Pattern p : aux){
+                for (Pattern p : aux) {
                     framework.items.Pattern pat = Utils.castToNewPatternFormat(p);
                     super.patterns.add(pat);
                 }
                 // WE CHANGE THE DEFINITION OF PATTERN CLASS!
-               
+
             } else {
                 ArrayList<ArrayList<Pattern>> allPatterns;
                 setPatterns(new ArrayList<>());
@@ -220,12 +217,12 @@ public class BCEP_Model extends Model implements Serializable {
                 for (ArrayList<Pattern> pattern : allPatterns) {
                     sum += pattern.size();
                     if (!pattern.isEmpty()) {
-                        for (Pattern pat : pattern){   /**/ // The same conversion of patterns here
+                        for (Pattern pat : pattern) {
+                            /**/ // The same conversion of patterns here
                             getPatterns().add(Utils.castToNewPatternFormat(pat));
                         }
                     }
                 }
-            
 
                 // calculate measures of training
                 // GUI.setInfoLearnText("Mining finished. eJEPs found: " + sum);
@@ -244,23 +241,20 @@ public class BCEP_Model extends Model implements Serializable {
 
     }
 
-
     @Override
     public String[][] predict(InstanceSet test) {
         String[][] preds = null;
         try {
-            ArrayList<Item> simpleItems = Utils.getSimpleItems(test, minSupp, 0);
-            ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = Utils.getInstances(test, simpleItems, 0);
-            
-            String[] predictionsNoFilter = makePredictions(testInstances, Utils.castToOldatternFormat(getPatterns()));
+
+            String[] predictionsNoFilter = makePredictions(test, Utils.castToOldatternFormat(getPatterns()));
             String[] predictionsFilterGlobal = null;
             String[] predictionsFilterClass = null;
 
             if (getPatternsFilteredMinimal() != null) {
-                predictionsFilterGlobal = makePredictions(testInstances, Utils.castToOldatternFormat(getPatternsFilteredMinimal()));
+                predictionsFilterGlobal = makePredictions(test, Utils.castToOldatternFormat(getPatternsFilteredMinimal()));
             }
             if (getPatternsFilteredMaximal() != null) {
-                predictionsFilterClass = makePredictions(testInstances, Utils.castToOldatternFormat(getPatternsFilteredMaximal()));
+                predictionsFilterClass = makePredictions(test, Utils.castToOldatternFormat(getPatternsFilteredMaximal()));
             }
 
             String[][] preds1 = {predictionsNoFilter, predictionsFilterGlobal, predictionsFilterClass};
@@ -272,7 +266,6 @@ public class BCEP_Model extends Model implements Serializable {
         return preds;
 
     }
-
 
     @Override
     public String toString() {
@@ -354,9 +347,9 @@ public class BCEP_Model extends Model implements Serializable {
 
     }
 
-
     /**
      * Gets the next pattern of the candidate patterns.
+     *
      * @param covered The list of covered items
      * @param B The sets of candidates
      * @return A Pattern.
@@ -419,23 +412,28 @@ public class BCEP_Model extends Model implements Serializable {
         }
     }
 
-    
     /**
      * It makes the predictions for a set of items.
+     *
      * @param testInstances
      * @param patterns
-     * @return 
+     * @return
      */
-    private String[] makePredictions(ArrayList<Pair<ArrayList<Item>, Integer>> testInstances, ArrayList<Pattern> patterns) {
-        String[] predictions = new String[testInstances.size()];
-        // for each instances on the test set
-        for (int i = 0; i < testInstances.size(); i++) {
+    // for each instances on the test set
+    private String[] makePredictions(InstanceSet test, ArrayList<Pattern> patterns) {
+        String[] predictions = new String[test.getNumInstances()];
+        ArrayList<Item> simpleItems = null;
+        ArrayList<Pair<ArrayList<Item>, Integer>> testInstances = null;
+        for (int i = 0; i < test.getNumInstances(); i++) {
+
             ArrayList<Item> covered = new ArrayList<>();
             ArrayList<Item> numerator = new ArrayList<>();
             ArrayList<Item> denominator = new ArrayList<>();
             ArrayList<Pattern> B = new ArrayList<>();
             // First, get the set of patterns that covers the example.
             for (Pattern p : patterns) {
+                simpleItems = Utils.getSimpleItems(test, minSupp, p.getClase());
+                testInstances = Utils.getInstances(test, simpleItems, p.getClase());
                 if (p.covers(testInstances.get(i).getKey())) {
                     B.add(p);
                 }
@@ -503,8 +501,5 @@ public class BCEP_Model extends Model implements Serializable {
         }
         return predictions;
     }
-    
-    
-    
 
 }

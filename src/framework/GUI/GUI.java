@@ -966,7 +966,7 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_rutaBatchActionPerformed
 
     private void BrowseBatchFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BrowseBatchFolderActionPerformed
-        JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser(lastDirectory);
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         int result = fileChooser.showOpenDialog(BrowseBatchFolder.getParent());
         // If the user press in 'Ok'...
@@ -997,6 +997,7 @@ public class GUI extends javax.swing.JFrame {
             File root = new File(rutaBatch.getText());
             int NUM_FOLDS = Integer.parseInt(numFolds.getItemAt(numFolds.getSelectedIndex()));
             File[] folders = root.listFiles();
+            Arrays.sort(folders);
             InstanceSet training = new InstanceSet();
             InstanceSet test = new InstanceSet();
 
@@ -1053,7 +1054,11 @@ public class GUI extends javax.swing.JFrame {
                                 Object newObject;
                                 Class clase = Class.forName(actual_fully_qualified_class);
                                 newObject = clase.newInstance();
-
+                                ((Model)newObject).patterns = new ArrayList<>();
+                                ((Model)newObject).patternsFilteredByMeasure = new ArrayList<>();
+                                ((Model)newObject).patternsFilteredMaximal = new ArrayList<>();
+                                ((Model)newObject).patternsFilteredMinimal = new ArrayList<>();
+                                
                                 // Second: get the argument class
                                 Class[] args = new Class[2];
                                 args[0] = InstanceSet.class;

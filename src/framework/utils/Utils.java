@@ -159,7 +159,6 @@ public class Utils {
             double P = p + _p;
             double N = n + _n;
             double P_N = P + N;
-
             // WRACC (Normalized)
             double wracc;
             if ((p + n) == 0) {
@@ -172,7 +171,7 @@ public class Utils {
             double minWRACC = (1 - div) * (0 - div);
             double maxWRACC = (div) * (1 - div);
             wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
-
+     
             // CONF
             double conf;
             if ((p + n) == 0) {
@@ -399,8 +398,10 @@ public class Utils {
         double sumTPR = 0.0;
         double sumFPR = 0.0;
         double sumSUPDIFF = 0.0;
+        double sumSUPP = 0.0;
         double sumFISHER = 0.0;
         double sumNVAR = 0.0;
+        double sumNumRules = 0.0;
 
         for (HashMap<String, Double> a : measures) {
             sumWRACC += a.get("WRACC");
@@ -409,7 +410,9 @@ public class Utils {
             sumTPR += a.get("TPR");
             sumFPR += a.get("FPR");
             sumSUPDIFF += a.get("SUPDIFF");
+            sumSUPP += a.get("SUPP");
             sumNVAR += a.get("NVAR");
+            sumNumRules += a.get("NRULES");
             if (a.get("GR") > 1) {
                 sumGR++;
             }
@@ -424,10 +427,11 @@ public class Utils {
         result.put("TPR", sumTPR / (double) measures.size());
         result.put("FPR", sumFPR / (double) measures.size());
         result.put("SUPDIFF", sumSUPDIFF / (double) measures.size());
+        result.put("SUPP", sumSUPP / (double) measures.size());
         result.put("NVAR", sumNVAR / (double) measures.size());
         result.put("GR", sumGR / (double) measures.size());
         result.put("FISHER", sumFISHER / (double) measures.size());
-        result.put("NRULES", (double) measures.size());
+        result.put("NRULES", sumNumRules / (double) measures.size());
         result.put("RULE_NUMBER", Double.NaN);
 
         return result;
@@ -536,7 +540,7 @@ public class Utils {
                 }
             });
             w3.close();
-            final PrintWriter w4 = new PrintWriter(measures3);
+            final PrintWriter w4 = new PrintWriter(measures4);
 
             QMsByMeasure.forEach(new BiConsumer<String, Double>() {
                 @Override
