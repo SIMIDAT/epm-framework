@@ -434,6 +434,9 @@ public class BCEP_Model extends Model implements Serializable {
             for (Pattern p : patterns) {
                 simpleItems = Utils.getSimpleItems(test, minSupp, p.getClase());
                 testInstances = Utils.getInstances(test, simpleItems, p.getClase());
+                for(Item it : simpleItems){
+                    it.calculateProbabilities(test, "M");
+                }
                 if (p.covers(testInstances.get(i).getKey())) {
                     B.add(p);
                 }
