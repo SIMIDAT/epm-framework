@@ -156,6 +156,20 @@
             <default>10</default>
         </parameter>
     </algorithm>
+    
+    <algorithm>
+        <name>SJEP-C</name>
+        <class>algorithms.sjep_classifier.SJEP_Classifier</class>
+        <parameter>
+            <name>Min Support</name>
+            <type>real</type>
+            <domain>
+                <min>0</min>
+                <max>1</max>
+            </domain>
+            <default>0.01</default>
+        </parameter>
+    </algorithm>
 
 
     

@@ -1,1 +1,1 @@
-/media/angel/Datos/DATASETS
+/media/angel/Datos/DATASETS/classification_discretizado/breast

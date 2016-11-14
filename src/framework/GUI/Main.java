@@ -45,15 +45,17 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import framework.utils.Utils;
+import java.util.Arrays;
+import keel.Dataset.Attributes;
 
 /**
  *
- * @author Ángel M. García-Vico 
+ * @author Ángel M. García-Vico
  * @version 1.0
  * @since JDK 1.8
  */
 public class Main {
- 
+
     public static void main(String[] args) {
         try {
             String fully_qualified_name = "";
@@ -69,6 +71,7 @@ public class Main {
                     HashMap<String, String> params = readParams(args[0]); // read parameters
                     InstanceSet training = new InstanceSet();
                     InstanceSet test = new InstanceSet();
+                    boolean batchMode = false;
 
                     // Find an algorithm that match on the list of algorithms
                     for (int i = 0; i < nodes.getLength() && !found; i++) {
@@ -84,66 +87,175 @@ public class Main {
                         System.out.println("ERROR: Algorithm does not match with any algorithm implemented. Aborting...");
                         System.exit(-1);
                     }
+                    batchMode = params.containsKey("directory");
+                    if (!batchMode) {
+                        // EXECUTE NORMAL MODE: ONLY TRAIN AND TEST
 
-                    if (!params.containsKey("training") || !params.containsKey("test")) {
-                        System.out.println("ERROR: You must specify the training or test file");
-                        System.exit(-1);
+                        if (!params.containsKey("training") || !params.containsKey("test")) {
+                            System.out.println("ERROR: You must specify the training or test file");
+                            System.exit(-1);
+                        }
+                        // read training and test sets
+                        training.readSet(params.get("training"), true);
+                        test.readSet(params.get("test"), false);
+
+                        //First: instantiate the class selected with the fully qualified name
+                        Object newObject;
+                        Class clase = Class.forName(fully_qualified_name);
+                        newObject = clase.newInstance();
+
+                        // Second: get the argument class
+                        Class[] arg = new Class[2];
+                        arg[0] = InstanceSet.class;
+                        arg[1] = HashMap.class;
+
+                        // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                        System.out.println("Learning Model...");
+                        clase.getMethod("learn", arg).invoke(newObject, training, params);
+                        // Get learned patterns, filter, and calculate measures
+                        //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
+
+                        ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                        ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
+                        Measures.add(filterPatterns.get(0));
+                        Measures.add(filterPatterns.get(1));
+                        Measures.add(filterPatterns.get(2));
+
+                        // Call predict method for ACC and AUC for training
+                        System.out.println("Calculating precision for training...");
+                        arg = new Class[1];
+                        arg[0] = InstanceSet.class;
+                        String[][] predictionsTra = (String[][]) clase.getMethod("predict", arg).invoke(newObject, training);
+                        Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
+                        // Save training measures in a file.
+                        System.out.println("Save results in a file...");
+                        Utils.saveTraining(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
+                        System.out.println("Done learning model.");
+                        System.out.println("Testing instances...");
+
+                        Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
+                        filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
+                        Measures.add(filterPatterns.get(0));
+                        Measures.add(filterPatterns.get(1));
+                        Measures.add(filterPatterns.get(2));
+
+                        arg = new Class[1];
+                        arg[0] = InstanceSet.class;
+                        // Call predict method
+                        String[][] predictions = (String[][]) clase.getMethod("predict", arg).invoke(newObject, test);
+
+                        // Calculate predictions
+                        Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
+                        // Save Results
+                        //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
+                        Utils.saveTest(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
+                        System.out.println("Done.");
+
+                    } else {
+                        // BATCH EXECUTION
+                        int NUM_FOLDS = Integer.parseInt(params.get("number of folds"));
+                        File root = new File(params.get("directory"));
+                        if (!root.isDirectory()) {
+                            System.out.println("ERROR: \"directory\" is not a folder. Aborting...");
+                            System.exit(-1);
+                        }
+                        File[] folders = root.listFiles();
+                        Arrays.sort(folders);
+                        training = new InstanceSet();
+                        test = new InstanceSet();
+                        
+                        // Now, look for each directory inside root for datasets to be executed.
+                        for (File dir : folders) {
+
+                            if (dir.isDirectory()) {
+                                File[] files = dir.listFiles();
+                                Arrays.sort(files);
+                                HashMap<String, Double> QMsUnfiltered = Utils.generateQualityMeasuresHashMap();
+                                HashMap<String, Double> QMsMinimal = Utils.generateQualityMeasuresHashMap();
+                                HashMap<String, Double> QMsMaximal = Utils.generateQualityMeasuresHashMap();
+                                HashMap<String, Double> QMsByMeasure = Utils.generateQualityMeasuresHashMap();
+
+                               
+                                System.out.println("Executing..." + dir.getName() + "...");
+                                for (int i = 1; i <= NUM_FOLDS; i++) {
+                                    // Search for the training and test files.
+                                    for (File x : files) {
+                                        if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tra.dat")) {
+                                            try {
+                                                Attributes.clearAll();
+                                                training.readSet(x.getAbsolutePath(), true);
+                                                training.setAttributesAsNonStatic();
+                                            } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
+                                                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                            }
+                                        }
+                                        if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tst.dat")) {
+                                            try {
+                                                test.readSet(x.getAbsolutePath(), false);
+                                                test.setAttributesAsNonStatic();
+                                            } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
+                                                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                            }
+                                        }
+                                    }
+
+                                    // Execute the method
+                                    //First: instantiate the class selected with the fully qualified name
+                                    Object newObject;
+                                    Class clase = Class.forName(fully_qualified_name);
+                                    newObject = clase.newInstance();
+                                    ((Model) newObject).patterns = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
+
+                                    // Second: get the argument class
+                                    Class[] arg = new Class[2];
+                                    arg[0] = InstanceSet.class;
+                                    arg[1] = HashMap.class;
+
+                                    // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                                    clase.getMethod("learn", arg).invoke(newObject, training, params);
+                                    // Get learned patterns, filter, and calculate measures
+                                    //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
+
+                                    // Call the test method. This method return in a hashmap the quality measures.
+                                    // for unfiltered, filtered global, and filtered by class QMs.
+                                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
+                                    Measures.add(filterPatterns.get(0));
+                                    Measures.add(filterPatterns.get(1));
+                                    Measures.add(filterPatterns.get(2));
+
+                                    arg = new Class[1];
+                                    arg[0] = InstanceSet.class;
+                                    // Call predict method
+                                    String[][] predictions = (String[][]) clase.getMethod("predict", arg).invoke(newObject, test);
+                                    // Calculate descriptive measures in test
+                                    Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
+                                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
+                                    Measures.add(filterPatterns.get(0));
+                                    Measures.add(filterPatterns.get(1));
+                                    Measures.add(filterPatterns.get(2));
+                                    // Calculate predictions in test
+                                    Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
+
+                                    // Store the result to make the average result
+                                    QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
+                                    QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));
+                                    QMsMaximal = Utils.updateHashMap(QMsMaximal, Measures.get(2));
+                                    QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
+
+                                }
+
+                                // After finished the fold cross validation, make the average calculation of each quality measure.
+                                Utils.saveResults(dir, QMsUnfiltered, QMsMinimal, QMsMaximal, QMsByMeasure, NUM_FOLDS);
+
+                            }
+
+                        }
+                        System.out.println("FINISHED BATCH EXECUTION ! RESULTS ARE SAVED IN EACH DATASET FOLDER.");
                     }
-                    // read training and test sets
-                    training.readSet(params.get("training"), true);
-                    test.readSet(params.get("test"), false);
-
-                    //First: instantiate the class selected with the fully qualified name
-                    Object newObject;
-                    Class clase = Class.forName(fully_qualified_name);
-                    newObject = clase.newInstance();
-
-                    // Second: get the argument class
-                    Class[] arg = new Class[2];
-                    arg[0] = InstanceSet.class;
-                    arg[1] = HashMap.class;
-
-                    // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
-                    System.out.println("Learning Model...");
-                    clase.getMethod("learn", arg).invoke(newObject, training, params);
-                    // Get learned patterns, filter, and calculate measures
-                    //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
-
-                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
-                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                    Measures.add(filterPatterns.get(0));
-                    Measures.add(filterPatterns.get(1));
-                    Measures.add(filterPatterns.get(2));
-                    
-                    // Call predict method for ACC and AUC for training
-                    System.out.println("Calculating precision for training...");
-                    arg = new Class[1];
-                    arg[0] = InstanceSet.class;
-                    String[][] predictionsTra = (String[][]) clase.getMethod("predict", arg).invoke(newObject, training);
-                    Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
-                    // Save training measures in a file.
-                    System.out.println("Save results in a file...");
-                    Utils.saveTraining(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
-                    System.out.println("Done learning model.");
-                    System.out.println("Testing instances...");
-
-                    Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                    Measures.add(filterPatterns.get(0));
-                    Measures.add(filterPatterns.get(1));
-                    Measures.add(filterPatterns.get(2));
-
-                    arg = new Class[1];
-                    arg[0] = InstanceSet.class;
-                    // Call predict method
-                    String[][] predictions = (String[][]) clase.getMethod("predict", arg).invoke(newObject, test);
-
-                    // Calculate predictions
-                    Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
-                    // Save Results
-                    //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-                    Utils.saveTest(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
-                    System.out.println("Done.");
                     break;
                 default:
                     System.out.println("You have to specify only one argument to execute in command-line or no arguments to launch the GUI.");

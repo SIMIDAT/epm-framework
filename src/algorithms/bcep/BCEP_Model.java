@@ -297,6 +297,7 @@ public class BCEP_Model extends Model implements Serializable {
      */
     private ArrayList<Pattern> pruneEPs(ArrayList<Pattern> patterns, ArrayList<Pair<ArrayList<Item>, Integer>> training) {
         // Sort the patterns by ranking (in ASCENDING ORDER)
+        if(patterns.isEmpty()) return new ArrayList<>();
         patterns.sort((o1, o2) -> {
             if (o1.getSupport() > o2.getSupport()) {
                 return 1;

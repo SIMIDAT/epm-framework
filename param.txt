@@ -1,5 +1,6 @@
-algorithm = BCEP
-training = breast-5-1tra.dat
-test = breast-5-1tst.dat
-Minimum support = 0.01
-Minimum GrowthRate = 100
+algorithm = Tree-based JEP-C
+directory = /media/angel/Datos/DATASETS/classification_discretizado
+number of folds = 5
+Ordering = hybrid
+Alpha = 0.3
+Pattern Max Length = -1

@@ -418,20 +418,33 @@ public class Utils {
                 sumFISHER++;
             }
         }
-
-        result.put("WRACC", sumWRACC / (double) measures.size());
-        result.put("GAIN", sumGAIN / (double) measures.size());
-        result.put("CONF", sumCONF / (double) measures.size());
-        result.put("TPR", sumTPR / (double) measures.size());
-        result.put("FPR", sumFPR / (double) measures.size());
-        result.put("SUPDIFF", sumSUPDIFF / (double) measures.size());
-        result.put("SUPP", sumSUPP / (double) measures.size());
-        result.put("NVAR", sumNVAR / (double) measures.size());
-        result.put("GR", sumGR / (double) measures.size());
-        result.put("FISHER", sumFISHER / (double) measures.size());
-        result.put("NRULES", (double) measures.size());
-        result.put("RULE_NUMBER", Double.NaN);
-
+        if (!measures.isEmpty()) {
+            result.put("WRACC", sumWRACC / (double) measures.size());
+            result.put("GAIN", sumGAIN / (double) measures.size());
+            result.put("CONF", sumCONF / (double) measures.size());
+            result.put("TPR", sumTPR / (double) measures.size());
+            result.put("FPR", sumFPR / (double) measures.size());
+            result.put("SUPDIFF", sumSUPDIFF / (double) measures.size());
+            result.put("SUPP", sumSUPP / (double) measures.size());
+            result.put("NVAR", sumNVAR / (double) measures.size());
+            result.put("GR", sumGR / (double) measures.size());
+            result.put("FISHER", sumFISHER / (double) measures.size());
+            result.put("NRULES", (double) measures.size());
+            result.put("RULE_NUMBER", Double.NaN);
+        } else {
+            result.put("WRACC", 0d);
+            result.put("GAIN", 0d);
+            result.put("CONF", 0d);
+            result.put("TPR", 0d);
+            result.put("FPR", 0d);
+            result.put("SUPDIFF", 0d);
+            result.put("SUPP", 0d);
+            result.put("NVAR", 0d);
+            result.put("GR", 0d);
+            result.put("FISHER", 0d);
+            result.put("NRULES", 0d);
+            result.put("RULE_NUMBER", Double.NaN);
+        }
         return result;
     }
 
