@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -103,7 +104,7 @@ public class Utils {
      * test (false)?
      * @return The descriptive quality measures for each rule.
      */
-    public static ArrayList<HashMap<String, Double>> calculateDescriptiveMeasures(InstanceSet data, Model model, boolean isTrain) {
+    public static ArrayList<HashMap<String, Double>> calculateDescriptiveMeasures(InstanceSet data, ArrayList<Pattern> patterns, boolean isTrain) {
         // 0 -> tp
         // 1 -> tn
         // 2 -> fp
@@ -113,8 +114,8 @@ public class Utils {
         data.setAttributesAsNonStatic();
         Attribute[] inputAttributes = data.getAttributeDefinitions().getInputAttributes();
         Attribute outputAttributes = data.getAttributeDefinitions().getOutputAttribute(0);
-        int[][] confusionMatrices = new int[model.getPatterns().size()][6];
-        for (int i = 0; i < model.getPatterns().size(); i++) {
+        int[][] confusionMatrices = new int[patterns.size()][6];
+        for (int i = 0; i < patterns.size(); i++) {
             int tp = 0;
             int tn = 0;
             int fp = 0;
@@ -123,15 +124,15 @@ public class Utils {
             int examplesClass = 0;
             for (int j = 0; j < data.getNumInstances(); j++) {
                 // If the pattern covers the example
-                if (model.getPatterns().get(i).covers(data.getInstance(j), inputAttributes)) {
+                if (patterns.get(i).covers(data.getInstance(j), inputAttributes)) {
 
-                    if (model.getPatterns().get(i).getClase() == outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
+                    if (patterns.get(i).getClase() == outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
                         tp++;
                         examplesClass++;
                     } else {
                         fp++;
                     }
-                } else if (model.getPatterns().get(i).getClase() != outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
+                } else if (patterns.get(i).getClase() != outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
                     tn++;
                 } else {
                     fn++;
@@ -144,7 +145,7 @@ public class Utils {
             confusionMatrices[i][1] = tn;
             confusionMatrices[i][2] = fp;
             confusionMatrices[i][3] = fn;
-            confusionMatrices[i][4] = model.getPatterns().get(i).getItems().size();
+            confusionMatrices[i][4] = patterns.get(i).getItems().size();
             confusionMatrices[i][5] = examplesClass;
         }
 
@@ -252,9 +253,9 @@ public class Utils {
 
             qms.add(measures);
             if (isTrain) {
-                model.getPatterns().get(i).setTra_measures(measures);
+                patterns.get(i).setTra_measures(measures);
             } else {
-                model.getPatterns().get(i).setTst_measures(measures);
+                patterns.get(i).setTst_measures(measures);
             }
         }
 
@@ -805,8 +806,9 @@ public class Utils {
             pw3 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MINIMAL.txt");
             pw4 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MAXIMAL.txt");
             pw5 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_CONFIDENCE.txt");
-
-            DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setInfinity("INFINITY");
+            DecimalFormat sixDecimals = new DecimalFormat("0.000000", symbols);
             // Write headers on file.
             Object[] keys = Measures.get(0).keySet().toArray();
             pw2.print("RULE_NUMBER\t\tN_VARS\t\t");
@@ -961,8 +963,9 @@ public class Utils {
             pw3 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MINIMAL.txt");
             pw4 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MAXIMAL.txt");
             pw5 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_CONFIDENCE.txt");
-
-            DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setInfinity("INFINITY");
+            DecimalFormat sixDecimals = new DecimalFormat("0.000000", symbols);
             // Write headers on file.
             Object[] keys = Measures.get(0).keySet().toArray();
             pw2.print("RULE_NUMBER\t\tN_VARS\t\t");

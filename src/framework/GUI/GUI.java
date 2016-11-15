@@ -624,7 +624,6 @@ public class GUI extends javax.swing.JFrame {
                         }
                     }
                     PredictionsPanel.setEditable(false);
-                    
 
                     return null;
                 }
@@ -762,7 +761,7 @@ public class GUI extends javax.swing.JFrame {
                     System.out.println("Filtering patterns and calculating descriptive measures...");
 
                     // Get learned patterns, filter, and calculate measures for training
-                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
                     ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                     Measures.add(filterPatterns.get(0));
                     Measures.add(filterPatterns.get(1));
@@ -784,15 +783,15 @@ public class GUI extends javax.swing.JFrame {
 
                     // If there is a test set call the method "predict" to make the test phase.
                     if (!rutaTst.getText().equals("")) {
-                        // Calculate descriptive measures for training
+                        // Calculate descriptive measures for test
                         appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
                         System.out.println("Testing instances");
 
-                        Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                        filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                        Measures.add(filterPatterns.get(0));
-                        Measures.add(filterPatterns.get(1));
-                        Measures.add(filterPatterns.get(2));
+                        // Calculate test measures for unfiltered and filtered patterns
+                        Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false);
+                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMinimal(), false).get(0));
+                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMaximal(), false).get(0));
+                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredByMeasure(), false).get(0));
 
                         args = new Class[1];
                         args[0] = InstanceSet.class;
@@ -1054,11 +1053,11 @@ public class GUI extends javax.swing.JFrame {
                                 Object newObject;
                                 Class clase = Class.forName(actual_fully_qualified_class);
                                 newObject = clase.newInstance();
-                                ((Model)newObject).patterns = new ArrayList<>();
-                                ((Model)newObject).patternsFilteredByMeasure = new ArrayList<>();
-                                ((Model)newObject).patternsFilteredMaximal = new ArrayList<>();
-                                ((Model)newObject).patternsFilteredMinimal = new ArrayList<>();
-                                
+                                ((Model) newObject).patterns = new ArrayList<>();
+                                ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
+                                ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
+                                ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
+
                                 // Second: get the argument class
                                 Class[] args = new Class[2];
                                 args[0] = InstanceSet.class;
@@ -1071,7 +1070,7 @@ public class GUI extends javax.swing.JFrame {
 
                                 // Call the test method. This method return in a hashmap the quality measures.
                                 // for unfiltered, filtered global, and filtered by class QMs.
-                                ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                                ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
                                 ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                                 Measures.add(filterPatterns.get(0));
                                 Measures.add(filterPatterns.get(1));
@@ -1083,11 +1082,11 @@ public class GUI extends javax.swing.JFrame {
                                 // Call predict method
                                 String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
                                 // Calculate descriptive measures in test
-                                Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                                filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                                Measures.add(filterPatterns.get(0));
-                                Measures.add(filterPatterns.get(1));
-                                Measures.add(filterPatterns.get(2));
+                                Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false);
+                                Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMinimal(), false).get(0));
+                                Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMaximal(), false).get(0));
+                                Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredByMeasure(), false).get(0));
+
                                 // Calculate predictions in test
                                 Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
 

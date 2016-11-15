@@ -98,6 +98,8 @@ public class Main {
                         // read training and test sets
                         training.readSet(params.get("training"), true);
                         test.readSet(params.get("test"), false);
+                        training.setAttributesAsNonStatic();
+                        test.setAttributesAsNonStatic();
 
                         //First: instantiate the class selected with the fully qualified name
                         Object newObject;
@@ -115,7 +117,7 @@ public class Main {
                         // Get learned patterns, filter, and calculate measures
                         //ArrayList<Pattern> patterns = (ArrayList<Pattern>) clase.getMethod("getPatterns", null).invoke(newObject, null);
 
-                        ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                        ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
                         ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                         Measures.add(filterPatterns.get(0));
                         Measures.add(filterPatterns.get(1));
@@ -133,11 +135,10 @@ public class Main {
                         System.out.println("Done learning model.");
                         System.out.println("Testing instances...");
 
-                        Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                        filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                        Measures.add(filterPatterns.get(0));
-                        Measures.add(filterPatterns.get(1));
-                        Measures.add(filterPatterns.get(2));
+                        Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false);
+                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMinimal(), false).get(0));
+                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMaximal(), false).get(0));
+                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredByMeasure(), false).get(0));
 
                         arg = new Class[1];
                         arg[0] = InstanceSet.class;
@@ -163,7 +164,7 @@ public class Main {
                         Arrays.sort(folders);
                         training = new InstanceSet();
                         test = new InstanceSet();
-                        
+
                         // Now, look for each directory inside root for datasets to be executed.
                         for (File dir : folders) {
 
@@ -175,7 +176,6 @@ public class Main {
                                 HashMap<String, Double> QMsMaximal = Utils.generateQualityMeasuresHashMap();
                                 HashMap<String, Double> QMsByMeasure = Utils.generateQualityMeasuresHashMap();
 
-                               
                                 System.out.println("Executing..." + dir.getName() + "...");
                                 for (int i = 1; i <= NUM_FOLDS; i++) {
                                     // Search for the training and test files.
@@ -221,7 +221,7 @@ public class Main {
 
                                     // Call the test method. This method return in a hashmap the quality measures.
                                     // for unfiltered, filtered global, and filtered by class QMs.
-                                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, (Model) newObject, true);
+                                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
                                     ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                                     Measures.add(filterPatterns.get(0));
                                     Measures.add(filterPatterns.get(1));
@@ -232,11 +232,11 @@ public class Main {
                                     // Call predict method
                                     String[][] predictions = (String[][]) clase.getMethod("predict", arg).invoke(newObject, test);
                                     // Calculate descriptive measures in test
-                                    Measures = Utils.calculateDescriptiveMeasures(test, (Model) newObject, false);
-                                    filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                                    Measures.add(filterPatterns.get(0));
-                                    Measures.add(filterPatterns.get(1));
-                                    Measures.add(filterPatterns.get(2));
+                                    Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false);
+                                    Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMinimal(), false).get(0));
+                                    Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMaximal(), false).get(0));
+                                    Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredByMeasure(), false).get(0));
+
                                     // Calculate predictions in test
                                     Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
 
