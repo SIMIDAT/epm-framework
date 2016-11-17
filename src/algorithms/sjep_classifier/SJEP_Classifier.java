@@ -258,6 +258,8 @@ public class SJEP_Classifier extends Model {
             } else if (visitSubTree(beta, i) && i.getChild() != null) {
                 mineTree(i.getChild(), beta);
             }
+            i.setChild(null);
+           // System.gc();
         }
     }
 
