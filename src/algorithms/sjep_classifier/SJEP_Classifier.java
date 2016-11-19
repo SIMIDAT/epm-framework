@@ -259,7 +259,7 @@ public class SJEP_Classifier extends Model {
                 mineTree(i.getChild(), beta);
             }
             i.setChild(null);
-           // System.gc();
+           System.gc(); // Force garbage collector
         }
     }
 
