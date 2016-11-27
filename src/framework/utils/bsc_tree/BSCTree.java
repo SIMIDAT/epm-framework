@@ -12,34 +12,35 @@ import java.util.Stack;
 import javafx.util.Pair;
 
 /**
- * Class that represents a Bit-String Compression Tree (BSC-Tree)
- * This class represents the bit string that represents if an item i appears in transaction k.
- * 
+ * Class that represents a Bit-String Compression Tree (BSC-Tree) This class
+ * represents the bit string that represents if an item i appears in transaction
+ * k.
+ *
  * @author angel
  */
 public class BSCTree {
-    
+
     /**
      * The root of the BSCTree
      */
     private BSCTreeNode root;
     private ArrayList<Pair<String, Integer>> pathCodes;
-    
-    
+
     /**
      * Construct a BSC-Tree with the given bit string
+     *
      * @param bitString The bit string
      */
-    public BSCTree(String bitString){
+    public BSCTree(String bitString) {
         generateTree(bitString, 2);
         pathCodes = getPathCodes();
     }
-    
-    
+
     /**
-     * Generates the BSC-Tree 
+     * Generates the BSC-Tree
+     *
      * @param bitString
-     * @param N 
+     * @param N
      */
     private void generateTree(String bitString, int N) {
         int L = 1;
@@ -78,7 +79,7 @@ public class BSCTree {
                     BSCTreeNode node1 = stack.pop();
                     BSCTreeNode node2 = stack.pop();
                     BSCTreeNode merged = null;
-                    if (node1.getBitType() == node2.getBitType()  && node1.getBitType() != 'm' && node2.getBitType() != 'm') {
+                    if (node1.getBitType() == node2.getBitType() && node1.getBitType() != 'm' && node2.getBitType() != 'm') {
                         // Merge the nodes
                         merged = new BSCTreeNode(node1.getNodeLevel() + 1, node1.getBitType(), node1.getOneBitCount() + node2.getOneBitCount(), node1.numBits + node2.numBits);
                         // Upgrade the level of L
@@ -148,11 +149,11 @@ public class BSCTree {
         }
     }
 
-    
     /**
      * It checks wheter the stack has two nodes in the same virtual level.
+     *
      * @param stack
-     * @return 
+     * @return
      */
     private static boolean checkSameVirtualLevelNodes(Stack<BSCTreeNode> stack) {
         if (stack.size() <= 1) {
@@ -162,57 +163,58 @@ public class BSCTree {
         BSCTreeNode node2 = stack.get(stack.size() - 2);
         return node1.getNodeLevel() == node2.getNodeLevel();
     }
-    
-    
-    public ArrayList<Pair<String, Integer>> getPathCodes(){
+
+    public ArrayList<Pair<String, Integer>> getPathCodes() {
         ArrayList<Pair<String, Integer>> result = new ArrayList<>();
         getPathCodes(root, result, "");
         return result;
     }
 
     private void getPathCodes(BSCTreeNode node, ArrayList<Pair<String, Integer>> results, String pathCode) {
-      if(node.getLeft() != null && node.getRight() != null){
-          // The node is not a leaf node
-          // Go to the left child
-          getPathCodes(node.getLeft(), results, pathCode + "0");
-          // Go to the right child
-          getPathCodes(node.getRight(), results, pathCode + "1");
-      } else {
-          // The node is a leaf, check if it is a 1-bit leaf
-          if(node.getBitType() == '1'){ // If 1-bit leaf node, store as a result
-              Pair pair = new Pair(pathCode, node.getOneBitCount());
-              results.add(pair);
-          }
-      }
+        if (node.getLeft() != null && node.getRight() != null) {
+            // The node is not a leaf node
+            // Go to the left child
+            getPathCodes(node.getLeft(), results, pathCode + "0");
+            // Go to the right child
+            getPathCodes(node.getRight(), results, pathCode + "1");
+        } else {
+            // The node is a leaf, check if it is a 1-bit leaf
+            if (node.getBitType() == '1') { // If 1-bit leaf node, store as a result
+                Pair pair = new Pair(pathCode, node.getOneBitCount());
+                results.add(pair);
+            }
+        }
     }
-    
+
     /**
-     * Performs the and operation of {@code this} and {@code other} and return an array of path codes 
-     * that is the resulting path code of result of applying the and operator to this BSC-Trees
+     * Performs the and operation of {@code this} and {@code other} and return
+     * an array of path codes that is the resulting path code of result of
+     * applying the and operator to this BSC-Trees
+     *
      * @param other
      * @return The path code of the "and" BSC-Tree
      */
-    private ArrayList<Pair<String, Integer>> and(BSCTree other){
+    private ArrayList<Pair<String, Integer>> and(BSCTree other) {
         ArrayList<Pair<String, Integer>> array3 = new ArrayList<>();
         int index1, index2, index3;
         index1 = index2 = index3 = 0;
-        
-        while(index1 < this.pathCodes.size() && index2 < other.pathCodes.size()){
+
+        while (index1 < this.pathCodes.size() && index2 < other.pathCodes.size()) {
             // If the path codes pointed by index1 and index2 are the same in both arrays 1 and 2
-            if(this.pathCodes.get(index1).getKey().equals(other.pathCodes.get(index2).getKey())){
+            if (this.pathCodes.get(index1).getKey().equals(other.pathCodes.get(index2).getKey())) {
                 // Store the path code pointed by index 1 in array3
                 array3.add(this.pathCodes.get(index1));
                 index1++;
                 index2++;
                 index3++;
-            } else if(isSubCode(this.pathCodes.get(index1).getKey(), other.pathCodes.get(index2).getKey())){
+            } else if (isSubCode(this.pathCodes.get(index1).getKey(), other.pathCodes.get(index2).getKey())) {
                 // if the path code in array1 is the subcode of the pathcode of array2
                 array3.add(this.pathCodes.get(index1));
                 index1++;
-            } else if(isSubCode(other.pathCodes.get(index2).getKey(), this.pathCodes.get(index1).getKey())){
+            } else if (isSubCode(other.pathCodes.get(index2).getKey(), this.pathCodes.get(index1).getKey())) {
                 array3.add(other.pathCodes.get(index2));
                 index2++;
-            } else if (isLarger(this.pathCodes.get(index1).getKey(), other.pathCodes.get(index2).getKey())){
+            } else if (isLarger(this.pathCodes.get(index1).getKey(), other.pathCodes.get(index2).getKey())) {
                 index1++;
             } else {
                 index2++;
@@ -220,62 +222,81 @@ public class BSCTree {
         }
         return array3;
     }
-    
+
+    /**
+     * Gets the total sum of the 1-bit counts in all the pathcodes. This gives
+     * the support of this item.
+     *
+     * @return
+     */
+    public int getCounts() {
+        int counts = 0;
+        for (Pair<String, Integer> pathCode : pathCodes) {
+            counts += pathCode.getValue();
+        }
+        return counts;
+    }
+
     /**
      * It returns whether {@code pathCode1} is a subcode of {@code pathCode2}
+     *
      * @param pathCode1
      * @param pathCode2
-     * @return 
+     * @return
      */
-    private boolean isSubCode(String pathCode1, String pathCode2){
-        if(pathCode2.length() > pathCode1.length()) return false;
+    private boolean isSubCode(String pathCode1, String pathCode2) {
+        if (pathCode2.length() > pathCode1.length()) {
+            return false;
+        }
         String regex = "^" + pathCode2 + ".*";
-        
+
         return pathCode1.matches(regex);
     }
-    
-    
+
     /**
      * It returns whether {@code pathCode2} is larger than {@code pathCode1}
+     *
      * @param pathCode1
      * @param pathCode2
-     * @return 
+     * @return
      */
-    private boolean isLarger(String pathCode1, String pathCode2){
-       int minor = pathCode1.length() < pathCode2.length() ? pathCode1.length() : pathCode2.length();
-       
-       for(int i = 0; i < minor; i++){
-           if(pathCode2.charAt(i) > pathCode1.charAt(i)){
-               return true;
-           } else if(pathCode2.charAt(i) < pathCode1.charAt(i)) {
-               return false;
-           }
-       }
-       
-       return pathCode2.length() > pathCode1.length();
+    private boolean isLarger(String pathCode1, String pathCode2) {
+        int minor = pathCode1.length() < pathCode2.length() ? pathCode1.length() : pathCode2.length();
+
+        for (int i = 0; i < minor; i++) {
+            if (pathCode2.charAt(i) > pathCode1.charAt(i)) {
+                return true;
+            } else if (pathCode2.charAt(i) < pathCode1.charAt(i)) {
+                return false;
+            }
+        }
+
+        return pathCode2.length() > pathCode1.length();
     }
-    
-    
+
     /**
-     * It performs the ANDing operation of {@code this} with an undefined set of BSC-Trees and
-     * returns the final counts
+     * It performs the ANDing operation of {@code this} with an undefined set of
+     * BSC-Trees and returns the final counts
+     *
      * @param trees
-     * @return 
+     * @return
      */
-    public int treeANDing(ArrayList<BSCTree> trees){
-       if(trees.isEmpty()) return 0;
-       int result = 0;
-       
-       BSCTree aux = new BSCTree("0");
-       aux.pathCodes = this.and(trees.get(0));
-       for(int i = 1; i < trees.size(); i++){
-           aux.pathCodes = aux.and(trees.get(i));
-       }
-       
-       for(Pair<String, Integer> pair : aux.pathCodes){
-           result += pair.getValue();
-       }
-       
-       return result;
+    public int treeANDing(ArrayList<BSCTree> trees) {
+        if (trees.isEmpty()) {
+            return 0;
+        }
+        int result = 0;
+
+        BSCTree aux = new BSCTree("0");
+        aux.pathCodes = this.and(trees.get(0));
+        for (int i = 1; i < trees.size(); i++) {
+            aux.pathCodes = aux.and(trees.get(i));
+        }
+
+        for (Pair<String, Integer> pair : aux.pathCodes) {
+            result += pair.getValue();
+        }
+
+        return result;
     }
 }

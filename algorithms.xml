@@ -171,7 +171,10 @@
         </parameter>
     </algorithm>
 
-
+    <algorithm>
+        <name>DGCP-Tree</name>
+        <class>algorithms.dgcp_tree.DGCPTree</class>
+    </algorithm>
     
 
 <!--

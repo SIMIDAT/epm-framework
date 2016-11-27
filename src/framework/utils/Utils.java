@@ -1319,6 +1319,17 @@ public class Utils {
         return new framework.items.Pattern(item, oldPattern.getClase());
     }
 
+    /**
+     * Transform the given dataset into Patterns with class 0 or 1. This is
+     * useful to transform the given dataset whe dealing with multiclass label
+     * with the OVA method. Where {@code class} is the possitive class (marked
+     * as 0), and the rest of classes belongs to the negative class (marked as
+     * 1).
+     *
+     * @param set
+     * @param clas
+     * @return
+     */
     public static ArrayList<Pattern> generatePatterns(InstanceSet set, int clas) {
         ArrayList<Pattern> trainingInstances = new ArrayList<>();
         for (Instance inst : set.getInstances()) {
