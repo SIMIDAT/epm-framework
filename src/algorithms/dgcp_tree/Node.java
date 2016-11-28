@@ -199,4 +199,17 @@ public class Node {
     public void setChilds(ArrayList<Node> child) {
         this.child = child;
     }
+    
+
+ 
+    public Node clone(){
+        Node a = new Node();
+        a.root = this.root;
+        a.item = this.item;
+        a.pcArrNeg = this.pcArrNeg;
+        a.pcArrPos = this.pcArrPos;
+        
+        //a.child = this.child;
+        return a;
+    }
 }

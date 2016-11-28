@@ -178,9 +178,11 @@ public class BSCTree {
             // Go to the right child
             getPathCodes(node.getRight(), results, pathCode + "1");
         } else // The node is a leaf, check if it is a 1-bit leaf
-        if (node.getBitType() == '1') { // If 1-bit leaf node, store as a result
-            Pair pair = new Pair(pathCode, node.getOneBitCount());
-            results.add(pair);
+        {
+            if (node.getBitType() == '1') { // If 1-bit leaf node, store as a result
+                Pair pair = new Pair(pathCode, node.getOneBitCount());
+                results.add(pair);
+            }
         }
     }
 
@@ -301,7 +303,7 @@ public class BSCTree {
     /**
      * It checks if the item that represents this BSC-Tree covers {@code other},
      * i.e., if the pathCode of {@code this.and(other)} is equal to
-     * {@code other.pathCodes}
+     * {@code other.pathCodes} and it means that {@code this} covers {@code other}
      *
      * @param other
      * @return
@@ -310,14 +312,27 @@ public class BSCTree {
         // Perfoms the and
         ArrayList<Pair<String, Integer>> and = this.and(other);
         
+        if (and.isEmpty() && !other.pathCodes.isEmpty()) {
+            return false;
+        }
+        if (and.size() != other.pathCodes.size()) {
+            return false;
+        }
+        
         // Checks if the and pathCode is equal to the path code of other
-        for(Pair<String, Integer> pathCode : and){
-            if(!other.pathCodes.contains(pathCode)){
+        for (Pair<String, Integer> pathCode : and) {
+            if (!other.pathCodes.contains(pathCode)) {
                 return false;
             }
         }
-        
+
         return true;
-        
+
+    }
+
+    public BSCTree And(BSCTree other) {
+        BSCTree result = new BSCTree("");
+        result.pathCodes = this.and(other);
+        return result;
     }
 }

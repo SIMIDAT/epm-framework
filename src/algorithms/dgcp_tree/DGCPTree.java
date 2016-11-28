@@ -69,19 +69,29 @@ public class DGCPTree extends Model {
      * The bit strings for each item on the negative class.
      */
     HashMap<Item, String> bitStringsNeg;
-    
+
     /**
      * It stores the items that are covered by another one in Dn
      */
     HashMap<Item, ArrayList<Item>> coverDn;
 
+    HashMap<Item, BSCTree> pathCodeDp;
+    HashMap<Item, BSCTree> pathCodeDn;
+
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
-        buildInitialTree(Utils.generatePatterns(training, 0), 0, 0);
+        double minSupport = 0.01;
+        int minCounts = ((Double) (minSupport * training.getNumInstances())).intValue();
+        long t_ini = System.currentTimeMillis();
+        int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
+        for (int i = 0; i < numClasses; i++) {
+            buildInitialTree(Utils.generatePatterns(training, i), minSupport, i);
+            mineGrowingTree(root, minCounts, new Pattern(new ArrayList<Item>(), i));
+        }
+        System.out.println("Mining Time: " + ((System.currentTimeMillis() - t_ini) / 1000.0) + " seconds");
+        System.out.println("EOOOOO ");
     }
 
-    
-    
     /**
      * It builds the initial DGCP-Tree
      *
@@ -95,11 +105,15 @@ public class DGCPTree extends Model {
         HashMap<Item, Pair<BSCTree, BSCTree>> items = new HashMap<>();
         // it stores the counts for calculate the support-ratio of each item.
         HashMap<Item, Par> counts = new HashMap<>();
+
         // Initialise class variables.
         bitStringsNeg = new HashMap<>();
         bitStringsPos = new HashMap<>();
         supportRatio = new HashMap<>();
-        int minCounts = (int) minimumSupport * dataset.size();
+        this.pathCodeDn = new HashMap<>();
+        this.pathCodeDp = new HashMap<>();
+        this.coverDn = new HashMap<>();
+        int minCounts = ((Double) (minimumSupport * dataset.size())).intValue();
 
         // Split the dataset into Dp and Dn, and calculate the counts for the supportRatio of each item.
         ArrayList<Pattern> Dp = new ArrayList<>();
@@ -173,6 +187,8 @@ public class DGCPTree extends Model {
                 child.setPcArrNeg(negative);
                 child.setPcArrPos(positive);
                 aux.addChild(child);
+                this.pathCodeDp.put(next.getKey(), positive);
+                this.pathCodeDn.put(next.getKey(), negative);
             }
         }
 
@@ -192,24 +208,59 @@ public class DGCPTree extends Model {
                 root.addChild(aux.getChild(i));
             }
         }
+
+        // Get the set of coveredDn values
+        for (int i = 0; i < root.numChilds(); i++) {
+            ArrayList<Item> cov = new ArrayList<>();
+            for (int j = 0; j < root.numChilds(); j++) {
+                if (j != i) {
+                    if (root.getChild(i).getPcArrNeg().covers(root.getChild(j).getPcArrNeg())) {
+                        cov.add(root.getChild(j).getItem());
+                    }
+                }
+            }
+            coverDn.put(root.getChild(i).getItem(), cov);
+        }
         // Now, the DGCP-Tree is initialised
     }
-    
-    
-    
-    public void mineGrowingTree(Node T, int minSupport, Pattern prefix){
+
+    public void mineGrowingTree(Node T, int minSupport, Pattern prefix) {
         // for each child node of T
-        for(int i = 0; i < T.getChilds().size(); i++){
+        for (int i = 0; i < T.getChilds().size(); i++) {
             Node N = T.getChild(i);
             Pattern prefixN = prefix.clone();
             prefixN.add(N.getItem());
-            if(N.getPcArrPos().getCounts() >= minSupport){
+            if (N.getPcArrPos().getCounts() >= minSupport) {
                 // Now, for each right sibling of N, S do
-                for(int j = i+1; j < T.getChilds().size(); j++){
+                for (int j = i + 1; j < T.getChilds().size(); j++) {
                     Node S = T.getChild(j);
-                    // VAS POR AQUI /**/
+                    Pattern prefixNS = prefixN.clone();
+                    prefixNS.add(S.getItem());
+                    //if S.item not in coverDn(N.item) and N.item not in coverDn(S.item)
+                    if (!coverDn.get(N.getItem()).contains(S.getItem())
+                            && !coverDn.get(S.getItem()).contains(N.getItem())
+                            && support(prefixNS, true) >= minSupport) {
+                        // The pattern is a possible JEP. Check if it is a JEP
+                        if (support(prefixNS, false) == 0) {
+                            // Is a SJEP !!
+                            this.patterns.add(prefixNS);
+                        } else {
+                            // clone S in S''
+                            Node S_Prime = S.clone();
+                            // modify the path codes by the and operation of BSC-Tree
+                            S_Prime.setPcArrPos(N.getPcArrPos().And(this.pathCodeDp.get(S.getItem())));
+                            S_Prime.setPcArrNeg(N.getPcArrNeg().And(this.pathCodeDn.get(S.getItem())));
+                            // add S' into T as a child node of N. (Obeying the order)
+                            N.addChild(S_Prime);
+                            N.sortChilds(supportRatio);
+                        }
+                    }
                 }
+                // Perfoms the recursive call
+                mineGrowingTree(N, minSupport, prefixN);
             }
+            // Prune subtree N from T
+            N = null;
         }
     }
 
@@ -226,6 +277,27 @@ public class DGCPTree extends Model {
             result += "0";
         }
         return result;
+    }
+
+    private int support(Pattern X, boolean positiveDataset) {
+        ArrayList<BSCTree> trees = new ArrayList<>();
+        BSCTree first;
+        if (positiveDataset) {
+            first = this.pathCodeDp.get(X.get(0));
+        } else {
+            first = this.pathCodeDn.get(X.get(0));
+        }
+        // Get individual path codes for each item
+        for (int i = 1; i < X.length(); i++) {
+            Item it = X.get(i);
+            if (positiveDataset) {
+                trees.add(this.pathCodeDp.get(it));
+            } else {
+                trees.add(this.pathCodeDn.get(it));
+            }
+        }
+        // Perfom the tree anding for each item
+        return first.treeANDing(trees);
     }
 
 }
