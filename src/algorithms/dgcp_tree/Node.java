@@ -71,7 +71,7 @@ public class Node {
     }
 
     public int numChilds() {
-        return child.size();
+        return getChilds().size();
     }
 
     /**
@@ -81,7 +81,7 @@ public class Node {
      * @return
      */
     public Node getChild(int pos) {
-        return child.get(pos);
+        return getChilds().get(pos);
     }
 
     /**
@@ -90,7 +90,7 @@ public class Node {
      * @param node
      */
     public void addChild(Node node) {
-        child.add(node);
+        getChilds().add(node);
     }
 
     /**
@@ -102,7 +102,7 @@ public class Node {
      * @param supportRatioValues
      */
     public void sortChilds(HashMap<Item, Double> supportRatioValues) {
-        this.child.sort((i1, i2) -> {
+        this.getChilds().sort((i1, i2) -> {
             double gr1 = supportRatioValues.get(i1.getItem());
             double gr2 = supportRatioValues.get(i2.getItem());
             if (gr1 > gr2) {
@@ -184,5 +184,19 @@ public class Node {
      */
     public void setPcArrNeg(BSCTree pcArrNeg) {
         this.pcArrNeg = pcArrNeg;
+    }
+
+    /**
+     * @return the child
+     */
+    public ArrayList<Node> getChilds() {
+        return child;
+    }
+
+    /**
+     * @param child the child to set
+     */
+    public void setChilds(ArrayList<Node> child) {
+        this.child = child;
     }
 }

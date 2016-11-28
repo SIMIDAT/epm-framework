@@ -69,6 +69,11 @@ public class DGCPTree extends Model {
      * The bit strings for each item on the negative class.
      */
     HashMap<Item, String> bitStringsNeg;
+    
+    /**
+     * It stores the items that are covered by another one in Dn
+     */
+    HashMap<Item, ArrayList<Item>> coverDn;
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
@@ -192,7 +197,21 @@ public class DGCPTree extends Model {
     
     
     
-    
+    public void mineGrowingTree(Node T, int minSupport, Pattern prefix){
+        // for each child node of T
+        for(int i = 0; i < T.getChilds().size(); i++){
+            Node N = T.getChild(i);
+            Pattern prefixN = prefix.clone();
+            prefixN.add(N.getItem());
+            if(N.getPcArrPos().getCounts() >= minSupport){
+                // Now, for each right sibling of N, S do
+                for(int j = i+1; j < T.getChilds().size(); j++){
+                    Node S = T.getChild(j);
+                    // VAS POR AQUI /**/
+                }
+            }
+        }
+    }
 
     /**
      * Generates a string of length {@code length} to be used to represent the
