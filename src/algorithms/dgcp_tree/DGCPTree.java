@@ -75,21 +75,38 @@ public class DGCPTree extends Model {
      */
     HashMap<Item, ArrayList<Item>> coverDn;
 
+    /**
+     * The path code for the positive dataset for each single item
+     */
     HashMap<Item, BSCTree> pathCodeDp;
+
+    /**
+     * The path code for the negative dataset for each single item.
+     */
     HashMap<Item, BSCTree> pathCodeDn;
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
-        double minSupport = 0.01;
+        double minSupport = Double.parseDouble(params.get("Min Support"));
         int minCounts = ((Double) (minSupport * training.getNumInstances())).intValue();
         long t_ini = System.currentTimeMillis();
         int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
         for (int i = 0; i < numClasses; i++) {
+            System.out.println("Mining Class: " + training.getAttributeDefinitions().getOutputAttribute(0).getNominalValue(i));
             buildInitialTree(Utils.generatePatterns(training, i), minSupport, i);
             mineGrowingTree(root, minCounts, new Pattern(new ArrayList<Item>(), i));
         }
         System.out.println("Mining Time: " + ((System.currentTimeMillis() - t_ini) / 1000.0) + " seconds");
-        System.out.println("EOOOOO ");
+    }
+
+    @Override
+    public String[][] predict(InstanceSet test) {
+        String[][] result = new String[4][test.getNumInstances()];
+        result[0] = super.getPredictions(super.patterns, test);
+        result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
+        result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
+        result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        return result;
     }
 
     /**
@@ -224,12 +241,21 @@ public class DGCPTree extends Model {
         // Now, the DGCP-Tree is initialised
     }
 
+    /**
+     * Recursive function that mines and grows the DGCP-Tree looking for SJEPs
+     *
+     * @param T A subtree of the DGCP- Tree
+     * @param minSupport The minimum support threshold. NOTE: The support here
+     * is measured by COUNTS, not support.
+     * @param prefix A pattern prefix.
+     */
     public void mineGrowingTree(Node T, int minSupport, Pattern prefix) {
         // for each child node of T
         for (int i = 0; i < T.getChilds().size(); i++) {
             Node N = T.getChild(i);
             Pattern prefixN = prefix.clone();
             prefixN.add(N.getItem());
+            int suppn = support(prefixN,true);
             if (N.getPcArrPos().getCounts() >= minSupport) {
                 // Now, for each right sibling of N, S do
                 for (int j = i + 1; j < T.getChilds().size(); j++) {
@@ -279,6 +305,15 @@ public class DGCPTree extends Model {
         return result;
     }
 
+    /**
+     * It calculates the support (in COUNTS) of a given pattern by perform the
+     * ANDing between the BSC-Trees of each single item that appears in the
+     * pattern.
+     *
+     * @param X
+     * @param positiveDataset
+     * @return
+     */
     private int support(Pattern X, boolean positiveDataset) {
         ArrayList<BSCTree> trees = new ArrayList<>();
         BSCTree first;

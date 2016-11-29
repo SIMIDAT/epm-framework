@@ -106,11 +106,11 @@ public class Node {
             double gr1 = supportRatioValues.get(i1.getItem());
             double gr2 = supportRatioValues.get(i2.getItem());
             if (gr1 > gr2) {
-                return -1;
-            } else if (gr1 < gr2) {
                 return 1;
+            } else if (gr1 < gr2) {
+                return -1;
             } else {
-                return -1 * ((NominalItem) i1.getItem()).compareTo((NominalItem) i2.getItem());
+                return 1 * ((NominalItem) i1.getItem()).compareTo((NominalItem) i2.getItem());
             }
         });
     }

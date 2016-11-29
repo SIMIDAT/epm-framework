@@ -283,7 +283,7 @@ public class BSCTree {
      */
     public int treeANDing(ArrayList<BSCTree> trees) {
         if (trees.isEmpty()) {
-            return 0;
+            return this.getCounts();
         }
         int result = 0;
 
