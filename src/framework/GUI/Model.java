@@ -123,7 +123,10 @@ public class Model implements Serializable {
         Attribute[] attributes = test.getAttributeDefinitions().getInputAttributes();
         ArrayList<String> predictions = new ArrayList<>();
         float[] clasContrib = new float[test.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues()];
-
+        ArrayList<ArrayList<Double>> contribs = new ArrayList<>();
+        for(int i = 0; i < clasContrib.length; i++){
+            contribs.add(new ArrayList<>());
+        }
         //For each test instance
         for (Instance inst : test.getInstances()) {
             for (int i = 0; i < clasContrib.length; i++) {
@@ -133,8 +136,15 @@ public class Model implements Serializable {
             // Checks the patterns that covers the instance for each class, and sum its support
             for (framework.items.Pattern pat : patterns) {
                 if (pat.covers(inst, attributes)) {
+                    contribs.get(pat.getClase()).add(pat.getTraMeasure("SUPP"));
                     clasContrib[pat.getClase()] += pat.getTra_measures().get("SUPP");
                 }
+            }
+            
+            // Normalise the score by the median value of each contribution.
+            for(int i = 0; i < clasContrib.length; i++){
+                if(!contribs.get(i).isEmpty())
+                clasContrib[i] /= Utils.median(contribs.get(i));
             }
 
             // The max value wins and it is the value predicted.

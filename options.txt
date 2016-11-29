@@ -1,1 +1,1 @@
-/home/angel/spambase
+/home/angel/Datasets_pruebaParametros/breast
