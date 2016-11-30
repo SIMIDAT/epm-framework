@@ -785,7 +785,7 @@ public class GUI extends javax.swing.JFrame {
                     if (!rutaTst.getText().equals("")) {
                         // Calculate descriptive measures for test
                         appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
-                        System.out.println("Testing instances");
+                        System.out.println("Testing instances...");
 
                         // Calculate test measures for unfiltered and filtered patterns
                         Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false);
@@ -804,6 +804,8 @@ public class GUI extends javax.swing.JFrame {
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
                         Utils.saveTest(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures);
                         appendToPane(ExecutionInfoLearn, "Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath(), Color.BLUE);
+                        System.out.println("Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath());
+                        
                     }
 
                     // Invoke saveModel method if neccesary
@@ -1105,6 +1107,7 @@ public class GUI extends javax.swing.JFrame {
 
                     }
                     appendToPane(BatchOutput, "Done.", Color.BLUE);
+                    System.out.println("EXECUTIONS FINISHED!");
                     BatchOutput.setEditable(false);
                     return null;
                 }
