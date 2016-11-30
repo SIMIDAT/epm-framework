@@ -265,7 +265,7 @@ public class DGCPTree extends Model {
                     //if S.item not in coverDn(N.item) and N.item not in coverDn(S.item)
                     if (!coverDn.get(N.getItem()).contains(S.getItem())
                             && !coverDn.get(S.getItem()).contains(N.getItem())
-                            && support(prefixNS, true) >= minSupport) {
+                            && support(prefixNS, true) >= minSupport && support(prefixNS, false) < minSupport) {
                         // The pattern is a possible JEP. Check if it is a JEP
                         if (support(prefixNS, false) == 0) {
                             // Is a SJEP !!

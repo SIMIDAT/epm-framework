@@ -23,6 +23,7 @@
  */
 package framework.utils;
 
+import static com.sun.corba.se.impl.util.Utility.printStackTrace;
 import framework.items.Pattern;
 import framework.items.Item;
 import framework.utils.FisherExact;
@@ -1374,15 +1375,18 @@ public class Utils {
      * @return 
      */
     public static double median(ArrayList<Double> values){
+  
         values.sort(null);
         if(values.size() % 2 != 0){
-            return values.get(values.size() / 2 + 1);
+            return values.get(values.size() / 2);
         } else {
             double v1 = values.get(values.size() / 2);
             double v2 = values.get(values.size() / 2 + 1);
             
             return (v1 + v2) / 2.0;
         }
+      
+        
     }
 
 }
