@@ -49,7 +49,9 @@ public class Node {
      * and a child Node.
      */
     private ArrayList<Entry> items;
-
+    
+    public boolean visited = false;
+    
     /**
      * Creates a node with the given item, and start to 1 the counts of the
      * given class

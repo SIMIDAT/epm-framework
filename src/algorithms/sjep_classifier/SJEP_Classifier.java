@@ -151,6 +151,7 @@ public class SJEP_Classifier extends Model {
                     super.patterns.add(topK_PosPatterns.poll());
                 }
             }
+            System.out.println("Patterns mined: " + super.patterns.size());
         } catch (IllegalActionException ex) {
             GUI.setInfoLearnTextError(ex.getReason());
         }
@@ -237,6 +238,7 @@ public class SJEP_Classifier extends Model {
     public void mineTree(Node node, Pattern alpha) {
         // for all i in t.items
         for (int j = 0; j < node.getItems().size(); j++) {
+            if(node.getItems().get(j).visited) continue;
             // if the subtree is not empty then merge
             if (node.getItems().get(j).getChild() != null) {
                 if (!node.getItems().get(j).getChild().getItems().isEmpty()) {
@@ -256,10 +258,11 @@ public class SJEP_Classifier extends Model {
                 topK_PosPatterns.offer(beta.clone());
 
             } else if (visitSubTree(beta, i) && i.getChild() != null) {
-                mineTree(i.getChild(), beta);
+                if(!i.getChild().getItems().isEmpty())
+                    mineTree(i.getChild(), beta);
             }
             i.setChild(null);
-           System.gc(); // Force garbage collector
+            //System.gc(); // Force garbage collector
         }
     }
 

@@ -40,6 +40,7 @@ public class Entry {
     private int countD2;
     private Node child;
     public boolean merged = false;
+    public boolean visited = false;
 
     public Entry(Item item, int clas) {
         this.item = item;
