@@ -87,14 +87,18 @@ public class SJEP_Classifier extends Model {
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
         try {
+            long t_ini = System.currentTimeMillis();
             Utils.checkDataset();
             tree = new CPTree();
             countsPerItem = new HashMap<>();
             supportRatioPerItem = new HashMap<>();
             itemCountsForD1 = new HashMap<>();
             itemCountsForD2 = new HashMap<>();
-            minPosCount = (int) (Float.parseFloat(params.get("Min Support")) * (float) training.getNumInstances());
-
+            if (Float.parseFloat(params.get("Min Support")) == 0) {
+                minPosCount = 1;
+            } else {
+                minPosCount = (int) (Float.parseFloat(params.get("Min Support")) * (float) training.getNumInstances());
+            }
             topK_PosPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
                 double supp1 = o1.getTraMeasure("SUPP");
                 double supp2 = o2.getTraMeasure("SUPP");
@@ -102,14 +106,12 @@ public class SJEP_Classifier extends Model {
                     return 1;
                 } else if (supp1 < supp2) {
                     return -1;
+                } else if (o1.length() > o2.length()) {
+                    return 1;
+                } else if (o1.length() < o2.length()) {
+                    return -1;
                 } else {
-                    if (o1.length() > o2.length()) {
-                        return 1;
-                    } else if (o1.length() < o2.length()) {
-                        return -1;
-                    } else {
-                        return 1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
-                    }
+                    return 1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
                 }
             });
 
@@ -122,8 +124,19 @@ public class SJEP_Classifier extends Model {
                 getSupportRatioForItems(instances);
                 //getBitStrings(instances);
                 // Fill the tree
+                for (int k = 0; k < instances.size(); k++) {
+                    Pattern p = instances.get(k);
+                    // Remove items with support ratio == 0
+                    for (int j = 0; j < p.getItems().size(); j++) {
+                        if (supportRatioPerItem.get(p.get(j)) == null) {
+                            instances.get(k).drop(j);
+                            j--;
+                        }
+                    }
+                }
+
                 for (Pattern p : instances) {
-                    // Sort the pattern according to the support-ratio inverse ordering for efficiency
+                    // Sort the patterns according to the support-ratio inverse ordering for efficiency
                     p.getItems().sort((o1, o2) -> {
                         double gr1 = supportRatioPerItem.get(o1);
                         double gr2 = supportRatioPerItem.get(o2);
@@ -132,7 +145,9 @@ public class SJEP_Classifier extends Model {
                         } else if (gr1 < gr2) {
                             return -1;
                         } else {
-                            return ((NominalItem) o1).compareTo(o2);
+                      
+                                return ((NominalItem) o1).compareTo(o2);
+                            
                         }
                     });
                     tree.insert(p, supportRatioPerItem);
@@ -151,7 +166,8 @@ public class SJEP_Classifier extends Model {
                     super.patterns.add(topK_PosPatterns.poll());
                 }
             }
-            System.out.println("Patterns mined: " + super.patterns.size());
+            System.out.println("Patterns mined: " + super.patterns.size() + "\n"
+                    + "Execution time: " + (System.currentTimeMillis() - t_ini) / 1000d + " seconds.");
         } catch (IllegalActionException ex) {
             GUI.setInfoLearnTextError(ex.getReason());
         }
@@ -195,14 +211,18 @@ public class SJEP_Classifier extends Model {
         while (iterator.hasNext()) {
             Map.Entry<Item, Par> next = iterator.next();
             double suppRatio;
-            if (next.getValue().D1 == 0 && next.getValue().D2 == 0) {
+            if (next.getValue().D1 < minPosCount && next.getValue().D2 < minPosCount) {
                 suppRatio = 0;
-            } else if ((next.getValue().D1 != 0 && next.getValue().D2 == 0)) {
+            } else if ((next.getValue().D1 >= minPosCount && next.getValue().D2 == 0)) {
                 suppRatio = Double.POSITIVE_INFINITY;
             } else {
                 suppRatio = ((Integer) next.getValue().D1).doubleValue() / ((Integer) next.getValue().D2).doubleValue();
             }
-            supportRatioPerItem.put(next.getKey(), suppRatio);
+            
+            if (suppRatio > 0) {
+                // Put only those items with supportRatio > 0
+                supportRatioPerItem.put(next.getKey(), suppRatio);
+            }
         }
     }
 
@@ -238,7 +258,9 @@ public class SJEP_Classifier extends Model {
     public void mineTree(Node node, Pattern alpha) {
         // for all i in t.items
         for (int j = 0; j < node.getItems().size(); j++) {
-            if(node.getItems().get(j).visited) continue;
+            if (node.getItems().get(j).visited) {
+                continue;
+            }
             // if the subtree is not empty then merge
             if (node.getItems().get(j).getChild() != null) {
                 if (!node.getItems().get(j).getChild().getItems().isEmpty()) {
@@ -255,12 +277,15 @@ public class SJEP_Classifier extends Model {
                 HashMap<String, Double> m = new HashMap<>();
                 m.put("SUPP", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
-                topK_PosPatterns.offer(beta.clone());
+                //topK_PosPatterns.offer(beta.clone());
+                super.patterns.add(beta.clone());
 
             } else if (visitSubTree(beta, i) && i.getChild() != null) {
-                if(!i.getChild().getItems().isEmpty())
+                if (!i.getChild().getItems().isEmpty()) {
                     mineTree(i.getChild(), beta);
+                }
             }
+
             i.setChild(null);
             //System.gc(); // Force garbage collector
         }
