@@ -1377,14 +1377,12 @@ public class Utils {
     public static double median(ArrayList<Double> values){
   
         values.sort(null);
-        if(values.size() % 2 != 0){
-            return values.get(values.size() / 2);
-        } else {
-            double v1 = values.get(values.size() / 2);
-            double v2 = values.get(values.size() / 2 + 1);
-            
-            return (v1 + v2) / 2.0;
-        }
+        int middle = values.size()/2;
+    if (values.size()%2 == 1) {
+        return values.get(middle);
+    } else {
+        return (values.get(middle-1) + values.get(middle)) / 2.0;
+    }
       
         
     }
