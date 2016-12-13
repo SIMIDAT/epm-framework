@@ -40,6 +40,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import keel.Dataset.Attributes;
 import keel.Dataset.InstanceSet;
 
 /**
@@ -83,47 +84,44 @@ public class SJEP_Classifier extends Model {
      * The minimum count for positive instances
      */
     private int minPosCount = 0;
+    private int minNegCount = 0;
+    private ArrayList<Pattern> SJEPs = new ArrayList<>();
 
     @Override
     public void learn(InstanceSet training, HashMap<String, String> params) {
         try {
-            long t_ini = System.currentTimeMillis();
+
             Utils.checkDataset();
             tree = new CPTree();
             countsPerItem = new HashMap<>();
             supportRatioPerItem = new HashMap<>();
             itemCountsForD1 = new HashMap<>();
             itemCountsForD2 = new HashMap<>();
-            if (Float.parseFloat(params.get("Min Support")) == 0) {
-                minPosCount = 1;
-            } else {
-                minPosCount = (int) (Float.parseFloat(params.get("Min Support")) * (float) training.getNumInstances());
-            }
-            topK_PosPatterns = new PriorityQueue<>((Pattern o1, Pattern o2) -> {
-                double supp1 = o1.getTraMeasure("SUPP");
-                double supp2 = o2.getTraMeasure("SUPP");
-                if (supp1 > supp2) {
-                    return 1;
-                } else if (supp1 < supp2) {
-                    return -1;
-                } else if (o1.length() > o2.length()) {
-                    return 1;
-                } else if (o1.length() < o2.length()) {
-                    return -1;
-                } else {
-                    return 1 * ((NominalItem) o1.get(0)).compareTo((NominalItem) o2.get(0));
-                }
-            });
 
             int numClasses = training.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues();
             // Mine for each class separately
-            for (int i = 0; i < numClasses; i++) {
+            long t_ini = 0;
+
+            if (numClasses == 2) {
+                // NORMAL RUNNING
                 // Retrieve training patterns
-                ArrayList<Pattern> instances = Utils.generatePatterns(training, i);
+                ArrayList<Pattern> instances = Utils.generatePatterns(training, 0);
+
+                // Fill the tree
+                for (int k = 0; k < instances.size(); k++) {
+                    Pattern p = instances.get(k);
+                    if (p.getClase() == 0) {
+                        minPosCount++;
+                    } else {
+                        minNegCount++;
+                    }
+                }
+                minPosCount *= Float.parseFloat(params.get("Min Support"));
+                minNegCount *= Float.parseFloat(params.get("Min Support"));
+
                 // get the support ratio for each item
                 getSupportRatioForItems(instances);
-                //getBitStrings(instances);
-                // Fill the tree
+
                 for (int k = 0; k < instances.size(); k++) {
                     Pattern p = instances.get(k);
                     // Remove items with support ratio == 0
@@ -145,29 +143,88 @@ public class SJEP_Classifier extends Model {
                         } else if (gr1 < gr2) {
                             return -1;
                         } else {
-                      
-                                return ((NominalItem) o1).compareTo(o2);
-                            
+
+                            return -1 * ((NominalItem) o1).compareTo(o2);
+
                         }
                     });
                     tree.insert(p, supportRatioPerItem);
                 }
+                t_ini = System.currentTimeMillis();
                 // Mine the tree looking for SJEPs !
-                mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i));
+                mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), 0), false);
 
-                // Clean auxiliar variables for the next class computation
-                itemCountsForD1.clear();
-                itemCountsForD2.clear();
-                countsPerItem.clear();
-                supportRatioPerItem.clear();
-                tree.clear();
-                // gets the SJEP possitive patterns of the class
-                while (!topK_PosPatterns.isEmpty()) {
-                    super.patterns.add(topK_PosPatterns.poll());
+            } else {
+                //MULTICLASS - WITH ONE VS ALL BINARZATION
+                System.out.println("EXECUTING SJEP-C WITH OVA: ");
+                for (int i = 0; i < numClasses; i++) {
+                    System.out.println("Mining for class: " + training.getAttributeDefinitions().getOutputAttribute(0).getNominalValue(i));
+                    System.out.println("Converting the dataset...");
+                    // Retrieve training patterns
+                    ArrayList<Pattern> instances = Utils.generatePatterns(training, i);
+
+                    // Fill the tree
+                    for (int k = 0; k < instances.size(); k++) {
+                        Pattern p = instances.get(k);
+                        if (p.getClase() == 0) {
+                            minPosCount++;
+                        } else {
+                            minNegCount++;
+                        }
+                    }
+                    minPosCount *= Float.parseFloat(params.get("Min Support"));
+                    minNegCount *= Float.parseFloat(params.get("Min Support"));
+
+                    // get the support ratio for each item
+                    getSupportRatioForItems(instances);
+
+                    for (int k = 0; k < instances.size(); k++) {
+                        Pattern p = instances.get(k);
+                        // Remove items with support ratio == 0
+                        for (int j = 0; j < p.getItems().size(); j++) {
+                            if (supportRatioPerItem.get(p.get(j)) == null) {
+                                instances.get(k).drop(j);
+                                j--;
+                            }
+                        }
+                    }
+                    System.out.println("Creating the tree...");
+                    for (Pattern p : instances) {
+                        // Sort the patterns according to the support-ratio inverse ordering for efficiency
+                        p.getItems().sort((o1, o2) -> {
+                            double gr1 = supportRatioPerItem.get(o1);
+                            double gr2 = supportRatioPerItem.get(o2);
+                            if (gr1 > gr2) {
+                                return 1;
+                            } else if (gr1 < gr2) {
+                                return -1;
+                            } else {
+
+                                return -1 * ((NominalItem) o1).compareTo(o2);
+
+                            }
+                        });
+                        tree.insert(p, supportRatioPerItem);
+                    }
+                    System.out.println("Mining!");
+                    t_ini = System.currentTimeMillis();
+                    // Mine the tree looking for SJEPs !
+                    mineTree(tree.getRoot(), new Pattern(new ArrayList<Item>(), i), true);
+                    System.out.println("Mining took: " + (System.currentTimeMillis() - t_ini) / 1000d + " seconds.");
+                    // Clean auxiliar variables for the next class computation
+                    itemCountsForD1.clear();
+                    itemCountsForD2.clear();
+                    countsPerItem.clear();
+                    supportRatioPerItem.clear();
+                    tree.clear();
+                    // filter obtained JEPs to get only those minimals
+
                 }
             }
+
             System.out.println("Patterns mined: " + super.patterns.size() + "\n"
                     + "Execution time: " + (System.currentTimeMillis() - t_ini) / 1000d + " seconds.");
+            
         } catch (IllegalActionException ex) {
             GUI.setInfoLearnTextError(ex.getReason());
         }
@@ -211,14 +268,15 @@ public class SJEP_Classifier extends Model {
         while (iterator.hasNext()) {
             Map.Entry<Item, Par> next = iterator.next();
             double suppRatio;
-            if (next.getValue().D1 < minPosCount && next.getValue().D2 < minPosCount) {
+            if (next.getValue().D1 < minPosCount && next.getValue().D2 < minNegCount) {
                 suppRatio = 0;
-            } else if ((next.getValue().D1 >= minPosCount && next.getValue().D2 == 0)) {
+            } else if ((next.getValue().D1 >= minPosCount && next.getValue().D2 == 0) || (next.getValue().D2 >= minPosCount && next.getValue().D1 == 0)) {
                 suppRatio = Double.POSITIVE_INFINITY;
             } else {
-                suppRatio = ((Integer) next.getValue().D1).doubleValue() / ((Integer) next.getValue().D2).doubleValue();
+                suppRatio = Math.max(((Integer) next.getValue().D1).doubleValue() / ((Integer) next.getValue().D2).doubleValue(),
+                        ((Integer) next.getValue().D2).doubleValue() / ((Integer) next.getValue().D1).doubleValue());
             }
-            
+
             if (suppRatio > 0) {
                 // Put only those items with supportRatio > 0
                 supportRatioPerItem.put(next.getKey(), suppRatio);
@@ -255,7 +313,7 @@ public class SJEP_Classifier extends Model {
         }
     }
 
-    public void mineTree(Node node, Pattern alpha) {
+    public void mineTree(Node node, Pattern alpha, boolean OVA) {
         // for all i in t.items
         for (int j = 0; j < node.getItems().size(); j++) {
             if (node.getItems().get(j).visited) {
@@ -277,12 +335,21 @@ public class SJEP_Classifier extends Model {
                 HashMap<String, Double> m = new HashMap<>();
                 m.put("SUPP", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
-                //topK_PosPatterns.offer(beta.clone());
                 super.patterns.add(beta.clone());
 
-            } else if (visitSubTree(beta, i) && i.getChild() != null) {
-                if (!i.getChild().getItems().isEmpty()) {
-                    mineTree(i.getChild(), beta);
+            } else {
+                if (acceptPattern(beta, i.getCountD2(), i.getCountD1(), minNegCount)) {
+                    if (!OVA) { // If we are in OVA multiclass, we dont want patterns for the negative class, but we want the pruning.
+                        beta.setClase(1);
+                        HashMap<String, Double> m = new HashMap<>();
+                        m.put("SUPP", ((Integer) i.getCountD2()).doubleValue());
+                        beta.setTra_measures(m);
+                        super.patterns.add(beta.clone());
+                    }
+                } else {
+                    if (visitSubTree(beta, i) && i.getChild() != null) {
+                        mineTree(i.getChild(), beta, OVA);
+                    }
                 }
             }
 
@@ -331,7 +398,7 @@ public class SJEP_Classifier extends Model {
      */
     public boolean acceptPattern(Pattern beta, int countD1, int countD2, int minCount) {
         // check if the patter is a JEP
-        return countD1 > minCount && countD2 == 0;
+        return countD1 >= minCount && countD2 == 0;
     }
 
     /**
@@ -344,7 +411,39 @@ public class SJEP_Classifier extends Model {
      */
     public boolean visitSubTree(Pattern beta, Entry entry) {
         // check if child node has minimal counts
-        return entry.getCountD1() >= minPosCount;
+        return entry.getCountD1() >= minPosCount || entry.getCountD2() >= minNegCount;
+    }
+
+    private void filterMinimals() {
+        patterns.sort((o1, o2) -> {
+            if (o1.length() > o2.length()) {
+                return 1;
+            } else if (o1.length() < o2.length()) {
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+
+        boolean[] marks = new boolean[patterns.size()];
+        for (int i = 0; i < patterns.size(); i++) {
+            Pattern p1 = patterns.get(i);
+            for (int j = i + 1; j < patterns.size(); j++) {
+                Pattern p2 = patterns.get(j);
+                if (!marks[j] && p1.length() < p2.length()) {
+                    if (p1.covers(p2)) { // if p1 covers p2 the p2 is not minimal. Remove it
+                        marks[j] = true;
+                    }
+                }
+            }
+        }
+
+        // retain those patterns with marks == false
+        for (int i = 0; i < marks.length; i++) {
+            if (!marks[i]) {
+                SJEPs.add(patterns.get(i));
+            }
+        }
     }
 
 }

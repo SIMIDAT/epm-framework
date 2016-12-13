@@ -28,6 +28,7 @@ import framework.items.Item;
 import framework.items.NominalItem;
 import framework.items.Pattern;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 /**
@@ -123,17 +124,17 @@ public class Node {
             // incremen itemNumber
             n.itemNumber++;
             // sorts items and counts by support-ratio descending order
-            n.getItems().sort((o1, o2) -> {
+            n.getItems().sort(Collections.reverseOrder((o1, o2) -> {
                 double gr1 = supportRatio.get(o1.getItem());
                 double gr2 = supportRatio.get(o2.getItem());
                 if (gr1 > gr2) {
-                    return -1;
-                } else if (gr1 < gr2) {
                     return 1;
+                } else if (gr1 < gr2) {
+                    return -1;
                 } else {
                     return -1 * ((NominalItem) o1.getItem()).compareTo(o2.getItem());
                 }
-            });
+            }));
             index = n.getItems().indexOf(check);
         }
 
@@ -175,17 +176,17 @@ public class Node {
             } else {
                 // Insert T1.items[i] with it counts and child at the appropiate place of T2 obeyin the order
                 this.getItems().add((Entry) item.clone());
-                this.getItems().sort((o1, o2) -> {
+                this.getItems().sort(Collections.reverseOrder((o1, o2) -> {
                     double gr1 = supportRatio.get(o1.getItem());
                     double gr2 = supportRatio.get(o2.getItem());
                     if (gr1 > gr2) {
-                        return -1;
+                        return 1;
                     } else if (gr1 < gr2) {
                         return 1;
                     } else {
-                        return -1 * ((NominalItem) o1.getItem()).compareTo(o2.getItem());
+                        return -1*((NominalItem) o1.getItem()).compareTo(o2.getItem());
                     }
-                });
+                }));
                 this.itemNumber++;
                 pos = this.getItems().indexOf(item);
             }
