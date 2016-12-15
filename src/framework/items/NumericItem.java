@@ -29,10 +29,30 @@ package framework.items;
  * @version 1.0
  * @since JDK 1.8
  */
-public class NumericItem extends Item {
+public class NumericItem extends Item
+{
 
     protected double value;
+
     protected double alpha;
+
+    protected String operator = " = ";
+
+    /**
+     * Constructor of NumericItem without growthrate and alpha
+     *
+     * @param variable
+     * @param value
+     * @param op
+     */
+    public NumericItem (String variable, double value, String op)
+    {
+        super.variable = variable;
+        this.value = value;
+        this.alpha = 0;
+        this.operator = op;
+        super.growthRate = 0;
+    }
 
     /**
      * Constructor of NumericItem without growthrate
@@ -41,7 +61,8 @@ public class NumericItem extends Item {
      * @param value
      * @param alpha
      */
-    public NumericItem(String variable, double value, double alpha) {
+    public NumericItem (String variable, double value, double alpha)
+    {
         super.variable = variable;
         this.value = value;
         this.alpha = alpha;
@@ -56,7 +77,8 @@ public class NumericItem extends Item {
      * @param alpha
      * @param growthRate
      */
-    public NumericItem(String variable, double value, double alpha, double growthRate) {
+    public NumericItem (String variable, double value, double alpha, double growthRate)
+    {
         super.variable = variable;
         this.value = value;
         this.alpha = alpha;
@@ -68,15 +90,18 @@ public class NumericItem extends Item {
      *
      * @param orig
      */
-    public NumericItem(NumericItem orig) {
+    public NumericItem (NumericItem orig)
+    {
         super.variable = orig.variable;
         super.growthRate = orig.growthRate;
         this.value = orig.value;
         this.alpha = orig.alpha;
+        this.operator = orig.operator;
     }
 
     @Override
-    public int compareTo(Item o) {
+    public int compareTo (Item o)
+    {
         NumericItem other = (NumericItem) o;
         if (other.getVariable().equals(this.getVariable())) {
             return ((Double) this.getValue()).compareTo(other.getValue());
@@ -86,13 +111,15 @@ public class NumericItem extends Item {
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals (Object other)
+    {
         NumericItem o = (NumericItem) other;
         return this.getVariable().equals(o.getVariable()) && this.getValue() == o.getValue();
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode ()
+    {
         int hash = 5;
         hash = 37 * hash + (int) (Double.doubleToLongBits(this.value) ^ (Double.doubleToLongBits(this.value) >>> 32));
         hash = 37 * hash + (int) (Double.doubleToLongBits(this.alpha) ^ (Double.doubleToLongBits(this.alpha) >>> 32));
@@ -101,12 +128,14 @@ public class NumericItem extends Item {
     }
 
     @Override
-    public String toString() {
-        return this.getVariable() + " = " + this.getValue() + " (+/- " + this.getAlpha() + ")";
+    public String toString ()
+    {   
+        return this.getVariable() + operator + this.getValue();
     }
 
     @Override
-    public boolean covers(Item itemInstance) {
+    public boolean covers (Item itemInstance)
+    {
         if (!(itemInstance instanceof NumericItem)) {
             return false;
         }
@@ -121,15 +150,16 @@ public class NumericItem extends Item {
     /**
      * @return the value
      */
-    public double getValue() {
+    public double getValue ()
+    {
         return value;
     }
 
     /**
      * @return the alpha
      */
-    public double getAlpha() {
+    public double getAlpha ()
+    {
         return alpha;
     }
-
 }
