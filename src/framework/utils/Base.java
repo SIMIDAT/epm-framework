@@ -109,7 +109,8 @@ public class Base
                     // IF NOMINAL, CREATE THE ITEM NOMINAL. NOTE THAT WE MADE THE CONVERSION OF REAL TO NOMINAL ATTRIBUTE
                     double aux = 1.0 / (classValues(i.getFeature()).length - 1.0);
                     int valueVal = ((Double) (((SingleValueItem) i).getValue() / aux)).intValue();
-                    it = new NominalItem(i.getFeature().getName(), i.getFeature().valueToString(((SingleValueItem) i).getValue()));
+                    String value = i.getFeature().valueToString(((SingleValueItem) i).getValue());
+                    it = new NominalItem(i.getFeature().getName(), value.substring(1, value.length() - 1));
                 }
                 items.add(it);
             }

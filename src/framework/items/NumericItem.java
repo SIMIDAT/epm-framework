@@ -141,10 +141,27 @@ public class NumericItem extends Item
         }
 
         NumericItem other = (NumericItem) itemInstance;
+        if(!this.variable.equals(other.variable))
+            return false;
+        
         double minBound = this.getValue() - getAlpha();
         double maxBound = this.getValue() + getAlpha();
-
-        return other.getValue() >= minBound && other.getValue() <= maxBound;
+        if(alpha > 0){
+            return other.getValue() >= minBound && other.getValue() <= maxBound;
+        } else {
+            switch(operator){
+                case " = ":
+                    return other.getValue() == this.value;
+                case " != ":
+                    return other.getValue() != this.value;
+                case " > ":
+                    return other.getValue() > this.value;
+                case " <= ":
+                        return other.getValue() <= this.value;   
+                default: 
+                    return false;
+            }
+        }
     }
 
     /**
