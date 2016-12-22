@@ -260,6 +260,15 @@
             <default>0.6</default>
         </parameter>
         <parameter>
+            <name>growthRate</name>
+            <type>real</type>
+            <domain>
+                <min>1</min>
+                <max>100000</max>
+            </domain>
+            <default>10</default>
+        </parameter>
+        <parameter>
             <name>maxOfItems</name>
             <type>integer</type>
             <domain>

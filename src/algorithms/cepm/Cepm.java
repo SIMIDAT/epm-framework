@@ -27,13 +27,18 @@
  */
 package algorithms.cepm;
 
+import PRFramework.Core.Common.Feature;
 import PRFramework.Core.Common.Instance;
 import PRFramework.Core.Common.InstanceModel;
+import PRFramework.Core.Common.RefObject;
 import PRFramework.Core.SupervisedClassifiers.DecisionTrees.Builder.DecisionTreeBuilder;
+import PRFramework.Core.SupervisedClassifiers.DecisionTrees.DistributionTesters.PureNodeStopCondition;
+import PRFramework.Core.SupervisedClassifiers.DecisionTrees.PruneTesters.PessimisticError;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.IEmergingPattern;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Miners.CepmMiner;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.PatternTests.QualityBasedPatternTester;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Qualities.Statistical.ConfidenceQuality;
+import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Qualities.Statistical.GrowthRateQuality;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.SubsetRelation;
 import static PRFramework.Core.SupervisedClassifiers.InstanceModelHelper.classFeature;
 import framework.utils.Base;
@@ -41,7 +46,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 import framework.items.Pattern;
-//import main.Pattern;
 
 public class Cepm extends Cepm_Wrapper
 {
@@ -50,9 +54,7 @@ public class Cepm extends Cepm_Wrapper
 
     public InstanceSet train;
 
-    public double confidence = 0.9;
-
-    public int maxOfItems = 5;
+    public double growthRate = 10;
 
     public SubsetRelation filterRelation = SubsetRelation.Different;
 
@@ -73,7 +75,7 @@ public class Cepm extends Cepm_Wrapper
     {
         this.train = train;
 
-        confidence = Double.parseDouble(params.get("confidence"));
+        growthRate = Double.parseDouble(params.get("growthRate"));
         if ("Different".equals(params.get("filterRelation"))) {
             filterRelation = SubsetRelation.Different;
         } else {
@@ -88,7 +90,8 @@ public class Cepm extends Cepm_Wrapper
         ArrayList<Instance> prfInstances = new ArrayList<>();
         InstanceModel model = new InstanceModel();
 
-        Base.ConvertKeelInstancesToPRFInstances(train, prfInstances, model);
+        RefObject<Feature> classFeature = new RefObject<Feature>(null);
+        Base.ConvertKeelInstancesToPRFInstances(train, prfInstances, model, classFeature);
 
         //Check  time		
         setInitialTime();
@@ -96,13 +99,17 @@ public class Cepm extends Cepm_Wrapper
         CepmMiner miner = new CepmMiner();
         DecisionTreeBuilder builder = new DecisionTreeBuilder();
         builder.setMaxDepth(maxDepth);
+        builder.setPruneResult(true);
+        builder.setPruneTester(new PessimisticError()); 
+        builder.setMinimalInstanceMembership(0.05);
+        builder.setStopCondition(new PureNodeStopCondition());
 
         miner.setDecisionTreeBuilder(builder);
         miner.setFilterRelation(filterRelation);
         miner.setMaxIterations(maxIterations);
-        miner.setEPTester(new QualityBasedPatternTester(new ConfidenceQuality(), confidence));
+        miner.setEPTester(new QualityBasedPatternTester(new GrowthRateQuality(), growthRate));
 
-        ArrayList<IEmergingPattern> prfPatterns = miner.mine(model, prfInstances, classFeature(model));
+        ArrayList<IEmergingPattern> prfPatterns = miner.mine(model, prfInstances, classFeature.argValue);
         ArrayList<Pattern> keelPatterns = new ArrayList<>();
 
         Base.convertPRFPatternsToKeelPatterns(prfPatterns, keelPatterns);

@@ -27,13 +27,18 @@
  */
 package algorithms.lc;
 
+import PRFramework.Core.Common.Feature;
 import PRFramework.Core.Common.Instance;
 import PRFramework.Core.Common.InstanceModel;
+import PRFramework.Core.Common.RefObject;
 import PRFramework.Core.SupervisedClassifiers.DecisionTrees.Builder.DecisionTreeBuilder;
+import PRFramework.Core.SupervisedClassifiers.DecisionTrees.DistributionTesters.PureNodeStopCondition;
+import PRFramework.Core.SupervisedClassifiers.DecisionTrees.PruneTesters.PessimisticError;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.IEmergingPattern;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Miners.LCMiner;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.PatternTests.QualityBasedPatternTester;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Qualities.Statistical.ConfidenceQuality;
+import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Qualities.Statistical.GrowthRateQuality;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.SubsetRelation;
 import static PRFramework.Core.SupervisedClassifiers.InstanceModelHelper.classFeature;
 import framework.utils.Base;
@@ -49,9 +54,7 @@ public class LC extends LC_Wrapper
 
     public InstanceSet train;
 
-    public double confidence = 0.9;
-
-    public int maxOfItems = 5;
+    public double growthRate = 10;
 
     public SubsetRelation subsetRelation = SubsetRelation.Equal;
 
@@ -72,8 +75,7 @@ public class LC extends LC_Wrapper
     {
         this.train = train;
 
-        confidence = Double.parseDouble(params.get("confidence"));
-        maxOfItems = Integer.parseInt(params.get("maxOfItems"));
+        growthRate = Double.parseDouble(params.get("growthRate"));
         if ("superset".equals(params.get("subsetRelation"))) {
             subsetRelation = SubsetRelation.Superset;
         } else {
@@ -95,7 +97,8 @@ public class LC extends LC_Wrapper
         ArrayList<Instance> prfInstances = new ArrayList<>();
         InstanceModel model = new InstanceModel();
 
-        Base.ConvertKeelInstancesToPRFInstances(train, prfInstances, model);
+        RefObject<Feature> classFeature = new RefObject<Feature>(null);
+        Base.ConvertKeelInstancesToPRFInstances(train, prfInstances, model, classFeature);
 
         //Check  time		
         setInitialTime();
@@ -103,13 +106,17 @@ public class LC extends LC_Wrapper
         LCMiner miner = new LCMiner();
         DecisionTreeBuilder builder = new DecisionTreeBuilder();
         builder.setMaxDepth(maxDepth);
+        builder.setPruneResult(true);
+        builder.setPruneTester(new PessimisticError()); 
+        builder.setMinimalInstanceMembership(0.05);
+        builder.setStopCondition(new PureNodeStopCondition());
 
         miner.setDecisionTreeBuilder(builder);
         miner.setFilterRelation(subsetRelation);
         miner.setMaxVariabilityPerLevel(maxVariabilityPerLevel);
-        miner.setEPTester(new QualityBasedPatternTester(new ConfidenceQuality(), confidence));
+        miner.setEPTester(new QualityBasedPatternTester(new GrowthRateQuality(), growthRate));
 
-        ArrayList<IEmergingPattern> prfPatterns = miner.mine(model, prfInstances, classFeature(model));
+        ArrayList<IEmergingPattern> prfPatterns = miner.mine(model, prfInstances, classFeature.argValue);
         ArrayList<Pattern> keelPatterns = new ArrayList<>();
 
         Base.convertPRFPatternsToKeelPatterns(prfPatterns, keelPatterns);

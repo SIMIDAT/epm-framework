@@ -26,7 +26,6 @@ package algorithms.cepm;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 import framework.GUI.Model;
-//import main.Model;
 
 /**
  *
@@ -34,19 +33,22 @@ import framework.GUI.Model;
  * @version 1.0
  * @since JDK 1.8
  */
-public class Cepm_Wrapper extends Model {
+public class Cepm_Wrapper extends Model
+{
 
     Cepm algorithm;
 
     @Override
-    public void learn(InstanceSet training, HashMap<String, String> params) {
+    public void learn (InstanceSet training, HashMap<String, String> params)
+    {
         algorithm = new Cepm(training, params);
         algorithm.mine();
         super.setPatterns(algorithm.getPatterns());
     }
 
     @Override
-    public String[][] predict(InstanceSet test) {
+    public String[][] predict (InstanceSet test)
+    {
         String[][] result = new String[4][test.getNumInstances()];
         result[0] = super.getPredictions(super.patterns, test);
         result[1] = super.getPredictions(super.patternsFilteredMinimal, test);

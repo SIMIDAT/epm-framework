@@ -49,7 +49,7 @@ public class RandomFeatureSubset_Wrapper extends Model
     @Override
     public String[][] predict (InstanceSet test)
     {
-         String[][] result = new String[4][test.getNumInstances()];
+  String[][] result = new String[4][test.getNumInstances()];
         result[0] = super.getPredictions(super.patterns, test);
         result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
         result[2] = super.getPredictions(super.patternsFilteredMaximal, test);

@@ -33,20 +33,23 @@ import framework.GUI.Model;
  * @version 1.0
  * @since JDK 1.8
  */
-public class RandomSplit_Wrapper extends Model {
+public class RandomSplit_Wrapper extends Model
+{
 
     RandomSplit algorithm;
 
     @Override
-    public void learn(InstanceSet training, HashMap<String, String> params) {
+    public void learn (InstanceSet training, HashMap<String, String> params)
+    {
         algorithm = new RandomSplit(training, params);
         algorithm.mine();
         super.setPatterns(algorithm.getPatterns());
     }
 
     @Override
-    public String[][] predict(InstanceSet test) {
-        String[][] result = new String[4][test.getNumInstances()];
+    public String[][] predict (InstanceSet test)
+    {
+       String[][] result = new String[4][test.getNumInstances()];
         result[0] = super.getPredictions(super.patterns, test);
         result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
         result[2] = super.getPredictions(super.patternsFilteredMaximal, test);

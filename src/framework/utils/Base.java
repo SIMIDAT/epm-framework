@@ -9,6 +9,8 @@ import PRFramework.Core.Common.Instance;
 import PRFramework.Core.Common.InstanceModel;
 import PRFramework.Core.Common.IntegerFeature;
 import PRFramework.Core.Common.NominalFeature;
+import PRFramework.Core.Common.RefObject;
+import PRFramework.Core.IO.ARFFSerializer;
 import PRFramework.Core.IO.BaseSerializer;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.DifferentThanItem;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.GreatherThanItem;
@@ -20,10 +22,7 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import keel.Dataset.Attribute;
 import keel.Dataset.InstanceSet;
-import framework.items.Item;
-import framework.items.NominalItem;
-import framework.items.NumericItem;
-import framework.items.Pattern;
+import framework.items.*;
 
 /**
  *
@@ -34,34 +33,42 @@ import framework.items.Pattern;
 public class Base
 {
 
-    public static void ConvertKeelInstancesToPRFInstances (InstanceSet train, ArrayList<Instance> instances, InstanceModel model)
+    public static void ConvertKeelInstancesToPRFInstances (InstanceSet train, 
+            ArrayList<Instance> instances, InstanceModel model, RefObject<Feature> classFeature)
     {
+        
         ArrayList<Feature> featureDescriptions = new ArrayList<>();
 
         StringTokenizer tokens = new StringTokenizer(train.getHeader(), " \n\r");
         tokens.nextToken();
 
+        Attribute classAttr = train.getAttributeDefinitions().getOutputAttribute(0);
+        
         model.setRelationName(tokens.nextToken());
 
         Attribute[] attributes = train.getAttributeDefinitions().getAttributes();
 
         int index = 0;
-        for (Attribute a : attributes) {
+        for (Attribute a : attributes) { 
+            String featName = a.getName();    
+            Feature featToAdd = null;
             if (a.getType() == Attribute.NOMINAL) {
-                NominalFeature nominalFeature = new NominalFeature(a.getName(), index++);
+                NominalFeature nominalFeature = null;
+                featToAdd = nominalFeature = new NominalFeature(featName, index++);                
                 nominalFeature.setValues((String[]) a.getNominalValuesList().stream().toArray(String[]::new));
-                featureDescriptions.add(nominalFeature);
             }
             if (a.getType() == Attribute.INTEGER) {
-                IntegerFeature integerFeature = new IntegerFeature(a.getName(), index++);
+                IntegerFeature integerFeature = null;
+                featToAdd = integerFeature = new IntegerFeature(featName, index++);
                 integerFeature.setMinValue(a.getMinAttribute());
                 integerFeature.setMaxValue(a.getMaxAttribute());
-                featureDescriptions.add(integerFeature);
             }
             if (a.getType() == Attribute.REAL) {
-                DoubleFeature doubleFeature = new DoubleFeature(a.getName(), index++);
-                featureDescriptions.add(doubleFeature);
+                featToAdd = new DoubleFeature(featName, index++);
             }
+            featureDescriptions.add(featToAdd);
+            if (a == classAttr)
+                classFeature.argValue = featToAdd;
         }
 
         model.setFeatures(featureDescriptions.toArray(new Feature[0]));
@@ -109,8 +116,7 @@ public class Base
                     // IF NOMINAL, CREATE THE ITEM NOMINAL. NOTE THAT WE MADE THE CONVERSION OF REAL TO NOMINAL ATTRIBUTE
                     double aux = 1.0 / (classValues(i.getFeature()).length - 1.0);
                     int valueVal = ((Double) (((SingleValueItem) i).getValue() / aux)).intValue();
-                    String value = i.getFeature().valueToString(((SingleValueItem) i).getValue());
-                    it = new NominalItem(i.getFeature().getName(), value.substring(1, value.length() - 1));
+                    it = new NominalItem(i.getFeature().getName(), i.getFeature().valueToString(((SingleValueItem) i).getValue()));
                 }
                 items.add(it);
             }

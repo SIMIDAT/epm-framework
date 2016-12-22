@@ -27,8 +27,10 @@
  */
 package algorithms.deletebestcondition;
 
+import PRFramework.Core.Common.Feature;
 import PRFramework.Core.Common.Instance;
 import PRFramework.Core.Common.InstanceModel;
+import PRFramework.Core.Common.RefObject;
 import PRFramework.Core.SupervisedClassifiers.DecisionTrees.Builder.DecisionTreeBuilder;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.IEmergingPattern;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Miners.DeleteBetterFeatureMiner;
@@ -85,7 +87,8 @@ public class DeleteBestCondition extends DeleteBestCondition_Wrapper
         ArrayList<Instance> prfInstances = new ArrayList<>();
         InstanceModel model = new InstanceModel();
 
-        Base.ConvertKeelInstancesToPRFInstances(train, prfInstances, model);
+        RefObject<Feature> classFeature = new RefObject<Feature>(null);
+        Base.ConvertKeelInstancesToPRFInstances(train, prfInstances, model, classFeature);
 
         //Check  time		
         setInitialTime();
