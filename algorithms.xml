@@ -599,7 +599,7 @@
     
     <algorithm>
         <name>EP-RandomForest</name>
-        <class>algorithms.randomforest.RandomForest</class>
+        <class>algorithms.randomforest.RandomForest_Wrapper</class>
         <parameter>
             <name>confidence</name>
             <type>real</type>
@@ -649,7 +649,7 @@
     
     <algorithm>
         <name>RandomSplit</name>
-        <class>algorithms.randomsplit.RandomSplit</class>
+        <class>algorithms.randomsplit.RandomSplit_Wrapper</class>
         <parameter>
             <name>confidence</name>
             <type>real</type>

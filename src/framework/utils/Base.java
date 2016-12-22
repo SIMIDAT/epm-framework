@@ -39,12 +39,12 @@ public class Base
         
         ArrayList<Feature> featureDescriptions = new ArrayList<>();
 
-        StringTokenizer tokens = new StringTokenizer(train.getHeader(), " \n\r");
-        tokens.nextToken();
+        //StringTokenizer tokens = new StringTokenizer(train.getHeader(), " \n\r");
+        //tokens.nextToken();
 
         Attribute classAttr = train.getAttributeDefinitions().getOutputAttribute(0);
         
-        model.setRelationName(tokens.nextToken());
+        model.setRelationName("Relation");
 
         Attribute[] attributes = train.getAttributeDefinitions().getAttributes();
 
