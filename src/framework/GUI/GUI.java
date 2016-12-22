@@ -1029,7 +1029,7 @@ public class GUI extends javax.swing.JFrame {
                             for (int i = 1; i <= NUM_FOLDS; i++) {
                                 // Search for the training and test files.
                                 for (File x : files) {
-                                    if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tra.dat")) {
+                                    if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
                                         try {
                                             Attributes.clearAll();
                                             training.readSet(x.getAbsolutePath(), true);
@@ -1039,7 +1039,7 @@ public class GUI extends javax.swing.JFrame {
                                             appendToPane(BatchOutput, ex.toString(), Color.red);
                                         }
                                     }
-                                    if (x.getName().matches(".*" + NUM_FOLDS + "-" + i + "tst.dat")) {
+                                    if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tst.dat")) {
                                         try {
                                             test.readSet(x.getAbsolutePath(), false);
                                             test.setAttributesAsNonStatic();
