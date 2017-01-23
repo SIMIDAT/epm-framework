@@ -327,7 +327,7 @@
             </domain>
             <default>1</default>
         </parameter>
-         <parameter>
+        <parameter>
             <name>maxDepth</name>
             <type>integer</type>
             <domain>
@@ -336,7 +336,7 @@
             </domain>
             <default>5</default>
         </parameter>
-         <parameter>
+        <parameter>
             <name>maxIterations</name>
             <type>integer</type>
             <domain>
@@ -344,6 +344,15 @@
                 <max>99999</max>
             </domain>
             <default>20</default>
+        </parameter>
+        <parameter>
+            <name>growthRate</name>
+            <type>real</type>
+            <domain>
+                <min>1</min>
+                <max>99999</max>
+            </domain>
+            <default>10</default>
         </parameter>
     </algorithm>
     
@@ -436,7 +445,7 @@
             </domain>
             <default>20</default>
         </parameter>
-         <parameter>
+        <parameter>
             <name>maxLevel</name>
             <type>integer</type>
             <domain>
@@ -519,6 +528,14 @@
             <default>1</default>
         </parameter>
         <parameter>
+            <name>maxVariabilityPerLevel</name>
+            <type>nominal</type>
+            <domain>
+                <item>5,4,3,2</item>
+            </domain>
+            <default>1</default>
+        </parameter>
+        <parameter>
             <name>maxDepth</name>
             <type>integer</type>
             <domain>
@@ -526,6 +543,15 @@
                 <max>99999</max>
             </domain>
             <default>5</default>
+        </parameter>
+        <parameter>
+            <name>growthRate</name>
+            <type>real</type>
+            <domain>
+                <min>1</min>
+                <max>99999</max>
+            </domain>
+            <default>10</default>
         </parameter>
     </algorithm>
     
@@ -695,7 +721,7 @@
             </domain>
             <default>20</default>
         </parameter>
-         <parameter>
+        <parameter>
             <name>bestKToSearch</name>
             <type>integer</type>
             <domain>

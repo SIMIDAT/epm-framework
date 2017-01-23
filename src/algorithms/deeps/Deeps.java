@@ -75,6 +75,7 @@ public class Deeps extends LazyAlgorithm {
     public Deeps(InstanceSet train, HashMap<String, String> params) {
 
         this.train = train;
+        super.ALPHA = Double.parseDouble(params.get("ALPHA"));
         ALPHA = Double.parseDouble(params.get("ALPHA"));
         filtering = 0;
 

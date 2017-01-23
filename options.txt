@@ -1,1 +1,1 @@
-/home/angel/Datasets_pruebaParametros/breast
+/media/angel/Datos/EPM_Seleccion_parametros/DeEPS

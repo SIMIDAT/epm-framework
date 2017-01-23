@@ -521,6 +521,7 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
 //        super.patternsFilteredMinimal = new ArrayList<>();
 //        super.patternsFilteredMaximal = new ArrayList<>();
         ArrayList<Pattern> patt = new ArrayList<>();
+        double alph2 = this.ALPHA;
         try {
             modelTime = ((double) System.currentTimeMillis() - initialTime) / 1000.0;
             System.out.println(name + " " + relation + " Model " + modelTime + "s");
@@ -546,13 +547,15 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
             // Adapt the rules to EPM-FRAMEWORK 
             Attribute[] inputAttrs = train.getAttributeDefinitions().getInputAttributes();
             for (int i = 0; i < rules.size(); i++) {
+      
                 Rule r = (Rule) rules.get(i);
                 ArrayList<Item> its = new ArrayList<>();
                 for (int j = 0; j < r.getNVar(); j++) {
                     if (r.getVar(j) != -1) {
                         if (inputAttrs[j].getType() == Attribute.INTEGER || inputAttrs[j].getType() == Attribute.REAL) {
                             //it = new Item(inputAttrs[j].getName(), (float) r.getVar(j));
-                            its.add(new NumericItem(inputAttrs[j].getName(), r.getVar(j), ALPHA));
+                            NumericItem a = new NumericItem(inputAttrs[j].getName(), r.getVar(j), alph2);
+                            its.add(a);
 
                         } else {
                             double aux = 1.0 / (inputAttrs[j].getNominalValuesList().size() - 1.0);

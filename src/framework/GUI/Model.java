@@ -124,7 +124,7 @@ public class Model implements Serializable {
         ArrayList<String> predictions = new ArrayList<>();
         float[] clasContrib = new float[test.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues()];
         ArrayList<ArrayList<Double>> contribs = new ArrayList<>();
-        for(int i = 0; i < clasContrib.length; i++){
+        for (int i = 0; i < clasContrib.length; i++) {
             contribs.add(new ArrayList<>());
         }
         //For each test instance
@@ -140,11 +140,15 @@ public class Model implements Serializable {
                     clasContrib[pat.getClase()] += pat.getTra_measures().get("SUPP");
                 }
             }
-            
+
             // Normalise the score by the median value of each contribution.
-            for(int i = 0; i < clasContrib.length; i++){
-                if(!contribs.get(i).isEmpty())
-                clasContrib[i] /= Utils.median(contribs.get(i));
+            for (int i = 0; i < clasContrib.length; i++) {
+                if (!contribs.get(i).isEmpty()) {
+                    double median = Utils.median(contribs.get(i));
+                    if (median != 0) {
+                        clasContrib[i] /= median;
+                    }
+                }
             }
 
             // The max value wins and it is the value predicted.
