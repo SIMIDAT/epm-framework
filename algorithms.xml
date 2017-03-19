@@ -194,7 +194,7 @@
 
     <algorithm>
         <name>EvAEP</name>
-        <class>evaep.EvAEP</class>
+        <class>algorithms.evaep.EvAEP</class>
         <parameter>
             <name>Seed</name>
             <type>integer</type>
@@ -210,7 +210,7 @@
             <type>integer</type>
             <domain>
                 <min>1</min>
-                <max>13</max>
+                <max>9</max>
             </domain>
             <default>3</default>
         </parameter>
