@@ -21,7 +21,11 @@ import keel.Dataset.*;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EvAEP extends Model {
 
@@ -78,84 +82,18 @@ public class EvAEP extends Model {
      * </p>
      * @param nFile      File of parameters
      */
-    public static void ReadParameters (String nFile) {
-        String contents;
-
-        try {
-            int nl;
-            String fichero, linea, tok;
-            StringTokenizer lineasFichero, tokens;
-            fichero = File.readFile (nFile);
-            fichero = fichero.toLowerCase() + "\n ";
-            lineasFichero = new StringTokenizer(fichero,"\n\r");
-
-            for (nl=0, linea=lineasFichero.nextToken(); lineasFichero.hasMoreTokens(); linea=lineasFichero.nextToken()) {
-                nl++;
-                tokens = new StringTokenizer(linea," ,\t");
-                if (tokens.hasMoreTokens()) {
-                    tok = tokens.nextToken();
-                    if (tok.equalsIgnoreCase("algorithm"))
-                        nombre_alg = Utils.getParamString(tokens);
-                    else if (tok.equalsIgnoreCase("inputdata"))
-                        GetInputFiles(tokens);
-                    else if (tok.equalsIgnoreCase("outputdata"))
-                        GetOutputFiles(tokens);
-                    else if (tok.equalsIgnoreCase("seed"))
-                        seed = Utils.getParamInt(tokens);
-                    else if (tok.equalsIgnoreCase("RulesRep"))
-                        AG.setRulesRep(Utils.getParamString(tokens).toUpperCase());
-                    else if (tok.equalsIgnoreCase("nLabels"))
-                        Variables.setNLabel(Utils.getParamInt(tokens));
-                    else if (tok.equalsIgnoreCase("nEval"))
-                        AG.setNEval(Utils.getParamInt(tokens));
-                    else if (tok.equalsIgnoreCase("popLength"))
-                        AG.setLengthPopulation(Utils.getParamInt(tokens));
-                    else if (tok.equalsIgnoreCase("crossProb"))
-                        AG.setProbCross(Utils.getParamFloat(tokens));
-                    else if (tok.equalsIgnoreCase("mutProb"))
-                        AG.setProbMutation(Utils.getParamFloat(tokens));
-                    else if (tok.equalsIgnoreCase("Fitness"))
-                        AG.setFitness(Utils.getParamString(tokens).toUpperCase());
-                    else if (tok.equalsIgnoreCase("Initialisation"))
-                        AG.setInitialisation(Utils.getParamString(tokens).toUpperCase());
-                    else if (tok.equalsIgnoreCase("RoundRobin"))
-                        if (Utils.getParamString(tokens).toUpperCase().compareTo("NO")==0) AG.setRoundRobin(false); else AG.setRoundRobin(true);
-                    else  throw new IOException("Syntax error on line "+nl+": ["+tok+"]\n");
-                }
-            }
-        }
-        catch(FileNotFoundException e) {
-            System.err.println(e+" Parameter file");
-        }
-        catch(IOException e) {
-            System.err.println(e+"Aborting program");
-            System.exit(-1);
-        }
-
-        File.writeFile(seg_file,"");
-
-        contents = "--------------------------------------------\n";
-        contents+= "|              Parameters Echo             |\n";
-        contents+= "--------------------------------------------\n";
-        contents+= "Algorithm name: " + nombre_alg + "\n";
-        contents+= "Input file name training: " + input_file_tra + "\n";
-        contents+= "Rules file name: " + rule_file + "\n";
-        contents+= "Quality measures file name: " + qmeasure_file + "\n";
-        contents+= "Tracking file name: " + seg_file + "\n";
-        contents+= "Representation of the Rules: " + AG.getRulesRep() + "\n";
-        contents+= "Random generator seed: " + seed + "\n";
-        contents+= "Number of labels for the continuous variables: " + Variables.getNLabel() + "\n";
-        contents+= "Number of evaluations: " + AG.getNEval() + "\n";
-        contents+= "Number of individuals of the Population: " + AG.getLengthPopulation() + "\n";
-        contents+= "Cross probability: " + AG.getProbCross() + "\n";
-        contents+= "Mutation probability: " + AG.getProbMutation() + "\n";
-        contents+= "Fitness function: "+ AG.getFitness() + "\n";
-        contents+= "Type of initialisation: "+ AG.getInitialisation() + "\n";
-        contents+= "Type of execution: ";
-            if(AG.getRoundRobin()) contents+= "Round Robin\n"; else contents+="One Versus All\n";
-
-        File.AddtoFile(seg_file,contents);
-
+    public static void ReadParameters(HashMap<String, String> params) {
+        nombre_alg = "NMEEFSD";
+        seed = Integer.parseInt(params.get("Seed"));
+        AG.setRulesRep(params.get("Rule Representation"));
+        Variables.setNLabel(Integer.parseInt(params.get("Number of Fuzzy Labels")));
+        AG.setNEval(Integer.parseInt(params.get("Number of Evaluations")));
+        AG.setLengthPopulation(Integer.parseInt(params.get("Population Length")));
+        AG.setProbCross(Float.parseFloat(params.get("Crossover Probability")));
+        AG.setProbMutation(Float.parseFloat(params.get("Mutation Probability")));
+        AG.setFitness("MEDGEO");
+        AG.setInitialisation("BIASED");
+        AG.setRoundRobin(false);
     }
 
     /**
@@ -163,28 +101,27 @@ public class EvAEP extends Model {
     * Read the dataset and stores the values
     * </p>
     */
-    public static void CaptureDatasetTraining () throws IOException   {
+    public static void CaptureDatasetTraining (InstanceSet training) throws IOException   {
 
         try {
 
         // Declaration of the dataset and load in memory
-        Data = new InstanceSet();
-        Data.readSet(input_file_tra,true);
+        Data = training;
 
         // Check that there is only one output variable
-        if (Attributes.getOutputNumAttributes()>1) {
+        if (Data.getAttributeDefinitions().getOutputNumAttributes() > 1) {
   		System.out.println("This algorithm can not process MIMO datasets");
   		System.out.println("All outputs but the first one will be removed");
 	}
 	boolean noOutputs=false;
-	if (Attributes.getOutputNumAttributes()<1) {
+	if (Data.getAttributeDefinitions().getOutputNumAttributes() < 1) {
   		System.out.println("This algorithm can not process datasets without outputs");
   		System.out.println("Zero-valued output generated");
   		noOutputs=true;
 	}
 
         // Chek that the output variable is nominal
-        if (Attributes.getOutputAttribute(0).getType()!=Attribute.NOMINAL) {
+        if (Data.getAttributeDefinitions().getOutputAttribute(0).getType()!=Attribute.NOMINAL) {
             // If the output variables is not enumeratad, the algorithm can not be run
             try {
                 throw new IllegalAccessException("Finish");
@@ -197,13 +134,13 @@ public class EvAEP extends Model {
         }
 
         // Set the number of classes of the output attribute - this attribute must be nominal
-        Variables.setNClass(Attributes.getOutputAttribute(0).getNumNominalValues());
+        Variables.setNClass(Data.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues());
 
         // Screen output of the output variable and selected class
-        System.out.println ( "Output variable: " + Attributes.getOutputAttribute(0).getName());
+        System.out.println ( "Output variable: " + Data.getAttributeDefinitions().getOutputAttribute(0).getName());
 
         // Creates the space for the variables and load the values.
-        Variables.Load (Attributes.getInputNumAttributes());
+        Variables.Load (Data.getAttributeDefinitions().getInputNumAttributes());
 
         // Setting and file writing of fuzzy sets characteristics for continuous variables
         String nombreF = seg_file;
@@ -930,8 +867,9 @@ public class EvAEP extends Model {
      * Main method of the algorithm
      * </p>
      **/
-    public static void main(String[] args) throws Exception {
-
+    @Override
+    public void learn(InstanceSet training, HashMap<String, String> params){
+        
         String contents;                    // String for the file contents
         String NameRule, NameMeasure;       // String containing de original names for the rules and measures files
         boolean terminar = false;           // Indicates no more repetition for the rule generation of diferent classes
@@ -939,11 +877,6 @@ public class EvAEP extends Model {
         
         int clase;                          // Store the value of the class to analyse
         
-        if (args.length != 1) {
-          System.err.println("Syntax error. Usage: java AGI <parameterfile.txt>" );
-          return;
-        }
-
         // Initial echo
         System.out.println("\nEvAEP implementation");
 
@@ -952,28 +885,32 @@ public class EvAEP extends Model {
         AG = new Genetic();
 
         // Read parameter file and initialize parameters
-        ReadParameters (args[0]);
+        ReadParameters (params);
         NameRule = rule_file;
 
-        // Read the dataset, store values and echo to output and seg files
-        CaptureDatasetTraining ();
-        WriteOutDataset(output_file_tra); // Creates and writes the exit files 
-        WriteOutDataset(output_file_tst); // Creates and writes the exit files 
-        WriteSegDataset (seg_file);
+        try {
+            // Read the dataset, store values and echo to output and seg files
+            CaptureDatasetTraining (training);
+        } catch (IOException ex) {
+            Logger.getLogger(EvAEP.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        //WriteOutDataset(output_file_tra); // Creates and writes the exit files 
+        //WriteOutDataset(output_file_tst); // Creates and writes the exit files 
+        //WriteSegDataset (seg_file);
 
         // Create and initilize gain information array
-        Variables.GainInit(Examples, seg_file);
+        //Variables.GainInit(Examples, seg_file);
 
         // Screen output of same parameters
         System.out.println ("\nSeed: " + seed);    // Random Seed
         System.out.println ("\nOutput variable: " + Attributes.getOutputAttribute(0).getName() ); // Output variable
 
         // Initialize measure file
-        String cab_measure_file = "";
+        /*String cab_measure_file = "";
         cab_measure_file = "--------------------------------------------\n";
         cab_measure_file+= "|              Measures file               |\n";
         cab_measure_file+= "--------------------------------------------\n\n";
-        cab_measure_file+= "\n\nCLASS\tFITNESS";
+        cab_measure_file+= "\n\nCLASS\tFITNESS";*/
         
         // Initialization of random generator seed. Done after load param values
         if (seed!=0) Randomize.setSeed (seed);  
@@ -1014,23 +951,19 @@ public class EvAEP extends Model {
                 contents+= "|                 Class "+Variables.getNumClassObj()+"                  |\n";
                 contents+= "--------------------------------------------\n\n";
 
-                File.AddtoFile(seg_file, contents);
+                //File.AddtoFile(seg_file, contents);
                 System.out.println(contents);
 
                 System.out.println("Number of rule: \n");
 
-                File.AddtoFile(seg_file, "Number of rule: \n");
+                //File.AddtoFile(seg_file, "Number of rule: \n");
 
                 boolean rulesClass = false;
                 
                 do {        
 
-                    if(clase == 3){
-                        System.out.println("e");
-                    }
                     Individual result = AG.GeneticAlgorithm(Variables,Examples,seg_file);
-                    System.out.println("CALLS to RANDOMIZE: " + Randomize.calls);
-                    System.out.println("GENS: " + AG.getGen());
+                 
                     if((result.getMeasures().getGRat() < 1) ||
                         (Examples.getExamplesCoveredClass()==Examples.getExamplesClassObj()) ||
                         result.getMeasures().getNSup()==0) {
@@ -1040,13 +973,17 @@ public class EvAEP extends Model {
                     if((rulesClass == false) || (terminar==false)){
                     
                         System.out.print("#"+NumRulesGenerated+":\n");
-                        File.AddtoFile(seg_file, "#"+NumRulesGenerated+":\n");
+                       // File.AddtoFile(seg_file, "#"+NumRulesGenerated+":\n");
+                       
+                       // Here is where the translation of CAN or DNF rules to Pattern is done              
+                        this.patterns.add(toPattern(result));
+                        
+                       
                         result.Print("");
                         result.getMeasures().Print("", AG);
-                        result.Print(seg_file);
-                        result.getMeasures().Print(seg_file, AG);
-                        //WriteRule(result, NameRule, NameMeasure, cab_measure_file);
-                        if(NumRulesGenerated==popFinal.getNumIndiv()-1){
+                        
+                        // Duplicate the size of the result population if neccesary
+                        /*if(NumRulesGenerated==popFinal.getNumIndiv()-1){
                             Population aux_popFinal = new Population(popFinal.getNumIndiv()*2, Variables.getNVars(), Examples.getNEx(), AG.getRulesRep(), Variables, AG.getTrials());
                             int[] aux_classFinal = new int[classFinal.length*2];
                             for(int i=0; i<classFinal.length; i++)
@@ -1060,7 +997,8 @@ public class EvAEP extends Model {
                         }
                         popFinal.CopyIndiv(NumRulesGenerated, Examples.getNEx(), result);
                         classFinal[NumRulesGenerated] = clase;
-                        NumRulesGenerated++;
+                        */
+                        NumRulesGenerated++; 
 
                         //Update Examples Structure
                         for(int j=0; j<Examples.getNEx(); j++){
@@ -1079,28 +1017,20 @@ public class EvAEP extends Model {
 
                 } while (terminar==false);            
             }
-        } else {
-            //-----------------
-            //ROUND ROBIN STUDY
-            //-----------------
-            System.out.println("Round Robin STUDY");
-        }
+        } 
         
         System.out.println("Algorithm terminated\n\n");
-       
-        System.out.println("Calculating measures\n");
-        System.out.println("====================\n\n");
 
         //CALCULAR FICHERO .TRA
-        CalculateOutDataCAN(output_file_tra,0,popFinal,classFinal,NumRulesGenerated);
+        //CalculateOutDataCAN(output_file_tra,0,popFinal,classFinal,NumRulesGenerated);
         //LEER FICHERO .TST
-        CaptureDatasetTest();
+//        CaptureDatasetTest();
         //CALCULAR FICHERO .TST
-        CalculateOutDataCAN(output_file_tst,1,popFinal,classFinal,NumRulesGenerated);
+        //CalculateOutDataCAN(output_file_tst,1,popFinal,classFinal,NumRulesGenerated);
         //CALCULAR FICHERO DE MEDIDAS
-        CalculateQMeasures(popFinal,NumRulesGenerated,qmeasure_file,classFinal);
+        //CalculateQMeasures(popFinal,NumRulesGenerated,qmeasure_file,classFinal);
         //ESCRIBIR LAS REGLAS
-        WriteRules(popFinal, NumRulesGenerated, classFinal);
+        //WriteRules(popFinal, NumRulesGenerated, classFinal);
         
         long t_end = System.currentTimeMillis();
         
@@ -1108,6 +1038,17 @@ public class EvAEP extends Model {
         System.out.println("EXECUTION TIME: " + (t_end - t_ini) / 1000d + " seconds.");
   }
 
+    
+  @Override
+  public String[][] predict(InstanceSet test){
+        String[][] result = new String[4][test.getNumInstances()];
+        result[0] = super.getPredictions(super.patterns, test);
+        result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
+        result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
+        result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        return result;
+  }
+    
 
   private static int NumInterv (float value, int num_var, TableVar Variables) {
         float pertenencia=0, new_pert=0;
@@ -1122,6 +1063,44 @@ public class EvAEP extends Model {
         }
         return interv;
 
+  }
+  
+  
+  /**
+   * Convert a Rule of class Individual into a Pattern of the framework
+   * @param ind
+   * @return 
+   */
+  public Pattern toPattern(Individual ind){
+      ArrayList<Item> items = new ArrayList<>();
+      if(AG.getRulesRep().equalsIgnoreCase("CAN")){
+          // CAN RULE
+          CromCAN crom = ind.getIndivCromCAN();
+         
+          for(int i = 0; i < crom.getCromLength(); i++){
+              if(!Variables.getContinuous(i)){
+                  // Nominal variable
+                  if(crom.getCromElem(i) < Variables.getNLabelVar(i)){
+                      // Variable takes part in the rule, add it to the Pattern
+                      NominalItem it = new NominalItem(Attributes.getAttribute(i).getName(), Attributes.getInputAttribute(i).getNominalValue(i));
+                      items.add(it);
+                  }
+              } else {
+                  // Numeric variable -> Fuzzy Item
+                  if(crom.getCromElem(i) < Variables.getNLabelVar(i)){
+                      framework.utils.Fuzzy fuz = new framework.utils.Fuzzy();
+                      int j = crom.getCromElem(i);
+                      fuz.setVal(Variables.getX0(i, j), Variables.getX1(i, j), Variables.getX3(i, j), 1);
+                      FuzzyItem it = new FuzzyItem(Attributes.getAttribute(i).getName(), fuz, "Label " + j);
+                      items.add(it);
+                  }
+              }
+          }
+      } else{
+          // DNF RULE
+      }
+      
+      return new Pattern(items, Variables.getNumClassObj());
   }
 
     

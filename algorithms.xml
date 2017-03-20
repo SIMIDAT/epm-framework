@@ -224,6 +224,15 @@
             <default>10000</default>
         </parameter>
         <parameter>
+                <name>Rule Representation</name>
+                <type>nominal</type>
+                <domain>
+                  <item>CAN</item>
+                  <item>DNF</item>
+                </domain>
+                <default>1</default> 
+            </parameter>
+        <parameter>
             <name>Crossover Probability</name>
             <type>real</type>
             <domain>
@@ -240,6 +249,15 @@
                 <max>1</max>
             </domain>
             <default>0.01</default>
+        </parameter>
+         <parameter>
+            <name>Population Length</name>
+            <type>integer</type>
+            <domain>
+                <min>10</min>
+                <max>4000</max>
+            </domain>
+            <default>100</default>
         </parameter>
     </algorithm>
     

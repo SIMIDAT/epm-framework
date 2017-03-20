@@ -259,9 +259,9 @@ public class TableVar {
                }
            }
         }
-        contents+= "\n";
+        /*contents+= "\n";
         if (nFile!="")
-            File.AddtoFile(nFile, contents);
+            File.AddtoFile(nFile, contents);*/
     }
 
 

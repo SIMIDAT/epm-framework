@@ -519,7 +519,6 @@ public class Genetic {
 
         poblac = new Population(long_poblacion, Variables.getNVars(), Examples.getNEx(), RulesRep, Variables, Trials);
         poblac.BsdInitPob(Variables, Examples, porcVar, porcPob, Examples.getNEx(), nFile);
-        System.out.println(Randomize.calls);
         Trials = 0;
         Gen = 0;
 
@@ -530,17 +529,13 @@ public class Genetic {
         do { // GA General cycle
 
             Gen++;
-            if(Gen == 143){
-                System.out.println("Eooo");
-            }
+    
             // Initialise auxiliar 
             auxiliar = new Population(long_poblacion, Variables.getNVars(), Examples.getNEx(), RulesRep, Variables, Trials);
             // Introduce the best individual of population in auxiliar
 
             best_guy = BestIndividual(poblac);
-//            System.out.println("GEN: " + Gen);
-//            poblac.getIndiv(best_guy).Print("");
-            //System.out.println(best_guy);
+//     
             auxiliar.CopyIndiv(0, Examples.getNEx(), poblac.getIndiv(best_guy));
 
             for (int conta = 1; conta < long_poblacion / 2; conta++) {
