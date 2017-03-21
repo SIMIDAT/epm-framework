@@ -720,6 +720,7 @@ public class GUI extends javax.swing.JFrame {
             if (rutaTra.getText().equals("")) {
                 throw new framework.exceptions.IllegalActionException("ERROR: You must specify a training file.");
             }
+            
             // Execute the task in background to update the text area.
             SwingWorker worker;
             worker = new SwingWorker() {

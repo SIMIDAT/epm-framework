@@ -106,16 +106,17 @@ public class Utils {
      * @return The descriptive quality measures for each rule.
      */
     public static ArrayList<HashMap<String, Double>> calculateDescriptiveMeasures(InstanceSet data, ArrayList<Pattern> patterns, boolean isTrain) {
-        // 0 -> tp
-        // 1 -> tn
-        // 2 -> fp
-        // 3 -> fn
-        // 4 -> n_vars
         int sumNvars = 0;
         data.setAttributesAsNonStatic();
         Attribute[] inputAttributes = data.getAttributeDefinitions().getInputAttributes();
         Attribute outputAttributes = data.getAttributeDefinitions().getOutputAttribute(0);
         int[][] confusionMatrices = new int[patterns.size()][6];
+        // 0 -> tp
+        // 1 -> tn
+        // 2 -> fp
+        // 3 -> fn
+        // 4 -> n_vars
+        // 5 -> n_examples_class
         for (int i = 0; i < patterns.size(); i++) {
             int tp = 0;
             int tn = 0;
@@ -161,6 +162,7 @@ public class Utils {
             double P = p + _p;
             double N = n + _n;
             double P_N = P + N;
+            
             // WRACC (Normalized)
             double wracc;
             if ((p + n) == 0) {
@@ -169,9 +171,9 @@ public class Utils {
                 wracc = ((p + n) / P_N) * ((p / (p + n)) - (P / P_N));
             }
             // Normalize WRACC
-            double div = ((Integer) confusionMatrices[i][5]).doubleValue() / ((Integer) data.getNumInstances()).doubleValue();
-            double minWRACC = (1 - div) * (0 - div);
-            double maxWRACC = (div) * (1 - div);
+            double classPCT = (double) confusionMatrices[i][5] / (double) data.getNumInstances();
+            double maxWRACC = classPCT * (1.0 - classPCT);
+            double minWRACC = classPCT * (0.0 - classPCT);
             wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
 
             // CONF
@@ -677,7 +679,7 @@ public class Utils {
      * @param model The model where the patterns are stored.
      * @param by A quality measure, this string must match with a key of the
      * quality measures hashmap.
-     * @param threshold The threshold in [1,0]
+     * @param threshold The threshold in [0,1]
      * @return
      */
     public static ArrayList<HashMap<String, Double>> filterPatterns(Model model, String by, float threshold) {

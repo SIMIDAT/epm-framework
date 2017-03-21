@@ -1,0 +1,9 @@
+algorithm = EP-RandomForest
+directory = /home/angel/Escritorio/Pr/a
+number of folds = 5
+confidence = 0.9
+maxOfItems = 5
+growthRate = 10
+subsetRelation = superset
+maxDepth = 10
+treeCount = 100

@@ -115,8 +115,13 @@ public class FuzzyItem extends Item {
     @Override
     public boolean covers(Item itemInstance) {
         if (itemInstance instanceof FuzzyItem) {
-            NumericItem other = (NumericItem) itemInstance;
-            return this.value.Fuzzy(((Double) other.getValue()).floatValue()) > 0;
+            FuzzyItem other = (FuzzyItem) itemInstance;
+            
+            // A fuzzy item, in this case, covers another item if the values that defines the fuzzy set are equal
+            // (Maybe, I it is more correct to say if the borders of the fuzzy set are contained in other... )
+            return this.value.getX0() == other.value.getX0() &&
+                    this.value.getX1() == other.value.getX1() &&
+                    this.value.getX3() == other.value.getX3();
         } else {
             return false;
         }
