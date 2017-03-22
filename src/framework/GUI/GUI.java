@@ -720,7 +720,7 @@ public class GUI extends javax.swing.JFrame {
             if (rutaTra.getText().equals("")) {
                 throw new framework.exceptions.IllegalActionException("ERROR: You must specify a training file.");
             }
-            
+
             // Execute the task in background to update the text area.
             SwingWorker worker;
             worker = new SwingWorker() {
@@ -763,10 +763,13 @@ public class GUI extends javax.swing.JFrame {
 
                     // Get learned patterns, filter, and calculate measures for training
                     ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
+                    
+                    // Filter the patterns, returning the average quality measures for each set of patterns
                     ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                    Measures.add(filterPatterns.get(0));
-                    Measures.add(filterPatterns.get(1));
-                    Measures.add(filterPatterns.get(2));
+                    for (int i = 0; i < filterPatterns.size(); i++) {
+                        // Adds to Masures to write later the average results in the file.
+                        Measures.add(filterPatterns.get(i));
+                    }
 
                     // Call predict method for ACC and AUC for training
                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
@@ -775,10 +778,11 @@ public class GUI extends javax.swing.JFrame {
                     args[0] = InstanceSet.class;
                     String[][] predictionsTra = (String[][]) clase.getMethod("predict", args).invoke(newObject, training);
                     Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
+
                     // Save training measures in a file.
                     System.out.println("Save results in a file...");
                     appendToPane(ExecutionInfoLearn, "Save result in a file...", Color.BLUE);
-                    Utils.saveTraining(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures);
+                    Utils.saveMeasures(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures, true);
                     appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
                     System.out.println("Done learning model.");
 
@@ -803,10 +807,10 @@ public class GUI extends javax.swing.JFrame {
                         Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-                        Utils.saveTest(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures);
+                        Utils.saveMeasures(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures, false);
                         appendToPane(ExecutionInfoLearn, "Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath(), Color.BLUE);
                         System.out.println("Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath());
-                        
+
                     }
 
                     // Invoke saveModel method if neccesary

@@ -119,9 +119,10 @@ public class Main {
 
                         ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
                         ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                        Measures.add(filterPatterns.get(0));
-                        Measures.add(filterPatterns.get(1));
-                        Measures.add(filterPatterns.get(2));
+                         for (int i = 0; i < filterPatterns.size(); i++) {
+                        // Adds to Masures to write later the average results in the file.
+                        Measures.add(filterPatterns.get(i));
+                    }
 
                         // Call predict method for ACC and AUC for training
                         System.out.println("Calculating precision for training...");
@@ -131,7 +132,7 @@ public class Main {
                         Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
                         // Save training measures in a file.
                         System.out.println("Save results in a file...");
-                        Utils.saveTraining(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
+                        Utils.saveMeasures(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, true);
                         System.out.println("Done learning model.");
                         System.out.println("Testing instances...");
 
@@ -149,7 +150,7 @@ public class Main {
                         Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-                        Utils.saveTest(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures);
+                        Utils.saveMeasures(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, false);
                         System.out.println("Done.");
 
                     } else {
