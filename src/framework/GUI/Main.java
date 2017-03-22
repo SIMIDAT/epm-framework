@@ -132,7 +132,7 @@ public class Main {
                         Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
                         // Save training measures in a file.
                         System.out.println("Save results in a file...");
-                        Utils.saveMeasures(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, true);
+                        Utils.saveMeasures(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, true, 0);
                         System.out.println("Done learning model.");
                         System.out.println("Testing instances...");
 
@@ -150,7 +150,7 @@ public class Main {
                         Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-                        Utils.saveMeasures(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, false);
+                        Utils.saveMeasures(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, false, 0);
                         System.out.println("Done.");
 
                     } else {
@@ -224,9 +224,17 @@ public class Main {
                                     // for unfiltered, filtered global, and filtered by class QMs.
                                     ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
                                     ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                                    Measures.add(filterPatterns.get(0));
-                                    Measures.add(filterPatterns.get(1));
-                                    Measures.add(filterPatterns.get(2));
+                                    
+                                    for(HashMap<String, Double> a : filterPatterns)
+                                        Measures.add(a);
+                                    
+                                    // Calculate training measures
+                                    String[][] predictionsTra = (String[][]) clase.getMethod("predict", arg).invoke(newObject, training);
+                                    Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
+                                     
+                                     // Save the training results file
+                                    Utils.saveMeasures(dir, (Model) newObject, Measures, true, i);
+
 
                                     arg = new Class[1];
                                     arg[0] = InstanceSet.class;
@@ -240,7 +248,9 @@ public class Main {
 
                                     // Calculate predictions in test
                                     Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
-
+                                      
+                                    Utils.saveMeasures(dir, (Model) newObject, Measures, false, i);
+                                    
                                     // Store the result to make the average result
                                     QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
                                     QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));

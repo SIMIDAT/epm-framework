@@ -91,7 +91,7 @@ public class Utils {
         qualityMeasures.put("FISHER", 0.0); // Fishers's test
         qualityMeasures.put("RULE_NUMBER", 0.0); // Rule number (for filtering purposes only)
         qualityMeasures.put("ACC", 0.0); // Accuracy
-        qualityMeasures.put("AUC", 0.0); // Area Under the Curve
+        qualityMeasures.put("AUC", 0.0); // Area Under the Curve (calculated from 
 
         return qualityMeasures;
     }
@@ -499,10 +499,10 @@ public class Utils {
     public static void saveResults(File dir, HashMap<String, Double> QMsUnfiltered, HashMap<String, Double> QMsMinimal, HashMap<String, Double> QMsMaximal, HashMap<String, Double> QMsByMeasure, int NUM_FOLDS) {
 
         try {
-            File measures1 = new File(dir.getAbsolutePath() + "/QM_Unfiltered.txt");
-            File measures2 = new File(dir.getAbsolutePath() + "/QM_MINIMALS.txt");
-            File measures3 = new File(dir.getAbsolutePath() + "/QM_MAXIMALS.txt");
-            File measures4 = new File(dir.getAbsolutePath() + "/QM_BYCONFIDENCE.txt");
+            File measures1 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_Unfiltered.txt");
+            File measures2 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_MINIMALS.txt");
+            File measures3 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_MAXIMALS.txt");
+            File measures4 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_BYCONFIDENCE.txt");
             if (measures1.exists()) {
                 measures1.delete();
             }
@@ -821,7 +821,7 @@ public class Utils {
      * @param train Are you writing the measures for training?
      * (Unfiltered, filtered and filtered by class)
      */
-    public static void saveMeasures(File dir, Model model, ArrayList<HashMap<String, Double>> Measures, boolean train) {
+    public static void saveMeasures(File dir, Model model, ArrayList<HashMap<String, Double>> Measures, boolean train, int fold) {
         PrintWriter pw1 = null;
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
@@ -831,15 +831,15 @@ public class Utils {
             // define the files to write
             if (train) {
                 pw1 = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
-                pw2 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_NOFILTER.txt");
-                pw3 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MINIMAL.txt");
-                pw4 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MAXIMAL.txt");
-                pw5 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_CONFIDENCE.txt");
+                pw2 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_NOFILTER" + fold + ".txt");
+                pw3 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MINIMAL" + fold + ".txt");
+                pw4 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_MAXIMAL"+ fold +".txt");
+                pw5 = new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_CONFIDENCE"+ fold +".txt");
             } else {
-                pw2 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_NOFILTER.txt");
-                pw3 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MINIMAL.txt");
-                pw4 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MAXIMAL.txt");
-                pw5 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_CONFIDENCE.txt");
+                pw2 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_NOFILTER"+ fold +".txt");
+                pw3 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MINIMAL"+ fold +".txt");
+                pw4 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_MAXIMAL"+ fold +".txt");
+                pw5 = new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_CONFIDENCE"+ fold +".txt");
             }
 
             // Define the decimal places to write and how to wirte the infinity symbol

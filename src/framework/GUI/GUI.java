@@ -763,7 +763,7 @@ public class GUI extends javax.swing.JFrame {
 
                     // Get learned patterns, filter, and calculate measures for training
                     ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
-                    
+
                     // Filter the patterns, returning the average quality measures for each set of patterns
                     ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
                     for (int i = 0; i < filterPatterns.size(); i++) {
@@ -782,7 +782,7 @@ public class GUI extends javax.swing.JFrame {
                     // Save training measures in a file.
                     System.out.println("Save results in a file...");
                     appendToPane(ExecutionInfoLearn, "Save result in a file...", Color.BLUE);
-                    Utils.saveMeasures(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures, true);
+                    Utils.saveMeasures(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures, true, 0);
                     appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
                     System.out.println("Done learning model.");
 
@@ -807,7 +807,7 @@ public class GUI extends javax.swing.JFrame {
                         Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-                        Utils.saveMeasures(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures, false);
+                        Utils.saveMeasures(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures, false, 0);
                         appendToPane(ExecutionInfoLearn, "Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath(), Color.BLUE);
                         System.out.println("Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath());
 
@@ -1034,6 +1034,7 @@ public class GUI extends javax.swing.JFrame {
                             for (int i = 1; i <= NUM_FOLDS; i++) {
                                 // Search for the training and test files.
                                 for (File x : files) {
+                                    // El formato es xx5xx-1tra.dat
                                     if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
                                         try {
                                             Attributes.clearAll();
@@ -1079,11 +1080,20 @@ public class GUI extends javax.swing.JFrame {
                                 // for unfiltered, filtered global, and filtered by class QMs.
                                 ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
                                 ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                                Measures.add(filterPatterns.get(0));
-                                Measures.add(filterPatterns.get(1));
-                                Measures.add(filterPatterns.get(2));
 
-                                appendToPane(ExecutionInfoLearn, "Testing instances...", Color.BLUE);
+                                for (HashMap<String, Double> a : filterPatterns) {
+                                    Measures.add(a);
+                                }
+
+                                args = new Class[1];
+                                args[0] = InstanceSet.class;
+                                // Calculate training measures
+                                String[][] predictionsTra = (String[][]) clase.getMethod("predict", args).invoke(newObject, training);
+                                Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
+
+                                // Save the training results file
+                                Utils.saveMeasures(dir, (Model) newObject, Measures, true, i);
+
                                 args = new Class[1];
                                 args[0] = InstanceSet.class;
                                 // Call predict method
@@ -1097,6 +1107,7 @@ public class GUI extends javax.swing.JFrame {
                                 // Calculate predictions in test
                                 Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
 
+                                Utils.saveMeasures(dir, (Model) newObject, Measures, false, i);
                                 // Store the result to make the average result
                                 QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
                                 QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));
