@@ -54,6 +54,7 @@ public class DeleteBestConditionByLevel_Wrapper extends Model
         result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
         result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
         result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        result[5] = super.getPredictions(super.patternsFilteredByMeasure, test);
         return result;
     }
 }

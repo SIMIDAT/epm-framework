@@ -103,8 +103,10 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
 
     //Rules
     protected Vector rules;
-    protected Vector rulesFilterAll;
-    protected Vector rulesFilterByClass;
+    protected Vector rulesFilterMinimal;
+    protected Vector rulesFilterMaximal;
+    protected Vector rulesFilterByMeasure;
+    protected Vector rulesFilterByChi;
 
     //Timing
     protected long initialTime;
@@ -581,28 +583,40 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
     public String[][] executeTest(InstanceSet test) {
         this.test = test;
         this.test.setAttributesAsNonStatic();
-        rulesFilterAll = new Vector();
-        rulesFilterByClass = new Vector();
+        rulesFilterMinimal = new Vector();
+        rulesFilterMaximal = new Vector();
+        rulesFilterByMeasure = new Vector();
+        rulesFilterByChi = new Vector();
         String[][] preds;
         try {
             normalizeTest();
         } catch (DataException ex) {
             Logger.getLogger(LazyAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
         }
-        //fill rules filteredAll and filteredByClass
+        
+        
+        //fill rules filteredMinimal, maximal, by measure and chi
         for (Pattern pat : super.patternsFilteredMinimal) {
             int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
-            rulesFilterAll.add(rules.get(index));
+            rulesFilterMinimal.add(rules.get(index));
         }
         for (Pattern pat : super.patternsFilteredMaximal) {
             int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
-            rulesFilterByClass.add(rules.get(index));
+            rulesFilterMaximal.add(rules.get(index));
+        }
+        for (Pattern pat : super.patternsFilteredByMeasure) {
+            int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
+            rulesFilterByMeasure.add(rules.get(index));
+        }
+        for (Pattern pat : super.patternsFilteredByChi) {
+            int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
+            rulesFilterByChi.add(rules.get(index));
         }
 
         //Working on test
         realClass = new int[testData.length][1];
-        prediction = new int[testData.length][3];
-        preds = new String[3][testData.length];
+        prediction = new int[testData.length][5];
+        preds = new String[5][testData.length];
 
         //Check  time		
         setInitialTime();
@@ -610,12 +624,14 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
         for (int i = 0; i < realClass.length; i++) {
             realClass[i][0] = testOutput[i];
             prediction[i][0] = evaluate(testData[i], "", 1, rules);
-            prediction[i][1] = evaluate(testData[i], "", 1, rulesFilterAll);
-            prediction[i][2] = evaluate(testData[i], "", 1, rulesFilterByClass);
+            prediction[i][1] = evaluate(testData[i], "", 1, rulesFilterMinimal);
+            prediction[i][2] = evaluate(testData[i], "", 1, rulesFilterMaximal);
+            prediction[i][3] = evaluate(testData[i], "", 1, rulesFilterByMeasure);
+            prediction[i][4] = evaluate(testData[i], "", 1, rulesFilterByChi);
         }
         // Get predictions strings.
         for (int i = 0; i < prediction.length; i++) {
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < 5; j++) {
                 if (prediction[i][j] != -1) {
                     preds[j][i] = test.getAttributeDefinitions().getOutputAttribute(0).getNominalValue(prediction[i][j]);
                 } else {

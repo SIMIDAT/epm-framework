@@ -247,6 +247,7 @@ public class BCEP_Model extends Model implements Serializable {
         try {
 
             String[] predictionsNoFilter = makePredictions(test, Utils.castToOldatternFormat(getPatterns()));
+            String[] predictionsChi = makePredictions(test, Utils.castToOldatternFormat(getPatternsFilteredByChi()));
             String[] predictionsFilterGlobal = null;
             String[] predictionsFilterClass = null;
 
@@ -257,7 +258,7 @@ public class BCEP_Model extends Model implements Serializable {
                 predictionsFilterClass = makePredictions(test, Utils.castToOldatternFormat(getPatternsFilteredMaximal()));
             }
 
-            String[][] preds1 = {predictionsNoFilter, predictionsFilterGlobal, predictionsFilterClass};
+            String[][] preds1 = {predictionsNoFilter, predictionsFilterGlobal, predictionsFilterClass, predictionsChi};
             return preds1;
         } catch (Exception ex) {
             Logger.getLogger(BCEP_Model.class.getName()).log(Level.SEVERE, null, ex);

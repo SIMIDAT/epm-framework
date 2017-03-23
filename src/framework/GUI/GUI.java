@@ -704,6 +704,7 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_SaveModelCheckboxActionPerformed
 
     private void LearnButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LearnButtonActionPerformed
+
         ExecutionInfoLearn.setEditable(true);
         // Reads the parameters of the user
         appendToPane(ExecutionInfoLearn, "Reading parameters and files...", Color.BLUE);
@@ -726,6 +727,9 @@ public class GUI extends javax.swing.JFrame {
             worker = new SwingWorker() {
                 @Override
                 protected Object doInBackground() throws Exception {
+                    String filterBy = "CONF";
+                    float threshold = 0.6f;
+
                     // Reads training and test file
                     Attributes.clearAll();
                     try {
@@ -749,6 +753,8 @@ public class GUI extends javax.swing.JFrame {
                     ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
                     ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
                     ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
+                    ((Model) newObject).setPatternsFilteredByChi(new ArrayList<>());
+                    ((Model) newObject).filters = new HashMap<>();
 
                     // Second: get the argument class
                     Class[] args = new Class[2];
@@ -762,21 +768,41 @@ public class GUI extends javax.swing.JFrame {
                     System.out.println("Filtering patterns and calculating descriptive measures...");
 
                     // Get learned patterns, filter, and calculate measures for training
-                    ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
+                    HashMap<String, HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true, "Unfiltered");
 
                     // Filter the patterns, returning the average quality measures for each set of patterns
-                    ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-                    for (int i = 0; i < filterPatterns.size(); i++) {
-                        // Adds to Masures to write later the average results in the file.
-                        Measures.add(filterPatterns.get(i));
+                    //ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
+                    HashMap<String, HashMap<String, Double>> filterPatterns = Utils.filterPatterns2((Model) newObject, filterBy, threshold);
+
+                    // Add each averaged measur with key in "filters" to the Measures variable
+                    for (String key : filterPatterns.keySet()) {
+                        Measures.put(key, filterPatterns.get(key));
                     }
+
+                    // Filter By Chi-EPs
+                    // Params used: Supp: 0.02; GR = 10; Chi: 3.84
+                    Measures.put("Chi", Utils.filterByChiEP((Model) newObject, 0.02, 10.0, 3.84, training));
 
                     // Call predict method for ACC and AUC for training
                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
                     System.out.println("Calculating precision for training...");
-                    args = new Class[1];
+
+                    args = new Class[2];
                     args[0] = InstanceSet.class;
-                    String[][] predictionsTra = (String[][]) clase.getMethod("predict", args).invoke(newObject, training);
+                    args[1] = ArrayList.class;
+                    // Call the predict method for each  filter
+                    //String[][] predictionsTra = (String[][]) clase.getMethod("predict", args).invoke(newObject, training);
+                    String[][] predictionsTra = new String[((Model) newObject).filters.size()][training.getNumInstances()];
+                    // First, the unfiltered pattern
+                    predictionsTra[0] = (String[]) clase.getMethod("predict", args).invoke(newObject, training, ((Model) newObject).patterns);
+                    // Now, the rest of filters
+                    int index = 1;
+                    for (String k : ((Model) newObject).filters.keySet()) {
+                        predictionsTra[index] = (String[]) clase.getMethod("predict", args).invoke(newObject, training, ((Model) newObject).filters.get(k));
+                        index++;
+                    }
+
+                    // After the obtention of the predictions for each filter, calculate the prediction measures
                     Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
 
                     // Save training measures in a file.
@@ -793,18 +819,29 @@ public class GUI extends javax.swing.JFrame {
                         System.out.println("Testing instances...");
 
                         // Calculate test measures for unfiltered and filtered patterns
-                        Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false);
-                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMinimal(), false).get(0));
-                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredMaximal(), false).get(0));
-                        Measures.add(Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatternsFilteredByMeasure(), false).get(0));
+                        Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false, "Unfiltered");
+                        for (String key : filterPatterns.keySet()) {
+                            Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
+                        }
 
-                        args = new Class[1];
+                        args = new Class[2];
                         args[0] = InstanceSet.class;
-                        // Call predict method
-                        String[][] predictions = (String[][]) clase.getMethod("predict", args).invoke(newObject, test);
+                        args[1] = ArrayList.class;
+                        // Call the predict method for each  filter
+                        //String[][] predictionsTra = (String[][]) clase.getMethod("predict", args).invoke(newObject, training);
+                        predictionsTra = new String[((Model) newObject).filters.size()][training.getNumInstances()];
+                        // First, the unfiltered pattern
+                        predictionsTra[0] = (String[]) clase.getMethod("predict", args).invoke(newObject, training, ((Model) newObject).patterns);
+                        // Now, the rest of filters
+                        index = 1;
+                        for (String k : ((Model) newObject).filters.keySet()) {
+                            predictionsTra[index] = (String[]) clase.getMethod("predict", args).invoke(newObject, training, ((Model) newObject).filters.get(k));
+                            index++;
+                        }
 
                         // Calculate predictions
-                        Utils.calculatePrecisionMeasures(predictions, test, training, Measures);
+                        Utils.calculatePrecisionMeasures(predictionsTra, test, training, Measures);
+                        
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
                         Utils.saveMeasures(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures, false, 0);
@@ -1018,7 +1055,7 @@ public class GUI extends javax.swing.JFrame {
                     }
 //                    ExecutorService exec = Executors.newFixedThreadPool(NUM_THREADS);
                     // for each folder in the root directory
-
+                  
                     for (File dir : folders) {
 
                         if (dir.isDirectory()) {
@@ -1065,6 +1102,7 @@ public class GUI extends javax.swing.JFrame {
                                 ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
                                 ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
                                 ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
+                                ((Model) newObject).filters = new HashMap<>();
 
                                 // Second: get the argument class
                                 Class[] args = new Class[2];
@@ -1078,7 +1116,8 @@ public class GUI extends javax.swing.JFrame {
 
                                 // Call the test method. This method return in a hashmap the quality measures.
                                 // for unfiltered, filtered global, and filtered by class QMs.
-                                ArrayList<HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true);
+                                HashMap<String, HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true, "Unfiltered");
+
                                 ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
 
                                 for (HashMap<String, Double> a : filterPatterns) {

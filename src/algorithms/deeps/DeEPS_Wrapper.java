@@ -49,6 +49,7 @@ public class DeEPS_Wrapper extends Model{
     public String[][] predict(InstanceSet test){
         algorithm.setPatternsFilteredMinimal(super.getPatternsFilteredMinimal());
         algorithm.setPatternsFilteredMaximal(super.getPatternsFilteredMaximal());
+        algorithm.setPatternsFilteredByChi(super.getPatternsFilteredByChi());
         return algorithm.executeTest(test);
     }
    

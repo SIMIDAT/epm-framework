@@ -1041,11 +1041,12 @@ public class EvAEP extends Model {
     
   @Override
   public String[][] predict(InstanceSet test){
-        String[][] result = new String[4][test.getNumInstances()];
+        String[][] result = new String[5][test.getNumInstances()];
         result[0] = super.getPredictions(super.patterns, test);
         result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
         result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
         result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        result[4] = super.getPredictions(super.patternsFilteredByChi, test);
         return result;
   }
     

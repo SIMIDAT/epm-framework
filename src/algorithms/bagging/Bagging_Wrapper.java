@@ -54,6 +54,7 @@ public class Bagging_Wrapper extends Model
         result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
         result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
         result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
+        result[4] = super.getPredictions(super.patternsFilteredByChi, test);
         return result;
     }
 }

@@ -57,6 +57,10 @@ public class Model implements Serializable {
     protected ArrayList<Pattern> patternsFilteredMinimal; // Minimal Patterns
     protected ArrayList<Pattern> patternsFilteredMaximal; // Maximal Patterns
     protected ArrayList<Pattern> patternsFilteredByMeasure; // Patterns filtered by a given quality measure
+    protected ArrayList<Pattern> patternsFilteredByChi; // Chi-Patterns
+    
+    // This will be a future update of the framework.
+    protected HashMap<String, ArrayList<Pattern>> filters; // Store the set of patterns with the filter name as the key
 
     /**
      * Saves the current model to a .ser file extension.
@@ -104,10 +108,11 @@ public class Model implements Serializable {
      * Predict the class of the new unseen instances.
      *
      * @param test The set of instances to predict the class
+     * @param patterns The set of pattern to use in order to predict
      * @return An array with the class predicted for each test instance for
      * unfiltered patterns, filtered global and filtered by class respectively.
      */
-    public String[][] predict(InstanceSet test) {
+    public String[] predict(InstanceSet test, ArrayList<Pattern> patterns) {
         return null;
     }
 
@@ -157,6 +162,25 @@ public class Model implements Serializable {
 
         //return the array of predictions
         return predictions.toArray(new String[0]);
+    }
+    
+    
+    /**
+     * Gets a filtered set: Possible keys are:
+     *  - Minimals
+     *  - Maximals
+     *  - Every measure
+     *  - Chi
+     *  
+     * @param key
+     * @return 
+     */
+    public ArrayList<Pattern> getSetFiltered(String key){
+        return getFilters().get(key);
+    }
+    
+    public void setFilter(String key, ArrayList<Pattern> set){
+        getFilters().put(key, set);
     }
 
     /**
@@ -240,6 +264,27 @@ public class Model implements Serializable {
      */
     public void setPatternsFilteredByMeasure(ArrayList<Pattern> patternsFilteredByMeasure) {
         this.patternsFilteredByMeasure = patternsFilteredByMeasure;
+    }
+
+    /**
+     * @return the patternsFilteredByChi
+     */
+    public ArrayList<Pattern> getPatternsFilteredByChi() {
+        return patternsFilteredByChi;
+    }
+
+    /**
+     * @param patternsFilteredByChi the patternsFilteredByChi to set
+     */
+    public void setPatternsFilteredByChi(ArrayList<Pattern> patternsFilteredByChi) {
+        this.patternsFilteredByChi = patternsFilteredByChi;
+    }
+
+    /**
+     * @return the filters
+     */
+    public HashMap<String, ArrayList<Pattern>> getFilters() {
+        return filters;
     }
 
 }
