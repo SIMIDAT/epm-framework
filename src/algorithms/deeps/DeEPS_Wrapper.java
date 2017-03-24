@@ -25,6 +25,8 @@
 package algorithms.deeps;
 
 import framework.GUI.Model;
+import framework.items.Pattern;
+import java.util.ArrayList;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 
@@ -46,11 +48,8 @@ public class DeEPS_Wrapper extends Model{
     }
     
     @Override
-    public String[][] predict(InstanceSet test){
-        algorithm.setPatternsFilteredMinimal(super.getPatternsFilteredMinimal());
-        algorithm.setPatternsFilteredMaximal(super.getPatternsFilteredMaximal());
-        algorithm.setPatternsFilteredByChi(super.getPatternsFilteredByChi());
-        return algorithm.executeTest(test);
+   public String[] predict(InstanceSet test, ArrayList<Pattern> patterns) {
+        return algorithm.executeTest(test, patterns);
     }
    
 }

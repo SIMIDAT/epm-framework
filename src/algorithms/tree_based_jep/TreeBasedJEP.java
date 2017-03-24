@@ -75,13 +75,8 @@ public class TreeBasedJEP extends Model {
     }
 
     @Override
-    public String[][] predict(InstanceSet test) {
-        String[][] result = new String[4][test.getNumInstances()];
-        result[0] = getPredictions(super.patterns, test);
-        result[1] = getPredictions(super.patternsFilteredMinimal, test);
-        result[2] = getPredictions(super.patternsFilteredMaximal, test);
-        result[3] = getPredictions(super.patternsFilteredByMeasure, test);
-        return result;
+     public String[] predict(InstanceSet test, ArrayList<framework.items.Pattern> patterns) {
+        return super.getPredictions(patterns, test);
     }
 
     /**

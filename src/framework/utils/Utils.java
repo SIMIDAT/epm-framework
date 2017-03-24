@@ -490,42 +490,57 @@ public class Utils {
     }
 
     /**
-     * Saves the results of the HashMaps on files. Additionally this function
-     * make the average results for cross-validation results
+     * Saves the average results obtained by means of the k-fold cross-validation in "summary" files
+     * 
+     * It saves the summary for the complete set and for each filter applied.
      *
      * @param dir
-     * @param QMsUnfiltered
-     * @param QMsMinimal
-     * @param QMsMaximal
+     *  @param Measures 
      * @param NUM_FOLDS
      */
-    public static void saveResults(File dir, HashMap<String, Double> QMsUnfiltered, HashMap<String, Double> QMsMinimal, HashMap<String, Double> QMsMaximal, HashMap<String, Double> QMsByMeasure, int NUM_FOLDS) {
+    public static void saveResults(File dir, HashMap<String, HashMap<String, Double>> Measures, int NUM_FOLDS) {
 
         try {
-            File measures1 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_Unfiltered.txt");
-            File measures2 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_MINIMALS.txt");
-            File measures3 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_MAXIMALS.txt");
-            File measures4 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_BYCONFIDENCE.txt");
-            if (measures1.exists()) {
-                measures1.delete();
+            //File measures1 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_Unfiltered.txt");
+            //File measures2 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_MINIMALS.txt");
+            //File measures3 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_MAXIMALS.txt");
+            //File measures4 = new File(dir.getAbsolutePath() + "/SUMMARY_QM_BYCONFIDENCE.txt");
+            HashMap<String, File> summaries = new HashMap<>();
+            for(String key : Measures.keySet()){
+                summaries.put(key, new File(dir.getAbsolutePath() + "/SUMMARY_QM_" + key + ".txt"));
             }
-            if (measures2.exists()) {
-                measures2.delete();
-            }
-            if (measures3.exists()) {
-                measures3.delete();
-            }
-            if (measures4.exists()) {
-                measures4.delete();
-            }
-            measures1.createNewFile();
-            measures2.createNewFile();
-            measures3.createNewFile();
-            measures4.createNewFile();
+            
+           summaries.forEach((key, value) ->{
+                try {
+                    if(value.exists())
+                        value.delete();
+                    value.createNewFile();
+                } catch (IOException ex) {
+                    Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+                }
+           });
+                   
+            
+            for (String key : Measures.keySet()) {
+                PrintWriter w = new PrintWriter(summaries.get(key));
 
-            final PrintWriter w = new PrintWriter(measures1);
+                Measures.get(key).forEach((t, u) -> {
+                    DecimalFormat sixDecimals = new DecimalFormat("0.000000");
+                    if (!u.isNaN()) {
+                        u /= (double) NUM_FOLDS;
+                        // Here is where you must made all the operations with each averaged quality measure.
+                        w.println(t + " ==> " + sixDecimals.format(u));
+                    } else {
+                        w.println(t + " ==> --------");
+                    }
+                });
 
-            QMsUnfiltered.forEach(new BiConsumer<String, Double>() {
+                w.close();
+            }
+           
+            //final PrintWriter w = new PrintWriter(measures1);
+
+            /*QMsUnfiltered.forEach(new BiConsumer<String, Double>() {
 
                 @Override
                 public void accept(String t, Double u) {
@@ -588,7 +603,7 @@ public class Utils {
                     }
                 }
             });
-            w4.close();
+            w4.close();*/
 
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
@@ -609,7 +624,7 @@ public class Utils {
      * @param results The Averaged quality measures for unfiltered, filtered and
      * filtered by class sets of quality measures.
      */
-    public static void calculatePrecisionMeasures(String[][] predictions, InstanceSet test, InstanceSet training, HashMap<String, HashMap<String, Double>> results) {
+    public static void calculatePrecisionMeasures(HashMap<String, String[]> predictions, InstanceSet test, InstanceSet training, HashMap<String, HashMap<String, Double>> results) {
         //------ GET THE MINORITY CLASS ----------------
         String minorityClass = "";
         training.setAttributesAsNonStatic();
@@ -630,26 +645,23 @@ public class Utils {
         }
         // ----------------------------------------------
         
-        
-       Object[] key = results.keySet().toArray();
-       
             // Calculate, for each set of patterns, their global confusion matrix
             // NOTE: If the dataset has more classes. The MINORITY CLASS is considered as the positive one
             // the rest of the classes are considered as negative.
-            for (int i = 0; i < predictions.length; i++) {
+            for(String k : predictions.keySet()){
                 float tp = 0;
                 float tn = 0;
                 float fp = 0;
                 float fn = 0;
-                String k = (String) key[i];
-                for (int j = 0; j < predictions[0].length; j++) {
+                String[] preds = predictions.get(k);
+                for (int j = 0; j < preds.length; j++) {
                     if (test.getOutputNominalValue(j, 0).equals(minorityClass)) {
-                        if (predictions[i][j].equals(minorityClass)) {
+                        if (preds[j].equals(minorityClass)) {
                             tp++;
                         } else {
                             fn++;
                         }
-                    } else if (predictions[i][j].equals(minorityClass)) {
+                    } else if (preds[j].equals(minorityClass)) {
                         fp++;
                     } else {
                         tn++;
@@ -670,8 +682,8 @@ public class Utils {
                 //  If the number of classes are grater than 2, we calculate accuracy via matching prediction-real value
                 if (Attributes.getOutputAttribute(0).getNominalValuesList().size() > 2) {
                     float aciertos = 0;
-                    for (int j = 0; j < predictions[i].length; j++) {
-                        if (predictions[i][j].equals(test.getOutputNominalValue(j, 0))) {
+                    for (int j = 0; j < preds.length; j++) {
+                        if (preds[j].equals(test.getOutputNominalValue(j, 0))) {
                             aciertos++;
                         }
                     }
@@ -1267,12 +1279,12 @@ public class Utils {
             if (train) {
                 rules = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
                 for (String key : Measures.keySet()) {
-                    files.add(new PrintWriter(dir.getAbsolutePath() + "TRA_QUAC_" + key + "_" + fold + ".txt"));
+                    files.add(new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_" + key + "_" + fold + ".txt"));
                 }
             } else {
 
                 for (String key : Measures.keySet()) {
-                    files.add(new PrintWriter(dir.getAbsolutePath() + "TST_QUAC_" + key + "_" + fold + ".txt"));
+                    files.add(new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_" + key + "_" + fold + ".txt"));
                 }
             }
            

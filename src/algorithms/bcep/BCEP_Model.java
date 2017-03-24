@@ -242,30 +242,8 @@ public class BCEP_Model extends Model implements Serializable {
     }
 
     @Override
-    public String[][] predict(InstanceSet test) {
-        String[][] preds = null;
-        try {
-
-            String[] predictionsNoFilter = makePredictions(test, Utils.castToOldatternFormat(getPatterns()));
-            String[] predictionsChi = makePredictions(test, Utils.castToOldatternFormat(getPatternsFilteredByChi()));
-            String[] predictionsFilterGlobal = null;
-            String[] predictionsFilterClass = null;
-
-            if (getPatternsFilteredMinimal() != null) {
-                predictionsFilterGlobal = makePredictions(test, Utils.castToOldatternFormat(getPatternsFilteredMinimal()));
-            }
-            if (getPatternsFilteredMaximal() != null) {
-                predictionsFilterClass = makePredictions(test, Utils.castToOldatternFormat(getPatternsFilteredMaximal()));
-            }
-
-            String[][] preds1 = {predictionsNoFilter, predictionsFilterGlobal, predictionsFilterClass, predictionsChi};
-            return preds1;
-        } catch (Exception ex) {
-            Logger.getLogger(BCEP_Model.class.getName()).log(Level.SEVERE, null, ex);
-            GUI.setInfoLearnTextError("ERROR: Excepcion: " + ex.toString());
-        }
-        return preds;
-
+    public String[] predict(InstanceSet test, ArrayList<framework.items.Pattern> patterns) {
+        return makePredictions(test, Utils.castToOldatternFormat(patterns));
     }
 
     @Override

@@ -26,6 +26,8 @@ package algorithms.deletebestcondition;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 import framework.GUI.Model;
+import framework.items.Pattern;
+import java.util.ArrayList;
 
 /**
  *
@@ -45,13 +47,7 @@ public class DeleteBestCondition_Wrapper extends Model {
     }
 
     @Override
-    public String[][] predict(InstanceSet test) {
-        String[][] result = new String[5][test.getNumInstances()];
-        result[0] = super.getPredictions(super.patterns, test);
-        result[1] = super.getPredictions(super.patternsFilteredMinimal, test);
-        result[2] = super.getPredictions(super.patternsFilteredMaximal, test);
-        result[3] = super.getPredictions(super.patternsFilteredByMeasure, test);
-        result[4] = super.getPredictions(super.patternsFilteredByChi, test);
-        return result;
+    public String[] predict(InstanceSet test, ArrayList<Pattern> patterns) {
+      return super.getPredictions(patterns, test);
     }
 }

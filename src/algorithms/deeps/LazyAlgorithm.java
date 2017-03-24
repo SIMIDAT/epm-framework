@@ -580,13 +580,10 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
         }
     }
 
-    public String[][] executeTest(InstanceSet test) {
+    public String[] executeTest(InstanceSet test, ArrayList<Pattern> patterns) {
         this.test = test;
         this.test.setAttributesAsNonStatic();
         rulesFilterMinimal = new Vector();
-        rulesFilterMaximal = new Vector();
-        rulesFilterByMeasure = new Vector();
-        rulesFilterByChi = new Vector();
         String[][] preds;
         try {
             normalizeTest();
@@ -596,42 +593,27 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
         
         
         //fill rules filteredMinimal, maximal, by measure and chi
-        for (Pattern pat : super.patternsFilteredMinimal) {
+        for (Pattern pat : patterns) {
             int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
             rulesFilterMinimal.add(rules.get(index));
         }
-        for (Pattern pat : super.patternsFilteredMaximal) {
-            int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
-            rulesFilterMaximal.add(rules.get(index));
-        }
-        for (Pattern pat : super.patternsFilteredByMeasure) {
-            int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
-            rulesFilterByMeasure.add(rules.get(index));
-        }
-        for (Pattern pat : super.patternsFilteredByChi) {
-            int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
-            rulesFilterByChi.add(rules.get(index));
-        }
+       
 
         //Working on test
         realClass = new int[testData.length][1];
-        prediction = new int[testData.length][5];
-        preds = new String[5][testData.length];
+        prediction = new int[testData.length][1];
+        preds = new String[1][testData.length];
 
         //Check  time		
         setInitialTime();
 
         for (int i = 0; i < realClass.length; i++) {
             realClass[i][0] = testOutput[i];
-            prediction[i][0] = evaluate(testData[i], "", 1, rules);
-            prediction[i][1] = evaluate(testData[i], "", 1, rulesFilterMinimal);
-            prediction[i][2] = evaluate(testData[i], "", 1, rulesFilterMaximal);
-            prediction[i][3] = evaluate(testData[i], "", 1, rulesFilterByMeasure);
-            prediction[i][4] = evaluate(testData[i], "", 1, rulesFilterByChi);
+            prediction[i][0] = evaluate(testData[i], "", 1, rulesFilterMinimal);
         }
         // Get predictions strings.
         for (int i = 0; i < prediction.length; i++) {
-            for (int j = 0; j < 5; j++) {
+            for(int j = 0;  j < prediction[i].length; j++){
                 if (prediction[i][j] != -1) {
                     preds[j][i] = test.getAttributeDefinitions().getOutputAttribute(0).getNominalValue(prediction[i][j]);
                 } else {
@@ -653,7 +635,7 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
         System.out.println(name + " " + relation + " Test " + testTime + "s");
 //		
 //		printOutput();
-        return preds;
+        return preds[0];
 
     }//end-method 
 
