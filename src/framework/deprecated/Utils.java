@@ -23,8 +23,6 @@
  */
 package framework.deprecated;
 
-
-import framework.utils.FisherExact;
 import framework.GUI.Model;
 import framework.items.FuzzyItem;
 import framework.items.NominalItem;
@@ -185,169 +183,7 @@ public class Utils {
         return qualityMeasures;
     }
 
-    /**
-     * Calculates the descriptive quality measures
-     *
-     * @param data The dataset with the data
-     * @param model The model where the rules are stored
-     * @param isTrain The calculated measures are for training (true) or for
-     * test (false)?
-     * @return The descriptive quality measures for each rule.
-     */
-    public static ArrayList<HashMap<String, Double>> calculateDescriptiveMeasures(InstanceSet data, Model model, boolean isTrain) {
-        // 0 -> tp
-        // 1 -> tn
-        // 2 -> fp
-        // 3 -> fn
-        // 4 -> n_vars
-        int sumNvars = 0;
-        data.setAttributesAsNonStatic();
-        Attribute[] inputAttributes = data.getAttributeDefinitions().getInputAttributes();
-        Attribute outputAttributes = data.getAttributeDefinitions().getOutputAttribute(0);
-        int[][] confusionMatrices = new int[model.getPatterns().size()][5];
-        for (int i = 0; i < model.getPatterns().size(); i++) {
-            int tp = 0;
-            int tn = 0;
-            int fp = 0;
-            int fn = 0;
-            // for each instance
-            for (int j = 0; j < data.getNumInstances(); j++) {
-                // If the pattern covers the example
-                if (model.getPatterns().get(i).covers(data.getInstance(j), inputAttributes)) {
-
-                    if (model.getPatterns().get(i).getClase() == outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
-                        tp++;
-                    } else {
-                        fp++;
-                    }
-                } else if (model.getPatterns().get(i).getClase() != outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
-                    tn++;
-                } else {
-                    fn++;
-                }
-
-            }
-
-            confusionMatrices[i][0] = tp;
-            confusionMatrices[i][1] = tn;
-            confusionMatrices[i][2] = fp;
-            confusionMatrices[i][3] = fn;
-            confusionMatrices[i][4] = model.getPatterns().get(i).getItems().size();
-        }
-
-        ArrayList<HashMap<String, Double>> qms = new ArrayList<>();
-        for (int i = 0; i < confusionMatrices.length; i++) {
-            HashMap<String, Double> measures = generateQualityMeasuresHashMap();
-
-            double p = (double) confusionMatrices[i][0];
-            double _n = (double) confusionMatrices[i][1];
-            double n = (double) confusionMatrices[i][2];
-            double _p = (double) confusionMatrices[i][3];
-            double P = p + _p;
-            double N = n + _n;
-            double P_N = P + N;
-
-            // WRACC (Normalized)
-            double wracc;
-            if ((p + n) == 0) {
-                wracc = 0;
-            } else {
-                wracc = ((p + n) / P_N) * ((p / (p + n)) - (P / P_N));
-            }
-
-            // CONF
-            double conf;
-            if ((p + n) == 0) {
-                conf = 0;
-            } else {
-                conf = p / (p + n);
-            }
-
-            //TPr
-            double tpr;
-            if (P == 0) {
-                tpr = 0;
-            } else {
-                tpr = p / P;
-            }
-
-            //FPr 
-            double fpr;
-            if (N == 0) {
-                fpr = 0;
-            } else {
-                fpr = n / N;
-            }
-
-            // Support
-            double supp;
-            if (P_N == 0) {
-                supp = 0;
-            } else {
-                supp = p / P_N;
-            }
-
-            // Information gain
-            double gain;
-            if (P == 0 || p == 0) {
-                gain = 0;
-            } else {
-                if ((p + n) == 0 || tpr == 0) {
-                    gain = (p / P) * (0.0 - Math.log(P / P_N));
-                }
-                gain = (p / P) * (Math.log(tpr / ((p + n) / P_N)) - Math.log(P / P_N));
-            }
-
-            //Support difference
-            double suppDif;
-            if (P_N == 0) {
-                suppDif = 0;
-            } else {
-                suppDif = (p / P_N) - (n / P_N);
-            }
-
-            // Growth Rate
-            double GR;
-            if (tpr != 0 && fpr != 0) {
-                GR = tpr / fpr;
-            } else if (tpr != 0 && fpr == 0) {
-                GR = Float.POSITIVE_INFINITY;
-            } else {
-                GR = 0;
-            }
-
-            // Fisher
-            int ejT = (int) P_N;
-            FisherExact fe = new FisherExact(ejT);
-            double fisher = fe.getTwoTailedP(confusionMatrices[i][0], confusionMatrices[i][2], confusionMatrices[i][3], confusionMatrices[i][1]);
-
-            measures.put("WRACC", wracc);  // Normalized Unusualness
-            measures.put("GAIN", gain);  // Information Gain
-            measures.put("CONF", conf);   // Confidence
-            measures.put("GR", GR);     // Growth Rate
-            measures.put("TPR", tpr);    // True positive rate
-            measures.put("FPR", fpr);    // False positive rate
-            measures.put("SUPDIFF", suppDif);     // Support Diference
-            measures.put("FISHER", fisher); // Fishers's test
-            measures.put("SUPP", supp); // Fishers's test
-            measures.put("NVAR", (double) confusionMatrices[i][4]);
-            measures.put("RULE_NUMBER", (double) i);
-
-            qms.add(measures);
-            if (isTrain) {
-                model.getPatterns().get(i).setTra_measures(measures);
-            } else {
-                model.getPatterns().get(i).setTst_measures(measures);
-            }
-        }
-
-        // Average the results and return
-        HashMap<String, Double> AverageQualityMeasures = AverageQualityMeasures(qms);
-        qms.clear();
-        qms.add(AverageQualityMeasures);
-        return qms;
-    }
-
+    
     /**
      * Gets the best n rules by a given quality measure. Note that this function
      * returns the best rules ignoring the class, i.e. it can return rules for
@@ -708,8 +544,6 @@ public class Utils {
         }
     }
 
-    
-
     /**
      * Saves the results of the patterns sets in the given folder. This creates
      * 4 files: RULES.txt, TRA_QUAC_NOFILTER.txt, TRA_QUAC_BEST.txt and
@@ -720,7 +554,7 @@ public class Utils {
      * @param Measures The Averaged quality measures for each set of patterns
      * (Unfiltered, filtered and filtered by class)
      */
-    public static void saveTraining(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
+    /*public static void saveTraining(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
         PrintWriter pw1 = null;
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
@@ -846,7 +680,7 @@ public class Utils {
      * @param Measures The Averaged quality measures for each set of patterns
      * (Unfiltered, filtered and filtered by class)
      */
-    public static void saveTest(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
+    /*public static void saveTest(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
         //PrintWriter pw1 = null;
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
@@ -960,7 +794,7 @@ public class Utils {
             pw3.close();
             pw4.close();
         }
-    }
+    }*/
 
     /**
      * Gets simple itemsets with a support higher than a threshold
@@ -1143,28 +977,55 @@ public class Utils {
      * @param original
      * @return
      */
-    public static ArrayList<framework.items.Pattern> removeDuplicates(ArrayList<framework.items.Pattern> original) {
-        HashSet<framework.items.Pattern> distinct = new HashSet<>(original);
-        Iterator<framework.items.Pattern> it = distinct.iterator();
-        ArrayList<framework.items.Pattern> result = new ArrayList<>();
+    public static ArrayList<Pattern> removeDuplicates(ArrayList<Pattern> original) {
+        HashSet<Pattern> distinct = new HashSet<>(original);
+        Iterator<Pattern> it = distinct.iterator();
+        ArrayList<Pattern> result = new ArrayList<>();
         while (it.hasNext()) {
-            result.add((framework.items.Pattern) it.next());
+            result.add((Pattern) it.next());
         }
         return result;
     }
 
+    /**
+     * Cast an old pattern to the new pattern format.
+     *
+     * @param oldPattern
+     * @return
+     */
     public static framework.items.Pattern castToNewPatternFormat(framework.deprecated.Pattern oldPattern) {
         ArrayList<framework.items.Item> item = new ArrayList<>();
-        for(framework.deprecated.Item it : oldPattern.getItems()){
-            if(it.getType() == algorithms.bcep.Item.NOMINAL_ITEM){
+        for (framework.deprecated.Item it : oldPattern.getItems()) {
+            if (it.getType() == algorithms.bcep.Item.NOMINAL_ITEM) {
                 item.add(new NominalItem(it.getVariable(), it.getValue()));
-            } else if (it.getType() == algorithms.bcep.Item.REAL_ITEM){   
+            } else if (it.getType() == algorithms.bcep.Item.REAL_ITEM) {
                 item.add(new NumericItem(it.getVariable(), ((Float) it.getValueNum()).doubleValue(), oldPattern.getALPHA()));
             } else {
                 item.add(new FuzzyItem(it.getVariable(), it.getValueFuzzy()));
             }
         }
-        
+
         return new framework.items.Pattern(item, oldPattern.getClase());
+    }
+
+    /**
+     * Cast a new Pattern format to the old one.
+     *
+     * @param oldPattern
+     * @return
+     */
+    public static ArrayList<framework.deprecated.Pattern> castToOldatternFormat(ArrayList<framework.items.Pattern> oldPatterns) {
+        
+        ArrayList<framework.deprecated.Pattern> result = new ArrayList<>();
+        for (framework.items.Pattern oldPattern : oldPatterns){
+            ArrayList<framework.deprecated.Item> item = new ArrayList<>();
+            for (framework.items.Item it : oldPattern.getItems()) {
+                framework.items.NominalItem newIt = (framework.items.NominalItem) it;
+                item.add(new framework.deprecated.Item(newIt.getVariable(), newIt.getValue()));
+            }
+            result.add(new framework.deprecated.Pattern(item, oldPattern.getClase()));
+        }
+
+        return result;
     }
 }

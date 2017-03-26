@@ -142,7 +142,7 @@ public class Model implements Serializable {
             for (framework.items.Pattern pat : patterns) {
                 if (pat.covers(inst, attributes)) {
                     contribs.get(pat.getClase()).add(pat.getTraMeasure("SUPP"));
-                    clasContrib[pat.getClase()] += pat.getTra_measures().get("SUPP");
+                    clasContrib[pat.getClase()] += pat.getTraMeasure("SUPP");
                 }
             }
 

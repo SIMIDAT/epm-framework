@@ -594,7 +594,7 @@ public abstract class LazyAlgorithm extends DeEPS_Wrapper {
         
         //fill rules filteredMinimal, maximal, by measure and chi
         for (Pattern pat : patterns) {
-            int index = pat.getTra_measures().get("RULE_NUMBER").intValue();
+            int index = ((Double) pat.getTraMeasure("RULE_NUMBER")).intValue();
             rulesFilterMinimal.add(rules.get(index));
         }
        

@@ -25,15 +25,11 @@ package algorithms.tree_based_jep;
 
 import framework.GUI.Model;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import javafx.util.Pair;
 import keel.Dataset.Attribute;
 import keel.Dataset.Instance;
 import keel.Dataset.InstanceSet;
-import sun.misc.REException;
 import framework.deprecated.Item;
 import framework.deprecated.Pattern;
 import framework.deprecated.Utils;
@@ -69,7 +65,12 @@ public class TreeBasedJEP extends Model {
             mineTree(i, prune);
         }
         System.out.println("Removing duplicated patterns...");
-        patterns = Utils.removeDuplicates(patterns);
+        ArrayList<Pattern> aux = Utils.castToOldatternFormat(patterns);
+        aux = Utils.removeDuplicates(aux);
+        super.patterns.clear();
+        for(Pattern p : aux){
+            super.patterns.add(Utils.castToNewPatternFormat(p));
+        }
         System.out.println("Execution time: " + (System.currentTimeMillis() - init_time) / 1000.0 + " seconds");
         System.out.println("Number of patterns: " + super.patterns.size());
     }
@@ -100,7 +101,7 @@ public class TreeBasedJEP extends Model {
             // Checks the patterns that covers the instance for each class, and sum its support
             for (framework.items.Pattern pat : patterns) {
                 if (pat.covers(inst, attributes)) {
-                    clasContrib[pat.getClase()] += pat.getTra_measures().get("SUPP");
+                    clasContrib[pat.getClase()] += pat.getTraMeasure("SUPP");
                 }
             }
 

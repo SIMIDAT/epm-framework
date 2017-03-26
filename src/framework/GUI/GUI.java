@@ -23,18 +23,13 @@
  */
 package framework.GUI;
 
-import com.sun.javafx.runtime.SystemProperties;
 import framework.exceptions.IllegalActionException;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.LayoutManager;
-import java.awt.peer.PanelPeer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -43,12 +38,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultComboBoxModel;
@@ -60,7 +51,6 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextPane;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
@@ -76,11 +66,9 @@ import keel.Dataset.HeaderFormatException;
 import keel.Dataset.InstanceSet;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.SAXException;
-import framework.deprecated.Pattern;
+import framework.utils.QualityMeasures;
 import framework.utils.Utils;
 
 /**
@@ -97,7 +85,7 @@ public class GUI extends javax.swing.JFrame {
     private Document doc;
     private String actual_fully_qualified_class;
     private String preds;
-    HashMap<String, Double> qualityMeasures = new HashMap<>();
+  
     File lastDirectory;
 
     /**
@@ -121,7 +109,7 @@ public class GUI extends javax.swing.JFrame {
         initComponents();
 
         // initializy quality measures hash map.
-        resetMeasures();
+        //resetMeasures();
 
         // Adds algorithm names
         NodeList nodes = doc.getElementsByTagName("algorithm");
@@ -750,9 +738,6 @@ public class GUI extends javax.swing.JFrame {
                     Class clase = Class.forName(actual_fully_qualified_class);
                     newObject = clase.newInstance();
                     ((Model) newObject).patterns = new ArrayList<>();
-                    ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
-                    ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
-                    ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
                     ((Model) newObject).setPatternsFilteredByChi(new ArrayList<>());
                     ((Model) newObject).filters = new HashMap<>();
 
@@ -769,7 +754,7 @@ public class GUI extends javax.swing.JFrame {
 
                     //  Perfom the filter phase, filter the patterns
                     // NOTE: The behaviour of this function must be changed in the future to select a filter accorder to an user criterion
-                    HashMap<String, HashMap<String, Double>> Measures = filterPhase(newObject, training, filterBy, threshold);
+                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold);
                     
                     // Call predict method for ACC and AUC for training
                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
@@ -1021,13 +1006,13 @@ public class GUI extends javax.swing.JFrame {
                         if (dir.isDirectory()) {
                             File[] files = dir.listFiles();
                             Arrays.sort(files);
-                            HashMap<String, HashMap<String, Double>> totalMeasures = new HashMap<>();
+                            HashMap<String, QualityMeasures> totalMeasures = new HashMap<>();
                             // This must be changed in order to introduce the selection of filter by the user
-                            totalMeasures.put("Unfiltered", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("Minimals", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("Maximals", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("CONF", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("Chi", Utils.generateQualityMeasuresHashMap());
+                            totalMeasures.put("Unfiltered", new QualityMeasures());
+                            totalMeasures.put("Minimals", new QualityMeasures());
+                            totalMeasures.put("Maximals", new QualityMeasures());
+                            totalMeasures.put("CONF", new QualityMeasures());
+                            totalMeasures.put("Chi", new QualityMeasures());
                             //HashMap<String, Double> QMsUnfiltered = Utils.generateQualityMeasuresHashMap();
                             //HashMap<String, Double> QMsMinimal = Utils.generateQualityMeasuresHashMap();
                             //HashMap<String, Double> QMsMaximal = Utils.generateQualityMeasuresHashMap();
@@ -1081,7 +1066,7 @@ public class GUI extends javax.swing.JFrame {
                                 // Get learned patterns, filter, and calculate measures
                                 
                                 // Filter patterns
-                                HashMap<String, HashMap<String, Double>> Measures = filterPhase(newObject, training, filterBy, threshold);
+                                HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold);
                     
                                 // Predict phase 
                                 appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
@@ -1105,7 +1090,7 @@ public class GUI extends javax.swing.JFrame {
 
                                 // Store the result to make the average result
                                 for (String key : totalMeasures.keySet()) {
-                                    HashMap<String, Double> updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
+                                    QualityMeasures updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
                                     totalMeasures.put(key, updateHashMap);
                                 }
                                 //QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
@@ -1114,7 +1099,13 @@ public class GUI extends javax.swing.JFrame {
                                 //QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
 
                             }
-
+                            
+                            // Average the summary of the measures for the fold cross validation
+                            totalMeasures.forEach((key, value) -> {
+                               Utils.averageQualityMeasures(value, NUM_FOLDS);
+                            });
+                            
+                            //Utils.averageQualityMeasures(totalMeasures, NUM_FOLDS);
                             // After finished the fold cross validation, make the average calculation of each quality measure.
                             Utils.saveResults(dir, totalMeasures, NUM_FOLDS);
 
@@ -1453,74 +1444,12 @@ public class GUI extends javax.swing.JFrame {
     }
 
     /**
-     * Reset/Initialize the quality measures hash map
-     */
-    private void resetMeasures() {
-        qualityMeasures.put("WRACC", 0.0);  // Normalized Unusualness
-        qualityMeasures.put("NVAR", 0.0);  // Number of variables
-        qualityMeasures.put("NRULES", 0.0);  // Number of rules
-        qualityMeasures.put("GAIN", 0.0);  // Information Gain
-        qualityMeasures.put("CONF", 0.0);   // Confidence
-        qualityMeasures.put("GR", 0.0);     // Growth Rate
-        qualityMeasures.put("TPR", 0.0);    // True positive rate
-        qualityMeasures.put("FPR", 0.0);    // False positive rate
-        qualityMeasures.put("SUPDIFF", 0.0);     // Support Diference
-        qualityMeasures.put("FISHER", 0.0); // Fishers's test
-        qualityMeasures.put("HELLINGER", 0.0); // Hellinger Distance
-        qualityMeasures.put("ACC", 0.0); // Accuracy
-        qualityMeasures.put("AUC", 0.0); // ROC Curve
-    }
-
-    private void updateMeasuresCV(HashMap<String, Double> measures) {
-        if (measures.containsKey("WRACC")) {
-            qualityMeasures.put("WRACC", qualityMeasures.get("WRACC") + measures.get("WRACC"));
-        }
-        if (measures.containsKey("NVAR")) {
-            qualityMeasures.put("NVAR", qualityMeasures.get("NVAR") + measures.get("NVAR"));
-        }
-        if (measures.containsKey("NRULES")) {
-            qualityMeasures.put("NRULES", qualityMeasures.get("NRULES") + measures.get("NRULES"));
-        }
-        if (measures.containsKey("GAIN")) {
-            qualityMeasures.put("GAIN", qualityMeasures.get("GAIN") + measures.get("GAIN"));
-        }
-        if (measures.containsKey("CONF")) {
-            qualityMeasures.put("CONF", qualityMeasures.get("CONF") + measures.get("CONF"));
-        }
-        if (measures.containsKey("GR")) {
-            qualityMeasures.put("GR", qualityMeasures.get("GR") + measures.get("GR"));
-        }
-        if (measures.containsKey("TPR")) {
-            qualityMeasures.put("TPR", qualityMeasures.get("TPR") + measures.get("TPR"));
-        }
-        if (measures.containsKey("FPR")) {
-            qualityMeasures.put("FPR", qualityMeasures.get("FPR") + measures.get("FPR"));
-        }
-        if (measures.containsKey("SUPDIFF")) {
-            qualityMeasures.put("SUPDIFF", qualityMeasures.get("SUPDIFF") + measures.get("SUPDIFF"));
-        }
-        if (measures.containsKey("FISHER")) {
-            qualityMeasures.put("FISHER", qualityMeasures.get("FISHER") + measures.get("FISHER"));
-        }
-        if (measures.containsKey("HELLINGER")) {
-            qualityMeasures.put("HELLINGER", qualityMeasures.get("HELLINGER") + measures.get("HELLINGER"));
-        }
-        if (measures.containsKey("ACC")) {
-            qualityMeasures.put("ACC", qualityMeasures.get("ACC") + measures.get("ACC"));
-        }
-        if (measures.containsKey("AUC")) {
-            qualityMeasures.put("AUC", qualityMeasures.get("AUC") + measures.get("AUC"));
-        }
-
-    }
-
-    /**
      * It makes the prediction phase for the training or test data
      *
      * @param newObject
      * @param data
      */
-    public static void predictPhase(Class clase, Object newObject, InstanceSet training, InstanceSet test, HashMap<String, HashMap<String, Double>> Measures, boolean isTrain) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public static void predictPhase(Class clase, Object newObject, InstanceSet training, InstanceSet test, HashMap<String, QualityMeasures> Measures, boolean isTrain) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Class[] args = new Class[2];
         args[0] = InstanceSet.class;
         args[1] = ArrayList.class;
@@ -1552,13 +1481,13 @@ public class GUI extends javax.swing.JFrame {
      * @param threshold the threshold of the measure filter
      * @return 
      */
-    public static HashMap<String, HashMap<String, Double>> filterPhase(Object newObject, InstanceSet training, String filterBy, float threshold) {
+    public static HashMap<String, QualityMeasures> filterPhase(Object newObject, InstanceSet training, String filterBy, float threshold) {
         // Get learned patterns, filter, and calculate measures for training
-        HashMap<String, HashMap<String, Double>> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true, "Unfiltered");
+        HashMap<String, QualityMeasures> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true, "Unfiltered");
 
         // Filter the patterns, returning the average quality measures for each set of patterns
         //ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-        HashMap<String, HashMap<String, Double>> filterPatterns = Utils.filterPatterns2((Model) newObject, filterBy, threshold);
+        HashMap<String, QualityMeasures> filterPatterns = Utils.filterPatterns2((Model) newObject, filterBy, threshold);
 
         // Add each averaged measur with key in "filters" to the Measures variable
         for (String key : filterPatterns.keySet()) {

@@ -554,7 +554,7 @@ public class Utils {
      * @param Measures The Averaged quality measures for each set of patterns
      * (Unfiltered, filtered and filtered by class)
      */
-    public static void saveTraining(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
+    /*public static void saveTraining(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
         PrintWriter pw1 = null;
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
@@ -680,7 +680,7 @@ public class Utils {
      * @param Measures The Averaged quality measures for each set of patterns
      * (Unfiltered, filtered and filtered by class)
      */
-    public static void saveTest(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
+    /*public static void saveTest(File dir, Model model, ArrayList<HashMap<String, Double>> Measures) {
         //PrintWriter pw1 = null;
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
@@ -794,7 +794,7 @@ public class Utils {
             pw3.close();
             pw4.close();
         }
-    }
+    }*/
 
     /**
      * Gets simple itemsets with a support higher than a threshold

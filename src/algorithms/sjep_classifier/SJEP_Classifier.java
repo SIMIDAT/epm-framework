@@ -29,6 +29,7 @@ import framework.exceptions.IllegalActionException;
 import framework.items.Item;
 import framework.items.NominalItem;
 import framework.items.Pattern;
+import framework.utils.QualityMeasures;
 import framework.utils.Utils;
 import framework.utils.cptree.*;
 import java.math.BigInteger;
@@ -327,8 +328,8 @@ public class SJEP_Classifier extends Model {
             // We are looking for patterns only on the positive class to allow multiclass problems.
             if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount)) {
                 //beta.setClase(i);
-                HashMap<String, Double> m = new HashMap<>();
-                m.put("SUPP", ((Integer) i.getCountD1()).doubleValue());
+                QualityMeasures m = new QualityMeasures();
+                m.addMeasure("SUPP", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
                 super.patterns.add(beta.clone());
 
@@ -336,8 +337,8 @@ public class SJEP_Classifier extends Model {
                 if (acceptPattern(beta, i.getCountD2(), i.getCountD1(), minNegCount)) {
                     if (!OVA) { // If we are in OVA multiclass, we dont want patterns for the negative class, but we want the pruning.
                         beta.setClase(1);
-                        HashMap<String, Double> m = new HashMap<>();
-                        m.put("SUPP", ((Integer) i.getCountD2()).doubleValue());
+                        QualityMeasures m = new QualityMeasures();
+                        m.addMeasure("SUPP", ((Integer) i.getCountD2()).doubleValue());
                         beta.setTra_measures(m);
                         super.patterns.add(beta.clone());
                     }

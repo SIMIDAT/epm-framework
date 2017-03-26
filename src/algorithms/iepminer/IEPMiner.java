@@ -29,6 +29,7 @@ import framework.exceptions.IllegalActionException;
 import framework.items.Item;
 import framework.items.NominalItem;
 import framework.items.Pattern;
+import framework.utils.QualityMeasures;
 import framework.utils.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -187,9 +188,9 @@ public class IEPMiner extends Model {
             } else {
                 gr = D1 / D2;
             }
-            HashMap<String, Double> measures = new HashMap<>();
-            measures.put("GR", gr);
-            measures.put("SUPP", D1);
+            QualityMeasures measures = new QualityMeasures();
+            measures.addMeasure("GR", gr);
+            measures.addMeasure("SUPP", D1);
             beta.setTra_measures(measures);
             if (is_iEP(PTree.headerTable.get(i).count1, gr)) {
                 patternSet.add(beta);
@@ -243,9 +244,9 @@ public class IEPMiner extends Model {
             } else {
                 gr = D1 / D2;
             }
-            HashMap<String, Double> measures = new HashMap<>();
-            measures.put("GR", gr);
-            measures.put("SUPP", D1);
+            QualityMeasures measures = new QualityMeasures();
+            measures.addMeasure("GR", gr);
+            measures.addMeasure("SUPP", D1);
             gamma.setTra_measures(measures);
 
             int[] Y = {(int) D1, (int) D2};

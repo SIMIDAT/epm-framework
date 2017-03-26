@@ -23,6 +23,7 @@
  */
 package framework.GUI;
 
+import framework.utils.QualityMeasures;
 import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
@@ -119,7 +120,7 @@ public class Main {
                         clase.getMethod("learn", arg).invoke(newObject, training, params);
 
                         // Get learned patterns, filter, and calculate measures
-                        HashMap<String, HashMap<String, Double>> Measures = GUI.filterPhase(newObject, training, filterBy, threshold);
+                        HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold);
                         
                         // Call predict method for ACC and AUC for training
                         System.out.println("Calculating precision for training...");
@@ -143,7 +144,7 @@ public class Main {
                         
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-                        Utils.saveMeasures(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, false, 0);
+                        Utils.saveMeasures2(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, false, 0);
                         System.out.println("Done.");
 
                     } else {
@@ -168,15 +169,21 @@ public class Main {
                         if (dir.isDirectory()) {
                             File[] files = dir.listFiles();
                             Arrays.sort(files);
-                            HashMap<String, HashMap<String, Double>> totalMeasures = new HashMap<>();
+                            HashMap<String, QualityMeasures> totalMeasures = new HashMap<>();
                             // This must be changed in order to introduce the selection of filter by the user
-                            totalMeasures.put("Unfiltered", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("Minimals", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("Maximals", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("CONF", Utils.generateQualityMeasuresHashMap());
-                            totalMeasures.put("Chi", Utils.generateQualityMeasuresHashMap());
+                            totalMeasures.put("Unfiltered", new QualityMeasures());
+                            totalMeasures.put("Minimals", new QualityMeasures());
+                            totalMeasures.put("Maximals", new QualityMeasures());
+                            totalMeasures.put("CONF", new QualityMeasures());
+                            totalMeasures.put("Chi", new QualityMeasures());
 
                             System.out.println("Executing..." + dir.getName() + "...");
+                            
+                            /* HINT: 
+                            In order to perform parallel execution, you can probe the function parallelstream().foreach()
+                            on an arraylist with 1 to num_folds as the data.
+                            This will do the execution of each fold in parallel.
+                            */
                             for (int i = 1; i <= NUM_FOLDS; i++) {
                                 // Search for the training and test files.
                                 for (File x : files) {
@@ -223,7 +230,7 @@ public class Main {
                                 // Get learned patterns, filter, and calculate measures
                                 
                                 // Filter patterns
-                                HashMap<String, HashMap<String, Double>> Measures = GUI.filterPhase(newObject, training, filterBy, threshold);
+                                HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold);
                     
                                 // Predict phase 
                                 System.out.println("Calculating precision for training...");
@@ -246,7 +253,7 @@ public class Main {
 
                                 // Store the result to make the average result
                                 for (String key : totalMeasures.keySet()) {
-                                    HashMap<String, Double> updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
+                                    QualityMeasures updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
                                     totalMeasures.put(key, updateHashMap);
                                 }
                                 //QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
@@ -255,6 +262,10 @@ public class Main {
                                 //QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
 
                             }
+                            
+                            totalMeasures.forEach((key, value) ->{
+                                Utils.averageQualityMeasures(value, NUM_FOLDS);
+                            });
 
                             // After finished the fold cross validation, make the average calculation of each quality measure.
                             Utils.saveResults(dir, totalMeasures, NUM_FOLDS);

@@ -23,6 +23,7 @@
  */
 package framework.items;
 
+import framework.utils.QualityMeasures;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,8 +42,8 @@ public class Pattern implements Serializable {
 
     protected ArrayList<Item> items;
     protected int clase;
-    protected HashMap<String, Double> tra_measures;
-    protected HashMap<String, Double> tst_measures;
+    protected QualityMeasures tra_measures;
+    protected QualityMeasures tst_measures;
 
     @Override
     public Pattern clone() {
@@ -264,28 +265,28 @@ public class Pattern implements Serializable {
     /**
      * @return the tra_measures
      */
-    public HashMap<String, Double> getTra_measures() {
+    public QualityMeasures getTra_measures() {
         return tra_measures;
     }
 
     /**
      * @param tra_measures the tra_measures to set
      */
-    public void setTra_measures(HashMap<String, Double> tra_measures) {
+    public void setTra_measures(QualityMeasures tra_measures) {
         this.tra_measures = tra_measures;
     }
 
     /**
      * @return the tst_measures
      */
-    public HashMap<String, Double> getTst_measures() {
+    public QualityMeasures getTst_measures() {
         return tst_measures;
     }
 
     /**
      * @param tst_measures the tst_measures to set
      */
-    public void setTst_measures(HashMap<String, Double> tst_measures) {
+    public void setTst_measures(QualityMeasures tst_measures) {
         this.tst_measures = tst_measures;
     }
 
@@ -330,7 +331,7 @@ public class Pattern implements Serializable {
      * @return 
      */
     public double getTraMeasure(String value) {
-        return tra_measures.get(value);
+        return tra_measures.getMeasure(value);
     }
 
 }

@@ -29,6 +29,7 @@ import framework.exceptions.IllegalActionException;
 import framework.items.Item;
 import framework.items.NominalItem;
 import framework.items.Pattern;
+import framework.utils.QualityMeasures;
 import framework.utils.Utils;
 import framework.utils.cptree.*;
 import java.math.BigInteger;
@@ -259,8 +260,8 @@ public class TopK extends Model {
             // We are only looking for patterns on the positive class to allow multiclass problems.
             if (acceptPattern(beta, i.getCountD1(), i.getCountD2(), minPosCount, true)) {
                 //beta.setClase(i);
-                HashMap<String, Double> m = new HashMap<>();
-                m.put("SUPP", ((Integer) i.getCountD1()).doubleValue());
+                QualityMeasures m = new QualityMeasures();
+                m.addMeasure("SUPP", ((Integer) i.getCountD1()).doubleValue());
                 beta.setTra_measures(m);
 
                 if (topK_PosPatterns.size() > k) {
