@@ -73,6 +73,7 @@ public class Main {
                     InstanceSet training = new InstanceSet();
                     InstanceSet test = new InstanceSet();
                     boolean batchMode = false;
+                    boolean imbalanced = false;
 
                     // Find an algorithm that match on the list of algorithms
                     for (int i = 0; i < nodes.getLength() && !found; i++) {
@@ -90,6 +91,10 @@ public class Main {
                     }
 
                     batchMode = params.containsKey("directory");
+                    if(params.containsKey("imbalanced mode")){
+                        imbalanced = params.get("imbalanced mode").equalsIgnoreCase("true");
+                    }
+                    
                     if (!batchMode) {
                         // EXECUTE NORMAL MODE: ONLY TRAIN AND TEST
                         String filterBy = "CONF";
@@ -120,7 +125,7 @@ public class Main {
                         clase.getMethod("learn", arg).invoke(newObject, training, params);
 
                         // Get learned patterns, filter, and calculate measures
-                        HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold);
+                        HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
                         
                         // Call predict method for ACC and AUC for training
                         System.out.println("Calculating precision for training...");
@@ -230,7 +235,7 @@ public class Main {
                                 // Get learned patterns, filter, and calculate measures
                                 
                                 // Filter patterns
-                                HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold);
+                                HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
                     
                                 // Predict phase 
                                 System.out.println("Calculating precision for training...");

@@ -24,6 +24,7 @@
 package framework.GUI;
 
 import framework.exceptions.IllegalActionException;
+import framework.items.Pattern;
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.io.BufferedReader;
@@ -70,10 +71,11 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import framework.utils.QualityMeasures;
 import framework.utils.Utils;
+import java.util.stream.Stream;
 
 /**
  *
- * @author Ángel M. García-Vico
+ * @author Ángel M. García-Vico (agvico@ujaen.es)
  * @version 1.0
  * @since JDK 1.8
  */
@@ -85,7 +87,7 @@ public class GUI extends javax.swing.JFrame {
     private Document doc;
     private String actual_fully_qualified_class;
     private String preds;
-  
+
     File lastDirectory;
 
     /**
@@ -110,7 +112,6 @@ public class GUI extends javax.swing.JFrame {
 
         // initializy quality measures hash map.
         //resetMeasures();
-
         // Adds algorithm names
         NodeList nodes = doc.getElementsByTagName("algorithm");
         for (int i = 0; i < nodes.getLength(); i++) {
@@ -156,6 +157,8 @@ public class GUI extends javax.swing.JFrame {
         BrowseButtonModel = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         ExecutionInfoLearn = new javax.swing.JTextPane();
+        jPanel2 = new javax.swing.JPanel();
+        learnImbalancedRadio = new javax.swing.JCheckBox();
         LoadPanel = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         InstancesPath = new javax.swing.JTextField();
@@ -179,7 +182,9 @@ public class GUI extends javax.swing.JFrame {
         BatchOutput = new javax.swing.JTextPane();
         jLabel8 = new javax.swing.JLabel();
         numFolds = new javax.swing.JComboBox<>();
+        jPanel1 = new javax.swing.JPanel();
         ParallelCheckbox = new javax.swing.JCheckBox();
+        batchImbalanceRadio = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Emerging Pattern Mining Algorithms Framework");
@@ -259,6 +264,27 @@ public class GUI extends javax.swing.JFrame {
         ExecutionInfoLearn.setEditable(false);
         jScrollPane1.setViewportView(ExecutionInfoLearn);
 
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Additional options"));
+
+        learnImbalancedRadio.setText("Results for Imbalance");
+        learnImbalancedRadio.setToolTipText("It gets results with respect the minority class only.");
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(learnImbalancedRadio)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(learnImbalancedRadio))
+        );
+
         javax.swing.GroupLayout LearnPanelLayout = new javax.swing.GroupLayout(LearnPanel);
         LearnPanel.setLayout(LearnPanelLayout);
         LearnPanelLayout.setHorizontalGroup(
@@ -282,18 +308,19 @@ public class GUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(LearnPanelLayout.createSequentialGroup()
-                                .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 0, Short.MAX_VALUE))
-                            .addGroup(LearnPanelLayout.createSequentialGroup()
                                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(rutaTst, javax.swing.GroupLayout.DEFAULT_SIZE, 666, Short.MAX_VALUE)
-                                    .addComponent(rutaModel)
-                                    .addComponent(rutaTra))
+                                    .addComponent(rutaTra)
+                                    .addComponent(rutaModel))
                                 .addGap(18, 18, 18)
                                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(BrowseButtonModel)
                                     .addComponent(BrowseButtonTRA)
-                                    .addComponent(BrowseButtonTST)))))
+                                    .addComponent(BrowseButtonTST)))
+                            .addGroup(LearnPanelLayout.createSequentialGroup()
+                                .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
                     .addComponent(jScrollPane1))
                 .addContainerGap())
         );
@@ -302,38 +329,34 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(LearnPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel1)
+                        .addComponent(rutaTra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(LearnPanelLayout.createSequentialGroup()
+                        .addComponent(BrowseButtonTRA)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel1)
-                            .addComponent(rutaTra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(59, 59, 59))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
-                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(LearnPanelLayout.createSequentialGroup()
-                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(LearnPanelLayout.createSequentialGroup()
-                                        .addComponent(BrowseButtonTRA)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(BrowseButtonTST)
-                                            .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel2))
-                                        .addGap(35, 35, 35))
-                                    .addComponent(BrowseButtonModel, javax.swing.GroupLayout.Alignment.TRAILING))
-                                .addGap(1, 1, 1))
-                            .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(SaveModelCheckbox)
-                                .addComponent(rutaModel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
-                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(BrowseButtonTST)
+                            .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel2))))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(BrowseButtonModel)
+                    .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(rutaModel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(SaveModelCheckbox)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel3)
+                        .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(LearnButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 194, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 182, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -476,8 +499,10 @@ public class GUI extends javax.swing.JFrame {
             }
         });
 
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Additional options"));
+
         ParallelCheckbox.setText("Parallel");
-        ParallelCheckbox.setToolTipText("Execute in parallel using all possible threads -1 to prevent system hang.");
+        ParallelCheckbox.setToolTipText("Execute each fold in parallel");
         ParallelCheckbox.setEnabled(false);
         ParallelCheckbox.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -485,28 +510,55 @@ public class GUI extends javax.swing.JFrame {
             }
         });
 
+        batchImbalanceRadio.setText("Results for Imbalance");
+        batchImbalanceRadio.setToolTipText(learnImbalancedRadio.getToolTipText());
+        batchImbalanceRadio.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                batchImbalanceRadioActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(ParallelCheckbox)
+                    .addComponent(batchImbalanceRadio))
+                .addContainerGap(50, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(ParallelCheckbox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(batchImbalanceRadio))
+        );
+
         javax.swing.GroupLayout BatchPanelLayout = new javax.swing.GroupLayout(BatchPanel);
         BatchPanel.setLayout(BatchPanelLayout);
         BatchPanelLayout.setHorizontalGroup(
             BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(BatchPanelLayout.createSequentialGroup()
                 .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, BatchPanelLayout.createSequentialGroup()
+                    .addGroup(BatchPanelLayout.createSequentialGroup()
                         .addGap(114, 114, 114)
                         .addComponent(jLabel6)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(ParallelCheckbox)
-                        .addGap(278, 278, 278))
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(BatchPanelLayout.createSequentialGroup()
                         .addContainerGap()
                         .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(ParametersPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 907, Short.MAX_VALUE))))
-                .addContainerGap(15, Short.MAX_VALUE))
+                            .addComponent(ParametersPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 930, Short.MAX_VALUE))))
+                .addContainerGap(23, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, BatchPanelLayout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
+                .addGap(0, 77, Short.MAX_VALUE)
                 .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel8)
                     .addComponent(jLabel7))
@@ -532,20 +584,22 @@ public class GUI extends javax.swing.JFrame {
                     .addComponent(BrowseBatchFolder)
                     .addComponent(jLabel7))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel8)
-                    .addComponent(numFolds, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(22, 22, 22)
-                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel6)
-                    .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(ParallelCheckbox))
-                .addGap(33, 33, 33)
+                .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(BatchPanelLayout.createSequentialGroup()
+                        .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel8)
+                            .addComponent(numFolds, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(22, 22, 22)
+                        .addGroup(BatchPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel6)
+                            .addComponent(AlgorithmList1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(55, 55, 55)
                 .addComponent(ParametersPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(BatchButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 157, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -754,8 +808,8 @@ public class GUI extends javax.swing.JFrame {
 
                     //  Perfom the filter phase, filter the patterns
                     // NOTE: The behaviour of this function must be changed in the future to select a filter accorder to an user criterion
-                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold);
-                    
+                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold, learnImbalancedRadio.isSelected());
+
                     // Call predict method for ACC and AUC for training
                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
                     System.out.println("Calculating precision for training...");
@@ -764,11 +818,15 @@ public class GUI extends javax.swing.JFrame {
                     predictPhase(clase, newObject, training, test, Measures, true);
 
                     // Save training measures in a file.
-                    System.out.println("Save results in a file...");
-                    appendToPane(ExecutionInfoLearn, "Save result in a file...", Color.BLUE);
-                    Utils.saveMeasures2(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures, true, 0);
-                    appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
-                    System.out.println("Done learning model.");
+                    if (!((Model) newObject).patterns.isEmpty()) {
+                        System.out.println("Save results in a file...");
+                        appendToPane(ExecutionInfoLearn, "Save result in a file...", Color.BLUE);
+                        Utils.saveMeasures2(new File(rutaTra.getText()).getParentFile(), (Model) newObject, Measures, true, 0);
+                        appendToPane(ExecutionInfoLearn, "Done", Color.BLUE);
+                        System.out.println("Done learning model.");
+                    } else {
+                        appendToPane(ExecutionInfoLearn, "No patterns extracted", Color.red);
+                    }
 
                     // If there is a test set call the method "predict" to make the test phase.
                     if (!rutaTst.getText().equals("")) {
@@ -787,10 +845,14 @@ public class GUI extends javax.swing.JFrame {
 
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
-                        Utils.saveMeasures2(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures, false, 0);
-                        appendToPane(ExecutionInfoLearn, "Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath(), Color.BLUE);
-                        System.out.println("Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath());
-
+                        if (!((Model) newObject).patterns.isEmpty()) {
+                            Utils.saveMeasures2(new File(rutaTst.getText()).getParentFile(), (Model) newObject, Measures, false, 0);
+                            appendToPane(ExecutionInfoLearn, "Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath(), Color.BLUE);
+                            System.out.println("Done. Results of quality measures saved in " + new File(rutaTst.getText()).getParentFile().getAbsolutePath());
+                        } else {
+                            appendToPane(ExecutionInfoLearn, "Done. However, no patterns have been extracted. Nothing to save.", Color.RED);
+                            System.out.println("Done. However, no patterns have been extracted. Nothing to save.");
+                        }
                     }
 
                     // Invoke saveModel method if neccesary
@@ -995,8 +1057,15 @@ public class GUI extends javax.swing.JFrame {
                     int NUM_THREADS = 1;
                     String filterBy = "CONF";
                     float threshold = 0.6f;
+                    ArrayList<Integer> numberFold = new ArrayList<>();
+                    for (int i = 1; i <= NUM_FOLDS; i++) {
+                        numberFold.add(i);
+                    }
+                    Stream<Integer> data = null;
                     if (ParallelCheckbox.isSelected()) {
-                        NUM_THREADS = Runtime.getRuntime().availableProcessors();
+                        data = numberFold.parallelStream();
+                    } else {
+                        data = numberFold.stream();
                     }
 //                    ExecutorService exec = Executors.newFixedThreadPool(NUM_THREADS);
                     // for each folder in the root directory
@@ -1013,98 +1082,102 @@ public class GUI extends javax.swing.JFrame {
                             totalMeasures.put("Maximals", new QualityMeasures());
                             totalMeasures.put("CONF", new QualityMeasures());
                             totalMeasures.put("Chi", new QualityMeasures());
-                            //HashMap<String, Double> QMsUnfiltered = Utils.generateQualityMeasuresHashMap();
-                            //HashMap<String, Double> QMsMinimal = Utils.generateQualityMeasuresHashMap();
-                            //HashMap<String, Double> QMsMaximal = Utils.generateQualityMeasuresHashMap();
-                            //HashMap<String, Double> QMsByMeasure = Utils.generateQualityMeasuresHashMap();
 
                             appendToPane(BatchOutput, "Executing " + dir.getName() + "...", Color.BLUE);
                             System.out.println("Executing..." + dir.getName() + "...");
-                            for (int i = 1; i <= NUM_FOLDS; i++) {
-                                // Search for the training and test files.
-                                for (File x : files) {
-                                    // El formato es xx5xx-1tra.dat
-                                    if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
-                                        try {
-                                            Attributes.clearAll();
-                                            training.readSet(x.getAbsolutePath(), true);
-                                            training.setAttributesAsNonStatic();
-                                        } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
-                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                            appendToPane(BatchOutput, ex.toString(), Color.red);
+
+                            // Execute for each fold (in parallel, if necessary)
+                            data.forEach(i -> {
+                                try {
+                                    // Search for the training and test files.
+                                    for (File x : files) {
+                                        // El formato es xx5xx-1tra.dat
+                                        if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
+                                            try {
+                                                Attributes.token = false;
+                                                Attributes.clearAll();
+                                                training.readSet(x.getAbsolutePath(), true);
+                                                training.setAttributesAsNonStatic();
+                                            } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
+                                                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                appendToPane(BatchOutput, ex.toString(), Color.red);
+                                            }
+                                        }
+                                        if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tst.dat")) {
+                                            try {
+                                                test.readSet(x.getAbsolutePath(), false);
+                                                test.setAttributesAsNonStatic();
+                                            } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
+                                                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                appendToPane(BatchOutput, ex.toString(), Color.red);
+                                            }
                                         }
                                     }
-                                    if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tst.dat")) {
-                                        try {
-                                            test.readSet(x.getAbsolutePath(), false);
-                                            test.setAttributesAsNonStatic();
-                                        } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
-                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                            appendToPane(BatchOutput, ex.toString(), Color.red);
-                                        }
+
+                                    // Execute the method
+                                    //First: instantiate the class selected with the fully qualified name
+                                    Object newObject;
+                                    Class clase = Class.forName(actual_fully_qualified_class);
+                                    newObject = clase.newInstance();
+                                    ((Model) newObject).patterns = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
+                                    ((Model) newObject).filters = new HashMap<>();
+
+                                    // Second: get the argument class
+                                    Class[] args = new Class[2];
+                                    args[0] = InstanceSet.class;
+                                    args[1] = HashMap.class;
+
+                                    // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                                    clase.getMethod("learn", args).invoke(newObject, training, params);
+                                    // Get learned patterns, filter, and calculate measures
+
+                                    // Filter patterns
+                                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold, batchImbalanceRadio.isSelected());
+
+                                    // Predict phase
+                                    appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
+                                    System.out.println("Calculating precision for training...");
+                                    predictPhase(clase, newObject, training, test, Measures, true);
+
+                                    // Save the training results file
+                                    Utils.saveMeasures2(dir, (Model) newObject, Measures, true, i);
+
+                                    // Now, process the test file
+                                    // Calculate test measures for unfiltered and filtered patterns
+                                    Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false, "Unfiltered");
+                                    for (String key : ((Model) newObject).filters.keySet()) {
+                                        Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
                                     }
+
+                                    predictPhase(clase, newObject, training, test, Measures, false);
+
+                                    // Save meassures to a file
+                                    Utils.saveMeasures2(dir, (Model) newObject, Measures, false, i);
+
+                                    // Store the result to make the average result
+                                    for (String key : totalMeasures.keySet()) {
+                                        QualityMeasures updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
+                                        totalMeasures.put(key, updateHashMap);
+                                    }
+                                    //QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
+                                    //QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));
+                                    //QMsMaximal = Utils.updateHashMap(QMsMaximal, Measures.get(2));
+                                    //QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
+                                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
+                                    appendToPane(BatchOutput, "An unexpected error has ocurred: " + ex.getCause().toString(), Color.red);
+
                                 }
 
-                                // Execute the method
-                                //First: instantiate the class selected with the fully qualified name
-                                Object newObject;
-                                Class clase = Class.forName(actual_fully_qualified_class);
-                                newObject = clase.newInstance();
-                                ((Model) newObject).patterns = new ArrayList<>();
-                                ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
-                                ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
-                                ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
-                                ((Model) newObject).filters = new HashMap<>();
+                            });
 
-                                // Second: get the argument class
-                                Class[] args = new Class[2];
-                                args[0] = InstanceSet.class;
-                                args[1] = HashMap.class;
-
-                                // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
-                                clase.getMethod("learn", args).invoke(newObject, training, params);
-                                // Get learned patterns, filter, and calculate measures
-                                
-                                // Filter patterns
-                                HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold);
-                    
-                                // Predict phase 
-                                appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
-                                System.out.println("Calculating precision for training...");
-                                predictPhase(clase, newObject, training, test, Measures, true);
-
-                                // Save the training results file
-                                Utils.saveMeasures2(dir, (Model) newObject, Measures, true, i);
-
-                                // Now, process the test file
-                                // Calculate test measures for unfiltered and filtered patterns
-                                Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false, "Unfiltered");
-                                for (String key : ((Model) newObject).filters.keySet()) {
-                                    Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
-                                }
-                                
-                                predictPhase(clase, newObject, training, test, Measures, false);
-
-                                // Save meassures to a file
-                                Utils.saveMeasures2(dir, (Model) newObject, Measures, false, i);
-
-                                // Store the result to make the average result
-                                for (String key : totalMeasures.keySet()) {
-                                    QualityMeasures updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
-                                    totalMeasures.put(key, updateHashMap);
-                                }
-                                //QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
-                                //QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));
-                                //QMsMaximal = Utils.updateHashMap(QMsMaximal, Measures.get(2));
-                                //QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
-
-                            }
-                            
                             // Average the summary of the measures for the fold cross validation
                             totalMeasures.forEach((key, value) -> {
-                               Utils.averageQualityMeasures(value, NUM_FOLDS);
+                                Utils.averageQualityMeasures(value, NUM_FOLDS);
                             });
-                            
+
                             //Utils.averageQualityMeasures(totalMeasures, NUM_FOLDS);
                             // After finished the fold cross validation, make the average calculation of each quality measure.
                             Utils.saveResults(dir, totalMeasures, NUM_FOLDS);
@@ -1170,6 +1243,10 @@ public class GUI extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void batchImbalanceRadioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_batchImbalanceRadioActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_batchImbalanceRadioActionPerformed
 
     private void ParallelCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ParallelCheckboxActionPerformed
         // TODO add your handling code here:
@@ -1237,6 +1314,7 @@ public class GUI extends javax.swing.JFrame {
     private static javax.swing.JTextPane PredictionsPanel;
     private javax.swing.JCheckBox SaveModelCheckbox;
     private javax.swing.JTabbedPane Tabs;
+    private static javax.swing.JCheckBox batchImbalanceRadio;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
@@ -1247,10 +1325,13 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private static javax.swing.JCheckBox learnImbalancedRadio;
     private javax.swing.JComboBox<String> numFolds;
     private javax.swing.JTextField rutaBatch;
     private javax.swing.JTextField rutaModel;
@@ -1471,17 +1552,33 @@ public class GUI extends javax.swing.JFrame {
             Utils.calculatePrecisionMeasures(predictionsTra, test, training, Measures);
         }
     }
-    
-    
+
     /**
      * It performs the filter phase of the framework
+     *
      * @param newObject The model
      * @param training The training data
      * @param filterBy A measure to filter the data
      * @param threshold the threshold of the measure filter
-     * @return 
+     * @return
      */
-    public static HashMap<String, QualityMeasures> filterPhase(Object newObject, InstanceSet training, String filterBy, float threshold) {
+    public static HashMap<String, QualityMeasures> filterPhase(Object newObject, InstanceSet training, String filterBy, float threshold, boolean imbalanced) {
+
+        // Check if we need to work with imbalanced data.
+        if (imbalanced) {
+            // Gets the patterns of the minority class only.
+            int minClass = Utils.getMinorityClass(training);
+            ArrayList<Pattern> newPatterns = new ArrayList<>();
+            for (Pattern p : ((Model) newObject).patterns) {
+                if (p.getClase() == minClass) {
+                    newPatterns.add(p);
+                }
+            }
+            // Replace "patterns" with those patterns that are for the minority class only
+            ((Model) newObject).patterns.clear();
+            ((Model) newObject).patterns.addAll(newPatterns);
+        }
+
         // Get learned patterns, filter, and calculate measures for training
         HashMap<String, QualityMeasures> Measures = Utils.calculateDescriptiveMeasures(training, ((Model) newObject).getPatterns(), true, "Unfiltered");
 
@@ -1497,7 +1594,7 @@ public class GUI extends javax.swing.JFrame {
         // Filter By Chi-EPs
         // Params used: Supp: 0.02; GR = 10; Chi: 3.84
         Measures.put("Chi", Utils.filterByChiEP((Model) newObject, 0.02, 10.0, 3.84, training));
-        
+
         return Measures;
     }
 

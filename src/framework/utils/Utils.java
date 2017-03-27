@@ -23,7 +23,6 @@
  */
 package framework.utils;
 
-
 import framework.items.Pattern;
 import framework.items.Item;
 import framework.utils.FisherExact;
@@ -77,7 +76,7 @@ public class Utils {
      *
      * @return A {@code HashMap<String, Double>} with the initialized quality
      * measures.
-     * @deprecated 
+     * @deprecated
      */
     public static HashMap<String, Double> generateQualityMeasuresHashMap() {
         HashMap<String, Double> qualityMeasures = new HashMap<>();
@@ -100,15 +99,17 @@ public class Utils {
     }
 
     /**
-     * Calculates the descriptive quality measures. Stores the individual result on the individual and return
-     * the average measures 
+     * Calculates the descriptive quality measures. Stores the individual result
+     * on the individual and return the average measures
      *
      * @param data The dataset with the data
      * @param patterns The patterns
      * @param isTrain The calculated measures are for training (true) or for
      * test (false)?
-     * @param name  -> The name of the set of rules to be introduced in the summary
-     * @return An array with a single hashmap that contains the average quality measures of the set of rules.
+     * @param name -> The name of the set of rules to be introduced in the
+     * summary
+     * @return An array with a single hashmap that contains the average quality
+     * measures of the set of rules.
      */
     public static HashMap<String, QualityMeasures> calculateDescriptiveMeasures(InstanceSet data, ArrayList<Pattern> patterns, boolean isTrain, String name) {
         int sumNvars = 0;
@@ -158,6 +159,8 @@ public class Utils {
 
         ArrayList<QualityMeasures> qms = new ArrayList<>();
         QualityMeasures total = new QualityMeasures();
+        double gr = 0d; // average the gr, sum 1 if gr of the measures is > 1;
+
         for (int i = 0; i < confusionMatrices.length; i++) {
             QualityMeasures measures = new QualityMeasures();
 
@@ -269,9 +272,10 @@ public class Utils {
             measures.addMeasure("TN", (double) confusionMatrices[i][1]);
             measures.addMeasure("FP", (double) confusionMatrices[i][2]);
             measures.addMeasure("FN", (double) confusionMatrices[i][3]);
-            
+
+            gr += GR > 1.0 ? 1.0 : 0.0;
             total.sum(measures);
-            
+
             qms.add(measures);
             if (isTrain) {
                 patterns.get(i).setTra_measures(measures);
@@ -283,6 +287,9 @@ public class Utils {
         // Average the results and return
         //HashMap<String, Double> AverageQualityMeasures = averageQualityMeasures(qms);
         averageQualityMeasures(total, patterns.size());
+
+        //Average GR
+        total.addMeasure("GR", gr / (double) patterns.size());
         HashMap<String, QualityMeasures> a = new HashMap<>();
         a.put(name, total);
         return a;
@@ -298,7 +305,7 @@ public class Utils {
      * @param by A String with the short name of the quality measure.
      * @param n The number of patterns to get.
      * @return
-     * @deprecated 
+     * @deprecated
      */
     public static ArrayList<HashMap<String, Double>> getBestNRulesBy(ArrayList<HashMap<String, Double>> qm, String by, int n) {
 
@@ -350,7 +357,7 @@ public class Utils {
      * @param n The number of patterns to get.
      * @param classes an array of integers with the class of the pattern.
      * @return
-     * @deprecated 
+     * @deprecated
      */
     public static ArrayList<HashMap<String, Double>> getBestNRulesByClass(ArrayList<HashMap<String, Double>> qm, String by, int n, int[] classes) {
         ArrayList<HashMap<String, Double>> result = new ArrayList<>();
@@ -418,11 +425,11 @@ public class Utils {
      * @param folds The number of patterns / folds to divide
      */
     public static void averageQualityMeasures(QualityMeasures measures, int folds) {
-        
-        measures.getMeasures().forEach((key,value) -> {
-                value /= (double) folds;
+
+        measures.getMeasures().forEach((key, value) -> {
+            value /= (double) folds;
         });
-       
+
     }
 
     /**
@@ -434,7 +441,7 @@ public class Utils {
      */
     public static QualityMeasures updateHashMap(QualityMeasures one, QualityMeasures another) {
         QualityMeasures sum = new QualityMeasures();
-        
+
         sum.sum(one);
         sum.sum(another);
 
@@ -442,33 +449,34 @@ public class Utils {
     }
 
     /**
-     * Saves the average results obtained by means of the k-fold cross-validation in "summary" files
-     * 
+     * Saves the average results obtained by means of the k-fold
+     * cross-validation in "summary" files
+     *
      * It saves the summary for the complete set and for each filter applied.
      *
      * @param dir
-     *  @param Measures 
+     * @param Measures
      * @param NUM_FOLDS
      */
     public static void saveResults(File dir, HashMap<String, QualityMeasures> Measures, int NUM_FOLDS) {
 
         try {
             HashMap<String, File> summaries = new HashMap<>();
-            for(String key : Measures.keySet()){
+            for (String key : Measures.keySet()) {
                 summaries.put(key, new File(dir.getAbsolutePath() + "/SUMMARY_QM_" + key + ".txt"));
             }
-            
-           summaries.forEach((key, value) ->{
+
+            summaries.forEach((key, value) -> {
                 try {
-                    if(value.exists())
+                    if (value.exists()) {
                         value.delete();
+                    }
                     value.createNewFile();
                 } catch (IOException ex) {
                     Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
                 }
-           });
-                   
-            
+            });
+
             for (String key : Measures.keySet()) {
                 PrintWriter w = new PrintWriter(summaries.get(key));
 
@@ -523,67 +531,67 @@ public class Utils {
             }
         }
         // ----------------------------------------------
-        
-            // Calculate, for each set of patterns, their global confusion matrix
-            // NOTE: If the dataset has more classes. The MINORITY CLASS is considered as the positive one
-            // the rest of the classes are considered as negative.
-            for(String k : predictions.keySet()){
-                float tp = 0;
-                float tn = 0;
-                float fp = 0;
-                float fn = 0;
-                String[] preds = predictions.get(k);
-                for (int j = 0; j < preds.length; j++) {
-                    if (test.getOutputNominalValue(j, 0).equals(minorityClass)) {
-                        if (preds[j].equals(minorityClass)) {
-                            tp++;
-                        } else {
-                            fn++;
-                        }
-                    } else if (preds[j].equals(minorityClass)) {
-                        fp++;
-                    } else {
-                        tn++;
-                    }
-                }
 
-                double acc = (double) (tp + tn) / (tp + tn + fp + fn);
-                double tpr = 0;
-                if ((tp + fn) > 0) {
-                    tpr = (double) tp / (tp + fn);
-                }
-                double fpr = 0;
-                if ((fp + tn) > 0) {
-                    fpr = (double) fp / (fp + tn);
-                }
-                double auc = (1.0 + tpr - fpr) / 2.0;
-                
-                //  If the number of classes are grater than 2, we calculate accuracy via matching prediction-real value
-                if (Attributes.getOutputAttribute(0).getNominalValuesList().size() > 2) {
-                    float aciertos = 0;
-                    for (int j = 0; j < preds.length; j++) {
-                        if (preds[j].equals(test.getOutputNominalValue(j, 0))) {
-                            aciertos++;
-                        }
+        // Calculate, for each set of patterns, their global confusion matrix
+        // NOTE: If the dataset has more classes. The MINORITY CLASS is considered as the positive one
+        // the rest of the classes are considered as negative.
+        for (String k : predictions.keySet()) {
+            float tp = 0;
+            float tn = 0;
+            float fp = 0;
+            float fn = 0;
+            String[] preds = predictions.get(k);
+            for (int j = 0; j < preds.length; j++) {
+                if (test.getOutputNominalValue(j, 0).equals(minorityClass)) {
+                    if (preds[j].equals(minorityClass)) {
+                        tp++;
+                    } else {
+                        fn++;
                     }
-                    acc = ((double) aciertos / (double) test.getNumInstances());
+                } else if (preds[j].equals(minorityClass)) {
+                    fp++;
+                } else {
+                    tn++;
                 }
-                // Save accuracy
-                results.get(k).addMeasure("ACC", acc);
-                
-                // NOTE: This is the AUC for the minority class !!!
-                results.get(k).addMeasure("AUC", auc);
-                
-                // Here is where you have to save the global confusion matrix CONSIDERING THE MINORITY CLASS
-                // AS POSITIVE, AND THE REST AS NEGATIVE !!
-                results.get(k).addMeasure("TP", (double) tp);
-                results.get(k).addMeasure("FP", (double) fp);
-                results.get(k).addMeasure("TN", (double) tn);
-                results.get(k).addMeasure("FN", (double) fn);
             }
+
+            double acc = (double) (tp + tn) / (tp + tn + fp + fn);
+            double tpr = 0;
+            if ((tp + fn) > 0) {
+                tpr = (double) tp / (tp + fn);
+            }
+            double fpr = 0;
+            if ((fp + tn) > 0) {
+                fpr = (double) fp / (fp + tn);
+            }
+            double auc = (1.0 + tpr - fpr) / 2.0;
+
+            //  If the number of classes are grater than 2, we calculate accuracy via matching prediction-real value
+            if (Attributes.getOutputAttribute(0).getNominalValuesList().size() > 2) {
+                float aciertos = 0;
+                for (int j = 0; j < preds.length; j++) {
+                    if (preds[j].equals(test.getOutputNominalValue(j, 0))) {
+                        aciertos++;
+                    }
+                }
+                acc = ((double) aciertos / (double) test.getNumInstances());
+            }
+            // Save accuracy
+            results.get(k).addMeasure("ACC", acc);
+
+            // NOTE: This is the AUC for the minority class !!!
+            results.get(k).addMeasure("AUC", auc);
+
+            // Here is where you have to save the global confusion matrix CONSIDERING THE MINORITY CLASS
+            // AS POSITIVE, AND THE REST AS NEGATIVE !!
+            results.get(k).addMeasure("TP", (double) tp);
+            results.get(k).addMeasure("FP", (double) fp);
+            results.get(k).addMeasure("TN", (double) tn);
+            results.get(k).addMeasure("FN", (double) fn);
+        }
     }
 
-    /**
+    /*/**
      * It filters the original pattern set and gets the following pattern sets:
      * <ul>
      * <li> A set with only MINIMAL patterns
@@ -603,7 +611,7 @@ public class Utils {
      * @return
      * @deprecated 
      */
-    /*public static ArrayList<HashMap<String, Double>> filterPatterns(Model model, String by, float threshold) {
+ /*public static ArrayList<HashMap<String, Double>> filterPatterns(Model model, String by, float threshold) {
 
         ArrayList<HashMap<String, Double>> qmsFil = new ArrayList<>();
         ArrayList<HashMap<String, Double>> qmsMin = new ArrayList<>();
@@ -706,41 +714,40 @@ public class Utils {
         return qmsFil;
 
     }*/
-    
-    
-    
     /**
      * It gets the Chi-EPs from the {@code patterns} set of {@code model}
-     * 
-     * @param model The model 
+     *
+     * @param model The model
      * @param supportThreshold Minimum support threshold of Chi-EPs
      * @param GRThreshold Minimum Growth Rate of Chi-EPS
-     * @param minimumChiSquared Minimum Chi-Squared value to consider the pattern Chi-EP
+     * @param minimumChiSquared Minimum Chi-Squared value to consider the
+     * pattern Chi-EP
      * @param data The data to obtain the results (normally, the training set)
-     * @return A {@code QualityMeasures} object with the average quality measures of the set. Also, in {@code model}
-     * a new patterns set is added in the {@code filters} hash map with "Chi" as key.
+     * @return A {@code QualityMeasures} object with the average quality
+     * measures of the set. Also, in {@code model} a new patterns set is added
+     * in the {@code filters} hash map with "Chi" as key.
      */
-    public static QualityMeasures filterByChiEP(Model model, double supportThreshold, double GRThreshold, double minimumChiSquared, InstanceSet data){
+    public static QualityMeasures filterByChiEP(Model model, double supportThreshold, double GRThreshold, double minimumChiSquared, InstanceSet data) {
         ArrayList<QualityMeasures> qms = new ArrayList<>();
         ArrayList<Pattern> Conds1 = new ArrayList<>();
         ArrayList<Pattern> chiPatterns = new ArrayList<>();
-        
+
         int[] examplesPerClass = new int[data.getAttributeDefinitions().getOutputAttribute(0).getNumNominalValues()];
-        for(int i = 0 ; i < examplesPerClass.length; i++){
+        for (int i = 0; i < examplesPerClass.length; i++) {
             examplesPerClass[i] = 0;
         }
         // Calculate examples per class
-        for(Instance inst : data.getInstances()){
+        for (Instance inst : data.getInstances()) {
             examplesPerClass[inst.getOutputNominalValuesInt(0)]++;
         }
-        
+
         // Conditions 1-2, get those patterns which support and growth rate are bigger than the threshold
-        for(int i = 0; i < model.getPatterns().size(); i++){
-            if(model.getPatterns().get(i).getTraMeasure("SUPP") >= supportThreshold && model.getPatterns().get(i).getTraMeasure("GR") >= GRThreshold){
+        for (int i = 0; i < model.getPatterns().size(); i++) {
+            if (model.getPatterns().get(i).getTraMeasure("SUPP") >= supportThreshold && model.getPatterns().get(i).getTraMeasure("GR") >= GRThreshold) {
                 Conds1.add(model.getPatterns().get(i));
             }
         }
-        
+
         // Check minimal patterns. Sort according to the length
         Conds1.sort((o1, o2) -> {
             if (o1.length() > o2.length()) {
@@ -751,9 +758,9 @@ public class Utils {
                 return 0;
             }
         });
-        
+
         // Condition 3-4
-          boolean[] marks = new boolean[Conds1.size()];
+        boolean[] marks = new boolean[Conds1.size()];
         for (int i = 0; i < Conds1.size(); i++) {
             Pattern p1 = Conds1.get(i);
             for (int j = i + 1; j < Conds1.size(); j++) {
@@ -766,31 +773,31 @@ public class Utils {
                         double supp2_P2 = (p2.getTraMeasure("TP") + p2.getTraMeasure("FP")) / (p2.getTraMeasure("TP") + p2.getTraMeasure("FN"));
                         double supp1_P1 = (p1.getTraMeasure("FN") + p1.getTraMeasure("TN")) / (p1.getTraMeasure("FP") + p1.getTraMeasure("TN"));
                         double supp2_P1 = (p1.getTraMeasure("TP") + p1.getTraMeasure("FP")) / (p1.getTraMeasure("TP") + p1.getTraMeasure("FN"));
-                        
-                        if(p2.getTraMeasure("GR") == Double.POSITIVE_INFINITY){
+
+                        if (p2.getTraMeasure("GR") == Double.POSITIVE_INFINITY) {
                             strengthP2 = supp1_P2;
                         } else {
                             strengthP2 = (supp1_P2 * supp1_P2) / (supp1_P2 * supp2_P2);
                         }
-                        
-                        if(p1.getTraMeasure("GR") == Double.POSITIVE_INFINITY){
+
+                        if (p1.getTraMeasure("GR") == Double.POSITIVE_INFINITY) {
                             strengthP1 = supp1_P1;
                         } else {
                             strengthP1 = (supp1_P1 * supp1_P1) / (supp1_P1 * supp2_P1);
                         }
-                        
+
                         // Check condition 3
-                        if (p2.getTraMeasure("GR") <= p1.getTraMeasure("GR") ||
-                                p2.getTraMeasure("SUPP") <= p1.getTraMeasure("SUPP") ||
-                                strengthP2 <= strengthP1) {
+                        if (p2.getTraMeasure("GR") <= p1.getTraMeasure("GR")
+                                || p2.getTraMeasure("SUPP") <= p1.getTraMeasure("SUPP")
+                                || strengthP2 <= strengthP1) {
                             marks[j] = true;
                         }
-                        
+
                         // Check condition 4
-                        if(p2.length() - p1.length() == 1 && !marks[j]){
+                        if (p2.length() - p1.length() == 1 && !marks[j]) {
                             int[] X = {((Double) (p1.getTraMeasure("FN") + p1.getTraMeasure("TN"))).intValue(), ((Double) (p1.getTraMeasure("FP") + p1.getTraMeasure("TP"))).intValue()};
                             int[] Y = {((Double) (p2.getTraMeasure("FN") + p2.getTraMeasure("TN"))).intValue(), ((Double) (p2.getTraMeasure("FP") + p2.getTraMeasure("TP"))).intValue()};
-                            if(chi(X,Y) >= minimumChiSquared){
+                            if (chi(X, Y) >= minimumChiSquared) {
                                 marks[j] = true;
                             }
                         }
@@ -798,25 +805,29 @@ public class Utils {
                 }
             }
         }
-        
+
         QualityMeasures total = new QualityMeasures();
+        double gr = 0d;
         // get only the non-marked patterns
-        for(int i = 0; i < marks.length; i++){
-            if(!marks[i]){
+        for (int i = 0; i < marks.length; i++) {
+            if (!marks[i]) {
                 chiPatterns.add(Conds1.get(i));
                 //qms.add(Conds1.get(i).getTra_measures());
                 total.sum(Conds1.get(i).getTra_measures());
+                  if(Conds1.get(i).getTraMeasure("GR") > 1){
+                    gr++;
+                }
             }
         }
-        
+
         model.setFilter("Chi", chiPatterns);
         averageQualityMeasures(total, chiPatterns.size());
+        total.addMeasure("GR", gr / (double) chiPatterns.size());
         //model.setPatternsFilteredByChi(chiPatterns);
         return total;
     }
 
-    
-        /**
+    /**
      * Calculates the chi-squared value and compares if the value obtained is
      * greater than the given chi-squeared threshold.
      *
@@ -851,7 +862,7 @@ public class Utils {
 
         return chiValue;
     }
-    
+
     /*/**
      * Saves the results of the patterns sets in the given folder. This creates
      * 5 files: RULES.txt, TRA_QUAC_NOFILTER.txt, TRA_QUAC_MINIMAL.txt and
@@ -865,7 +876,7 @@ public class Utils {
      * (Unfiltered, filtered and filtered by class)
      * @deprecated 
      */
-   /* public static void saveMeasures(File dir, Model model, HashMap<String, HashMap<String, Double>> Measures, boolean train, int fold) {
+ /* public static void saveMeasures(File dir, Model model, HashMap<String, HashMap<String, Double>> Measures, boolean train, int fold) {
         PrintWriter pw1 = null;
         PrintWriter pw2 = null;
         PrintWriter pw3 = null;
@@ -1158,13 +1169,8 @@ public class Utils {
         }
     }
     
-   */
-    
-    
-    
-    
-    
-      /**
+     */
+    /**
      * Saves the results of the patterns sets in the given folder. It creates
      * one file for pattern set (or filter) as TRA_QUAC_MEASURE_FOLD.txt or
      * TST_QUAC_MEASURE_FOLD.txt for training and test respectively
@@ -1173,154 +1179,140 @@ public class Utils {
      * @param model The model where the pattern are stored.
      * @param Measures The Averaged quality measures for each set of patterns
      * @param train Are you writing the measures for training?
+     * @param fold The number of the fold in order to appear in the name of the file
      */
     public static void saveMeasures2(File dir, Model model, HashMap<String, QualityMeasures> Measures, boolean train, int fold) {
-        
+
         // Tienes que modificar este ArrayList por un HashMap, Así puedes
         // identificar cada fichero con su conjunto de datos.
         // AHORA SE ESCRIBEN TODAS LAS REGLAS EN TODOS LOS FICHEROS! ES ALGO NO DESEADO!
-        ArrayList<PrintWriter> files = new ArrayList<>();
+        HashMap<String, PrintWriter> files = new HashMap<>();
         PrintWriter rules = null;
-        
+
         try {
             // define the files to write
             if (train) {
                 rules = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
                 for (String key : Measures.keySet()) {
-                    files.add(new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_" + key + "_" + fold + ".txt"));
+                    files.put(key, new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_" + key + "_" + fold + ".txt"));
                 }
             } else {
 
                 for (String key : Measures.keySet()) {
-                    files.add(new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_" + key + "_" + fold + ".txt"));
+                    files.put(key, new PrintWriter(dir.getAbsolutePath() + "/TST_QUAC_" + key + "_" + fold + ".txt"));
                 }
             }
-           
+
             // Define the decimal places to write and how to wirte the infinity symbol
             DecimalFormatSymbols symbols = new DecimalFormatSymbols();
             symbols.setInfinity("INFINITY");
             DecimalFormat sixDecimals = new DecimalFormat("0.000000", symbols);
-            
-            int unfilteredIndex = Arrays.asList(Measures.keySet().toArray()).indexOf("Unfiltered");
-            
-            // Write headers on file.
-            for(PrintWriter pw : files)
-                pw.print("RULE_NUMBER\tN_VARS\tTP\tTN\tFP\tFN\t");
 
-            for (String k : Measures.get("Unfiltered").getMeasures().keySet()) {
-                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
-                    for(PrintWriter pw : files)
-                        pw.print(k + "\t");
-                }
-            }
-     
-            
+            // Write headers on file.
+            files.forEach((k, pw) -> {
+                pw.print("RULE_NUMBER\tN_VARS\tTP\tTN\tFP\tFN\t");
+                Measures.get(k).getMeasures().forEach((key, value) -> {
+                    if (!key.equals("RULE_NUMBER") && !key.equals("NVAR") && !key.equals("TP") && !key.equals("FP") && !key.equals("TN") && !key.equals("FN")) {
+                        pw.print(key + "\t");
+                    }
+                });
+                pw.println();
+            });
+
             // write rules and training qms for all rules
-            for (Pattern pat :  model.getPatterns()) {
+            for (Pattern pat : model.getPatterns()) {
                 if (train) {
                     rules.println("RULE NUMBER " + pat.getTra_measures().getMeasure("RULE_NUMBER") + ": " + pat.toString());
                 }
-                
-                files.get(unfilteredIndex).print(pat.getTra_measures().getMeasure("RULE_NUMBER") + "\t");
+
+                files.get("Unfiltered").print(pat.getTraMeasure("RULE_NUMBER") + "\t");
                 if (train) {
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTraMeasure("NVAR")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTraMeasure("TP")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTraMeasure("TN")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTraMeasure("FP")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTraMeasure("FN")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("NVAR")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("TP")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("TN")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("FP")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("FN")) + "\t");
                 } else {
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTst_measures().getMeasure("NVAR")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTst_measures().getMeasure("TP")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTst_measures().getMeasure("TN")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTst_measures().getMeasure("FP")) + "\t");
-                    files.get(unfilteredIndex).print(sixDecimals.format(pat.getTst_measures().getMeasure("FN")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure("NVAR")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure("TP")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure("TN")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure("FP")) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure("FN")) + "\t");
                 }
                 for (String k : Measures.get("Unfiltered").getMeasures().keySet()) {
-                    
+
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
                         if (k.equals("ACC") || k.equals("AUC")) {
-                            files.get(unfilteredIndex).print("--------\t");
+                            files.get("Unfiltered").print("--------\t");
                         } else if (train) {
-                            files.get(unfilteredIndex).print(sixDecimals.format(pat.getTraMeasure(k)) + "\t");
+                            files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure(k)) + "\t");
                         } else {
-                            files.get(unfilteredIndex).print(sixDecimals.format(pat.getTst_measures().getMeasure(k)) + "\t");
+                            files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure(k)) + "\t");
                         }
                     }
                 }
-                files.get(unfilteredIndex).println();
+                files.get("Unfiltered").println();
             }
             // write mean results
-            files.get(unfilteredIndex).print("--------\t--------\t"
+            files.get("Unfiltered").print("--------\t--------\t"
                     + sixDecimals.format(Measures.get("Unfiltered").getMeasure("TP")) + "\t"
                     + sixDecimals.format(Measures.get("Unfiltered").getMeasure("TN")) + "\t"
                     + sixDecimals.format(Measures.get("Unfiltered").getMeasure("FP")) + "\t"
                     + sixDecimals.format(Measures.get("Unfiltered").getMeasure("FN")) + "\t");
 
-             for (String k : Measures.get("Unfiltered").getMeasures().keySet()) {
+            for (String k : Measures.get("Unfiltered").getMeasures().keySet()) {
                 if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
-                    files.get(unfilteredIndex).print(sixDecimals.format(Measures.get("Unfiltered").getMeasure(k)) + "\t");
+                    files.get("Unfiltered").print(sixDecimals.format(Measures.get("Unfiltered").getMeasure(k)) + "\t");
                 }
             }
 
-             
-             
             // write rules and training qms for the other filters
             model.getFilters().forEach((key, value) -> {
                 for (Pattern pat : value) {
-                    for (int i = 0; i < files.size(); i++) {
-                        if (i != unfilteredIndex) {
-                            if (train) {
-                                files.get(i).print(pat.getTraMeasure("RULE_NUMBER") + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTraMeasure("NVAR")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTraMeasure("TP")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTraMeasure("TN")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTraMeasure("FP")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTraMeasure("FN")) + "\t");
-                            } else {
-                                files.get(i).print(pat.getTst_measures().getMeasure("RULE_NUMBER") + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTst_measures().getMeasure("NVAR")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTst_measures().getMeasure("TP")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTst_measures().getMeasure("TN")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTst_measures().getMeasure("FP")) + "\t");
-                                files.get(i).print(sixDecimals.format(pat.getTst_measures().getMeasure("FN")) + "\t");
-                            }
+                    if (train) {
+                        files.get(key).print(pat.getTraMeasure("RULE_NUMBER") + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTraMeasure("NVAR")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTraMeasure("TP")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTraMeasure("TN")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTraMeasure("FP")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTraMeasure("FN")) + "\t");
+                    } else {
+                        files.get(key).print(pat.getTst_measures().getMeasure("RULE_NUMBER") + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTst_measures().getMeasure("NVAR")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTst_measures().getMeasure("TP")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTst_measures().getMeasure("TN")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTst_measures().getMeasure("FP")) + "\t");
+                        files.get(key).print(sixDecimals.format(pat.getTst_measures().getMeasure("FN")) + "\t");
+                    }
 
-                            for (String k : Measures.get(key).getMeasures().keySet()) {
-                                if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("TN") && !k.equals("FP") && !k.equals("FN")) {
-                                    if (k.equals("ACC") || k.equals("AUC")) {
-                                        files.get(i).print("--------\t");
-                                    } else if (train) {
-                                        files.get(i).print(sixDecimals.format(pat.getTraMeasure(k)) + "\t");
-                                    } else {
-                                        files.get(i).print(sixDecimals.format(pat.getTst_measures().getMeasure(k)) + "\t");
-                                    }
-                                }
+                    for (String k : Measures.get(key).getMeasures().keySet()) {
+                        if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("TN") && !k.equals("FP") && !k.equals("FN")) {
+                            if (k.equals("ACC") || k.equals("AUC")) {
+                                files.get(key).print("--------\t");
+                            } else if (train) {
+                                files.get(key).print(sixDecimals.format(pat.getTraMeasure(k)) + "\t");
+                            } else {
+                                files.get(key).print(sixDecimals.format(pat.getTst_measures().getMeasure(k)) + "\t");
                             }
-                            files.get(i).println();
                         }
+                    }
+                    files.get(key).println();
+
+                }
+
+                // Write average results of the filter
+                files.get(key).print("--------\t--------\t"
+                        + sixDecimals.format(Measures.get(key).getMeasure("TP")) + "\t"
+                        + sixDecimals.format(Measures.get(key).getMeasure("TN")) + "\t"
+                        + sixDecimals.format(Measures.get(key).getMeasure("FP")) + "\t"
+                        + sixDecimals.format(Measures.get(key).getMeasure("FN")) + "\t");
+
+                for (String k : Measures.get(key).getMeasures().keySet()) {
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
+                        files.get(key).print(sixDecimals.format(Measures.get(key).getMeasure(k)) + "\t");
                     }
                 }
             });
-            
-            // Write average results of all possible filters
-            List<Object> keys = Arrays.asList(Measures.keySet().toArray());
-       
-            for (int i = 0; i < keys.size(); i++) {
-                String key = (String) keys.get(i);
-                if (!key.equalsIgnoreCase("Unfiltered")) {
-                    files.get(i).print("--------\t--------\t"
-                            + sixDecimals.format(Measures.get(key).getMeasure("TP")) + "\t"
-                            + sixDecimals.format(Measures.get(key).getMeasure("TN")) + "\t"
-                            + sixDecimals.format(Measures.get(key).getMeasure("FP")) + "\t"
-                            + sixDecimals.format(Measures.get(key).getMeasure("FN")) + "\t");
-
-                    for (String k : Measures.get(key).getMeasures().keySet()) {
-                        if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
-                            files.get(i).print(sixDecimals.format(Measures.get(key).getMeasure(k)) + "\t");
-                        }
-                    }
-                }
-            }
 
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
@@ -1328,10 +1320,11 @@ public class Utils {
             if (train) {
                 rules.close();
             }
-         for(PrintWriter pw : files)
-             pw.close();
+            files.forEach((key, pw) -> {
+                pw.close();
+            });
         }
-    } 
+    }
 
 //    /**
 //     * Saves the results of the patterns sets in the given folder. This creates
@@ -1525,7 +1518,6 @@ public class Utils {
 //            pw5.close();
 //        }
 //    }
-
     /**
      * Gets simple itemsets with a support higher than a threshold
      *
@@ -1811,9 +1803,7 @@ public class Utils {
         }
 
     }
-    
-    
-    
+
     /**
      * It filters the original pattern set and gets the following pattern sets:
      * <ul>
@@ -1833,7 +1823,7 @@ public class Utils {
      * @param threshold The threshold in [0,1]
      * @return
      */
-   public static HashMap<String, QualityMeasures> filterPatterns2(Model model, String by, float threshold) {
+    public static HashMap<String, QualityMeasures> filterPatterns2(Model model, String by, float threshold) {
 
         QualityMeasures qmsFil = new QualityMeasures();
         QualityMeasures qmsMin = new QualityMeasures();
@@ -1868,11 +1858,15 @@ public class Utils {
                 }
             }
         }
+        double grMin = 0d;
         // retain those patterns with marks == false
         for (int i = 0; i < marks.length; i++) {
             if (!marks[i]) {
                 minimalPatterns.add(model.getPatterns().get(i));
                 qmsMin.sum(model.getPatterns().get(i).getTra_measures());
+                if (model.getPatterns().get(i).getTraMeasure("GR") > 1) {
+                    grMin++;
+                }
             }
         }
 
@@ -1891,19 +1885,27 @@ public class Utils {
                 }
             }
         }
+        double grMax = 0d;
         // retain those patterns with marks == false
         for (int i = 0; i < marks.length; i++) {
             if (!marks[i]) {
                 maximalPatterns.add(model.getPatterns().get(i));
                 qmsMax.sum(model.getPatterns().get(i).getTra_measures());
+                if (model.getPatterns().get(i).getTraMeasure("GR") > 1) {
+                    grMax++;
+                }
             }
         }
 
+        double grFil = 0d;
         // Phase 3: Filter patterns by the threshold of a quality measure
         for (int i = 0; i < model.getPatterns().size(); i++) {
             if (model.getPatterns().get(i).getTraMeasure(by) >= threshold) {
                 filteredPatterns.add(model.getPatterns().get(i));
                 qmsFil.sum(model.getPatterns().get(i).getTra_measures());
+                if (model.getPatterns().get(i).getTraMeasure("GR") > 1) {
+                    grFil++;
+                }
             }
         }
 
@@ -1917,8 +1919,12 @@ public class Utils {
         averageQualityMeasures(qmsMin, minimalPatterns.size());
         averageQualityMeasures(qmsMax, maximalPatterns.size());
         averageQualityMeasures(qmsFil, filteredPatterns.size());
-        HashMap<String, QualityMeasures> a = new HashMap<>();
+        qmsMin.addMeasure("GR", grMin / (double) minimalPatterns.size());
+        qmsMax.addMeasure("GR", grMax / (double) maximalPatterns.size());
+        qmsFil.addMeasure("GR", grFil / (double) filteredPatterns.size());
         
+        HashMap<String, QualityMeasures> a = new HashMap<>();
+
         a.put("Minimals", qmsMin);
         a.put("Maximals", qmsMax);
         a.put(by, qmsFil);
@@ -1933,17 +1939,50 @@ public class Utils {
                 return 0;
             }
         };
-        
+
         model.getFilters().forEach((key, value) -> {
             value.sort(ruleNumberSort);
         });
-        
+
         /*model.getPatterns().sort(ruleNumberSort);
         model.getPatternsFilteredByMeasure().sort(ruleNumberSort);
         model.getPatternsFilteredMinimal().sort(ruleNumberSort);
         model.getPatternsFilteredMaximal().sort(ruleNumberSort);*/
         return a;
 
+    }
+    
+    
+    /**
+     * It returns the index of the minority class in the dataset. For classes with 
+     * equal number of individuals, it returns the lower index.
+     * @param data
+     * @return 
+     */
+    public static int getMinorityClass(InstanceSet data){
+           //------ GET THE MINORITY CLASS ----------------
+        String minorityClass = "";
+        data.setAttributesAsNonStatic();
+        Vector nominalValuesList = data.getAttributeDefinitions().getOutputAttribute(0).getNominalValuesList();
+        int[] numInstances = new int[nominalValuesList.size()];
+        for (int i = 0; i < numInstances.length; i++) {
+            numInstances[i] = 0;
+        }
+        for (Instance inst : data.getInstances()) {
+            numInstances[nominalValuesList.indexOf(inst.getOutputNominalValues(0))]++;
+        }
+        int min = Integer.MAX_VALUE;
+        int index = -1;
+        for (int i = 0; i < numInstances.length; i++) {
+            if (numInstances[i] < min) {
+                minorityClass = (String) nominalValuesList.get(i);
+                min = numInstances[i];
+                index = i;
+            }
+        }
+        // ----------------------------------------------
+        
+        return index;
     }
 
 }
