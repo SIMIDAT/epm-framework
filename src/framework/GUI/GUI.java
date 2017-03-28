@@ -1089,7 +1089,8 @@ public class GUI extends javax.swing.JFrame {
                             // Execute for each fold (in parallel, if necessary)
                             data.forEach(i -> {
                                 try {
-                                    // Search for the training and test files.
+                                    // Search for the training and test files.z
+                                   
                                     for (File x : files) {
                                         // El formato es xx5xx-1tra.dat
                                         if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
@@ -1113,6 +1114,7 @@ public class GUI extends javax.swing.JFrame {
                                             }
                                         }
                                     }
+                                    
 
                                     // Execute the method
                                     //First: instantiate the class selected with the fully qualified name

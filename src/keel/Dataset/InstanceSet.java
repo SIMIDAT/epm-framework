@@ -167,7 +167,7 @@ public class InstanceSet {
  * @throws HeaderFormatException if there is any lexical or sintactical error in the 
  * header of the input file
  */
-  public void readSet( String fileName,boolean isTrain ) throws DatasetException, HeaderFormatException{
+  public synchronized void readSet( String fileName,boolean isTrain ) throws DatasetException, HeaderFormatException{
     String line;
 
     System.out.println ("Opening the file: "+fileName+".");
