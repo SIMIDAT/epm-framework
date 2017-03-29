@@ -32,7 +32,66 @@
                 <default>2</default> it goes from 1 to n 
             </parameter>
     </algorithm> -->
-        
+    
+    <!-- Definition of the quality measures used in the framework -->
+      
+            measures.addMeasure("SUPP", supp); // Support
+            measures.addMeasure("NVAR", (double) confusionMatrices[i][4]); // Number of variables
+            measures.addMeasure("RULE_NUMBER", (double) i); // Rule ID
+    <measure>
+        <name>Normalised Weighted Relative Accuracy</name>
+        <shortName>WRACC</shortName>
+    </measure>
+    
+    <measure>
+        <name>Information Gain</name>
+        <shortName>GAIN</shortName>
+    </measure>
+    
+    <measure>
+        <name>Confidence</name>
+        <shortName>CONF</shortName>
+    </measure>
+    
+    <measure>
+        <name>Growth Rate</name>
+        <shortName>GR</shortName>
+    </measure>
+    
+    <measure>
+        <name>True Positive Rate</name>
+        <shortName>TPR</shortName>
+    </measure>
+    
+    <measure>
+        <name>False Positive Rate</name>
+        <shortName>FPR</shortName>
+    </measure>
+    
+    <measure>
+        <name>Difference of supports</name>
+        <shortName>SUPDIFF</shortName>
+    </measure>
+    
+    <measure>
+        <name>Fisher's test</name>
+        <shortName>FISHER</shortName>
+    </measure>
+    
+    <measure>
+        <name>Support</name>
+        <shortName>SUPP</shortName>
+    </measure>
+    
+    <measure>
+        <name>Number of variables</name>
+        <shortName>NVAR</shortName>
+    </measure>
+    
+    <!-- End of the definitions of the quality measures used in the framework -->
+     
+     
+     <!-- Start the definition of the algorithms -->
     <algorithm>
         <name>BCEP</name>
         <class>algorithms.bcep.BCEP_Model</class>
@@ -749,6 +808,8 @@
             <default>10</default>
         </parameter>
     </algorithm>
+    
+    <!-- End of the algorithms definitions -->
     
 </document>
 
