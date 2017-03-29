@@ -72,6 +72,8 @@ import org.xml.sax.SAXException;
 import framework.utils.QualityMeasures;
 import framework.utils.Utils;
 import java.util.stream.Stream;
+import javax.swing.JCheckBox;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -81,12 +83,26 @@ import java.util.stream.Stream;
  */
 public class GUI extends javax.swing.JFrame {
 
-    private Vector<String> algorithms = new Vector<>();
-    private Vector<JPanel> paramPanels = new Vector<>();
+    private Vector<String> algorithms = new Vector<>();          // algorithms in the framework
+    private Vector<String> measures = new Vector<>();            // measures in the framework
+    private Vector<String> measuresDescriptions = new Vector<>();            // measures in the framework
+    private Vector<JPanel> paramPanels = new Vector<>();         //
     private DefaultComboBoxModel modelo;
     private Document doc;
     private String actual_fully_qualified_class;
     private String preds;
+
+    // Filters-related variables
+    private String chiFilterString;
+    private Double chiSupportThreshold;
+    private Double chiGrowthRateThreshold;
+    private Double chiChiThreshold;
+    private String filter;
+    private Double measureFilterThreshold;
+    private boolean minimalFilter = true;
+    private boolean maximalFilter = false;
+    private boolean chiFilter = false;
+    private boolean measureFilter = false;
 
     File lastDirectory;
 
@@ -108,6 +124,16 @@ public class GUI extends javax.swing.JFrame {
         } else {
             lastDirectory = new File(System.getProperty("user.home"));
         }
+
+        // Set the default chi thresholds
+        chiFilterString = "0.02,10,3.84";
+        chiChiThreshold = 3.84;
+        chiGrowthRateThreshold = 10.0;
+        chiSupportThreshold = 0.02;
+
+        // Set the default measure filter threshold (0.6)
+        measureFilterThreshold = 0.6;
+
         initComponents();
 
         // initializy quality measures hash map.
@@ -120,6 +146,14 @@ public class GUI extends javax.swing.JFrame {
             algorithms.add(node.getElementsByTagName("name").item(0).getTextContent());
         }
 
+        // Gets the measures
+        nodes = doc.getElementsByTagName("measure");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element node = (Element) nodes.item(i);
+            measures.add(node.getElementsByTagName("shortName").item(0).getTextContent());
+            measuresDescriptions.add(node.getElementsByTagName("name").item(0).getTextContent());
+        }
+
         // Sets the first algorithm parameters
         addParamsToPanel(doc, 0, ParametersPanel);
         addParamsToPanel(doc, 0, ParametersPanel1);
@@ -128,6 +162,10 @@ public class GUI extends javax.swing.JFrame {
         AlgorithmList.setModel(modelo);
         AlgorithmList1.setModel(modelo);
 
+        // Set the measures in the list of measures filters
+        measureFilterListLearn.setModel(new DefaultComboBoxModel(measures));
+        measureFilterListLearn.setToolTipText(measuresDescriptions.get(0));
+        filter = measures.get(0);
     }
 
     /**
@@ -159,6 +197,12 @@ public class GUI extends javax.swing.JFrame {
         ExecutionInfoLearn = new javax.swing.JTextPane();
         jPanel2 = new javax.swing.JPanel();
         learnImbalancedRadio = new javax.swing.JCheckBox();
+        applyFiltersLearn = new javax.swing.JCheckBox();
+        minimalFilterCheckboxLearn = new javax.swing.JCheckBox();
+        maximalFilterCheckboxLearn = new javax.swing.JCheckBox();
+        chiFilterCheckboxLearn = new javax.swing.JCheckBox();
+        measureFilterCheckboxLearn = new javax.swing.JCheckBox();
+        measureFilterListLearn = new javax.swing.JComboBox<>();
         LoadPanel = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         InstancesPath = new javax.swing.JTextField();
@@ -269,20 +313,96 @@ public class GUI extends javax.swing.JFrame {
         learnImbalancedRadio.setText("Results for Imbalance");
         learnImbalancedRadio.setToolTipText("It gets results with respect the minority class only.");
 
+        applyFiltersLearn.setSelected(true);
+        applyFiltersLearn.setText("Apply filters");
+        applyFiltersLearn.setToolTipText("Return additional sets of rules and measures applying the specified filters");
+        applyFiltersLearn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                applyFiltersLearnActionPerformed(evt);
+            }
+        });
+
+        minimalFilterCheckboxLearn.setSelected(true);
+        minimalFilterCheckboxLearn.setText("Minimals");
+        minimalFilterCheckboxLearn.setToolTipText("Obtains minimal patterns");
+        minimalFilterCheckboxLearn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                minimalFilterCheckboxLearnActionPerformed(evt);
+            }
+        });
+
+        maximalFilterCheckboxLearn.setText("Maximals");
+        maximalFilterCheckboxLearn.setToolTipText("Obtain maximal patterns");
+        maximalFilterCheckboxLearn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                maximalFilterCheckboxLearnActionPerformed(evt);
+            }
+        });
+
+        chiFilterCheckboxLearn.setText("Chi-EP");
+        chiFilterCheckboxLearn.setToolTipText("Obtain Chi-EPs with characteristics specified by the user");
+        chiFilterCheckboxLearn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chiFilterCheckboxLearnActionPerformed(evt);
+            }
+        });
+
+        measureFilterCheckboxLearn.setText("Measure");
+        measureFilterCheckboxLearn.setToolTipText("Gets those patterns with a value of the specified quality measure above a threshold");
+        measureFilterCheckboxLearn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                measureFilterCheckboxLearnActionPerformed(evt);
+            }
+        });
+
+        measureFilterListLearn.setToolTipText("");
+        measureFilterListLearn.setEnabled(false);
+        measureFilterListLearn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                measureFilterListLearnActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(learnImbalancedRadio)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(learnImbalancedRadio)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(minimalFilterCheckboxLearn)
+                        .addComponent(applyFiltersLearn))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(23, 23, 23)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addComponent(measureFilterCheckboxLearn)
+                                .addGap(2, 2, 2)
+                                .addComponent(measureFilterListLearn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(chiFilterCheckboxLearn)
+                            .addComponent(maximalFilterCheckboxLearn))))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(learnImbalancedRadio))
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(learnImbalancedRadio)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(applyFiltersLearn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(minimalFilterCheckboxLearn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(maximalFilterCheckboxLearn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(chiFilterCheckboxLearn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(measureFilterListLearn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(measureFilterCheckboxLearn))
+                .addContainerGap())
         );
 
         javax.swing.GroupLayout LearnPanelLayout = new javax.swing.GroupLayout(LearnPanel);
@@ -292,7 +412,7 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(LearnPanelLayout.createSequentialGroup()
                 .addGap(425, 425, 425)
                 .addComponent(LearnButton, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(453, Short.MAX_VALUE))
             .addGroup(LearnPanelLayout.createSequentialGroup()
                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LearnPanelLayout.createSequentialGroup()
@@ -308,19 +428,18 @@ public class GUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(LearnPanelLayout.createSequentialGroup()
-                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(rutaTst, javax.swing.GroupLayout.DEFAULT_SIZE, 666, Short.MAX_VALUE)
-                                    .addComponent(rutaTra)
+                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(rutaTst, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
+                                    .addComponent(rutaTra, javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(rutaModel))
-                                .addGap(18, 18, 18)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(BrowseButtonModel)
                                     .addComponent(BrowseButtonTRA)
                                     .addComponent(BrowseButtonTST)))
-                            .addGroup(LearnPanelLayout.createSequentialGroup()
-                                .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addComponent(jScrollPane1))
                 .addContainerGap())
         );
@@ -329,34 +448,34 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(LearnPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel1)
-                        .addComponent(rutaTra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(LearnPanelLayout.createSequentialGroup()
-                        .addComponent(BrowseButtonTRA)
+                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLabel1)
+                                .addComponent(rutaTra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(BrowseButtonTRA))
+                            .addGroup(LearnPanelLayout.createSequentialGroup()
+                                .addGap(37, 37, 37)
+                                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(BrowseButtonTST)
+                                    .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel2))))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(BrowseButtonTST)
-                            .addComponent(rutaTst, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel2))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(BrowseButtonModel)
-                    .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(rutaModel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(SaveModelCheckbox)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel3)
-                        .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(rutaModel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(SaveModelCheckbox)
+                            .addComponent(BrowseButtonModel))
+                        .addGap(15, 15, 15)
+                        .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel3)
+                            .addComponent(AlgorithmList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 21, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 254, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(LearnButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 182, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 163, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -406,7 +525,7 @@ public class GUI extends javax.swing.JFrame {
                     .addGroup(LoadPanelLayout.createSequentialGroup()
                         .addGap(457, 457, 457)
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 391, Short.MAX_VALUE))
+                        .addGap(0, 422, Short.MAX_VALUE))
                     .addGroup(LoadPanelLayout.createSequentialGroup()
                         .addGap(19, 19, 19)
                         .addGroup(LoadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -1090,7 +1209,7 @@ public class GUI extends javax.swing.JFrame {
                             data.forEach(i -> {
                                 try {
                                     // Search for the training and test files.z
-                                   
+
                                     for (File x : files) {
                                         // El formato es xx5xx-1tra.dat
                                         if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
@@ -1114,7 +1233,6 @@ public class GUI extends javax.swing.JFrame {
                                             }
                                         }
                                     }
-                                    
 
                                     // Execute the method
                                     //First: instantiate the class selected with the fully qualified name
@@ -1254,6 +1372,56 @@ public class GUI extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_ParallelCheckboxActionPerformed
 
+    private void applyFiltersLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_applyFiltersLearnActionPerformed
+        // TODO add your handling code here:
+        minimalFilterCheckboxLearn.setEnabled(applyFiltersLearn.isSelected());
+        maximalFilterCheckboxLearn.setEnabled(applyFiltersLearn.isSelected());
+        chiFilterCheckboxLearn.setEnabled(applyFiltersLearn.isSelected());
+        measureFilterListLearn.setEnabled(applyFiltersLearn.isSelected());
+        measureFilterCheckboxLearn.setEnabled(applyFiltersLearn.isSelected());
+        
+        measureFilter = applyFiltersLearn.isSelected();
+        minimalFilter = applyFiltersLearn.isSelected();
+        maximalFilter = applyFiltersLearn.isSelected();
+        chiFilter = applyFiltersLearn.isSelected();
+        
+    }//GEN-LAST:event_applyFiltersLearnActionPerformed
+
+    private void measureFilterListLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_measureFilterListLearnActionPerformed
+        // TODO add your handling code here:
+        JComboBox source = (JComboBox) evt.getSource();
+        int index = measures.indexOf(source.getSelectedItem());
+        source.setToolTipText(measuresDescriptions.get(index));
+
+        Object value = JOptionPane.showInputDialog(BatchPanel, "Select the threshold of the selected quality measure: ",
+                "Threshold Selection", JOptionPane.PLAIN_MESSAGE, null, null, measureFilterThreshold.toString());
+        if (value != null) {
+            measureFilterThreshold = Double.parseDouble((String) value);
+            filter = (String) source.getSelectedItem();
+        }
+    }//GEN-LAST:event_measureFilterListLearnActionPerformed
+
+    private void measureFilterCheckboxLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_measureFilterCheckboxLearnActionPerformed
+        // TODO add your handling code here:
+        measureFilterListLearn.setEnabled(((JCheckBox) evt.getSource()).isSelected());
+        ((JCheckBox) evt.getSource()).isSelected();
+    }//GEN-LAST:event_measureFilterCheckboxLearnActionPerformed
+
+    private void minimalFilterCheckboxLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_minimalFilterCheckboxLearnActionPerformed
+        // TODO add your handling code here:
+        minimalFilter = ((JCheckBox) evt.getSource()).isSelected();
+    }//GEN-LAST:event_minimalFilterCheckboxLearnActionPerformed
+
+    private void maximalFilterCheckboxLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_maximalFilterCheckboxLearnActionPerformed
+        // TODO add your handling code here:
+        maximalFilter = ((JCheckBox) evt.getSource()).isSelected();
+    }//GEN-LAST:event_maximalFilterCheckboxLearnActionPerformed
+
+    private void chiFilterCheckboxLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chiFilterCheckboxLearnActionPerformed
+        // TODO add your handling code here:
+        chiFilter = ((JCheckBox) evt.getSource()).isSelected();
+    }//GEN-LAST:event_chiFilterCheckboxLearnActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -1316,7 +1484,9 @@ public class GUI extends javax.swing.JFrame {
     private static javax.swing.JTextPane PredictionsPanel;
     private javax.swing.JCheckBox SaveModelCheckbox;
     private javax.swing.JTabbedPane Tabs;
+    private javax.swing.JCheckBox applyFiltersLearn;
     private static javax.swing.JCheckBox batchImbalanceRadio;
+    private javax.swing.JCheckBox chiFilterCheckboxLearn;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
@@ -1334,6 +1504,10 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private static javax.swing.JCheckBox learnImbalancedRadio;
+    private javax.swing.JCheckBox maximalFilterCheckboxLearn;
+    private javax.swing.JCheckBox measureFilterCheckboxLearn;
+    private javax.swing.JComboBox<String> measureFilterListLearn;
+    private javax.swing.JCheckBox minimalFilterCheckboxLearn;
     private javax.swing.JComboBox<String> numFolds;
     private javax.swing.JTextField rutaBatch;
     private javax.swing.JTextField rutaModel;
@@ -1595,6 +1769,7 @@ public class GUI extends javax.swing.JFrame {
 
         // Filter By Chi-EPs
         // Params used: Supp: 0.02; GR = 10; Chi: 3.84
+       
         Measures.put("Chi", Utils.filterByChiEP((Model) newObject, 0.02, 10.0, 3.84, training));
 
         return Measures;
