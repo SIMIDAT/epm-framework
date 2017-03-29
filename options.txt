@@ -1,1 +1,1 @@
-/media/angel/Datos/EPM_Seleccion_parametros/DeEPS
+/home/angel/Escritorio
