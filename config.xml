@@ -1,4 +1,4 @@
-<document>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><document>
     <!-- EXAMPLE OF ALGORITHM 
 <algorithm>
             <name>BCEP</name>
@@ -807,6 +807,4 @@
     
     <!-- End of the algorithms definitions -->
     
-</document>
-
-
+<lastDir>/home/angel/DATASETS/classification_fayyad_disc/appendicitis</lastDir></document>

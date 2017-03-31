@@ -74,6 +74,16 @@ import framework.utils.Utils;
 import java.util.stream.Stream;
 import javax.swing.JCheckBox;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Comment;
 
 /**
  *
@@ -104,16 +114,29 @@ public class GUI extends javax.swing.JFrame {
     private boolean chiFilter = false;
     private boolean measureFilter = false;
 
-    File lastDirectory;
+    //File lastDirectory;
+    String lastDirectory;
 
     /**
      * Creates new form Main
      */
     public GUI() {
         // Here we have to read the algorithms XML and add to algorithms the names of the methods
-        doc = readXML("algorithms.xml");
+        doc = readXML("config.xml");
         preds = "";
-        File f = new File("options.txt");
+        
+        if (doc.getElementsByTagName("lastDir").getLength() == 0) {
+            Element dir = doc.createElement("lastDir");
+            Comment comment = doc.createComment("This option sets the first directory shown to the user");
+            dir.insertBefore(comment, dir.getLastChild());
+            dir.insertBefore(doc.createTextNode(System.getProperty("user.home")), dir.getLastChild());
+            Element root = (Element) doc.getElementsByTagName("document").item(0);
+            root.appendChild(dir);
+        } else {
+            lastDirectory = doc.getElementsByTagName("lastDir").item(0).getTextContent();
+        }
+        
+        /*File f = new File("options.txt");
         if (f.exists()) {
             try {
                 BufferedReader bf = new BufferedReader(new FileReader(f));
@@ -123,7 +146,7 @@ public class GUI extends javax.swing.JFrame {
             }
         } else {
             lastDirectory = new File(System.getProperty("user.home"));
-        }
+        }*/
 
         // Set the default chi thresholds
         chiFilterString = "0.02,10,3.84";
@@ -234,6 +257,11 @@ public class GUI extends javax.swing.JFrame {
         setTitle("Emerging Pattern Mining Algorithms Framework");
         setBackground(new java.awt.Color(204, 204, 204));
         setMinimumSize(getPreferredSize());
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         jLabel1.setText("Training file:");
 
@@ -430,8 +458,8 @@ public class GUI extends javax.swing.JFrame {
                             .addGroup(LearnPanelLayout.createSequentialGroup()
                                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                                     .addComponent(rutaTst, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
-                                    .addComponent(rutaTra, javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(rutaModel))
+                                    .addComponent(rutaModel)
+                                    .addComponent(rutaTra, javax.swing.GroupLayout.Alignment.LEADING))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(LearnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(BrowseButtonModel)
@@ -841,19 +869,12 @@ public class GUI extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTST.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            PrintWriter pw = null;
-            try {
-                File fileSelected = fileChooser.getSelectedFile();
-                lastDirectory = fileSelected.getParentFile();
-                pw = new PrintWriter(new File("options.txt"));
-                pw.println(lastDirectory.getAbsolutePath());
-                ModelPath1.setText(fileSelected.getAbsolutePath());
-
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-            } finally {
-                pw.close();
-            }
+            File fileSelected = fileChooser.getSelectedFile();
+            lastDirectory = fileSelected.getParentFile().getAbsolutePath();
+            //pw = new PrintWriter(new File("options.txt"));
+            //pw.println(lastDirectory.getAbsolutePath());
+            doc.getElementsByTagName("lastDirectory").item(0).setTextContent(lastDirectory);
+            ModelPath1.setText(fileSelected.getAbsolutePath());
         }
     }//GEN-LAST:event_BrowseModelButtonActionPerformed
 
@@ -1039,18 +1060,12 @@ public class GUI extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTST.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            PrintWriter pw = null;
-            try {
-                File fileSelected = fileChooser.getSelectedFile();
-                lastDirectory = fileSelected.getParentFile();
-                pw = new PrintWriter(new File("options.txt"));
-                pw.println(lastDirectory.getAbsolutePath());
-                rutaTst.setText(fileSelected.getAbsolutePath());
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-            } finally {
-                pw.close();
-            }
+            File fileSelected = fileChooser.getSelectedFile();
+            lastDirectory = fileSelected.getParentFile().getAbsolutePath();
+            //pw = new PrintWriter(new File("options.txt"));
+            //pw.println(lastDirectory.getAbsolutePath());
+            doc.getElementsByTagName("lastDir").item(0).setTextContent(lastDirectory);
+            rutaTst.setText(fileSelected.getAbsolutePath());
         }
     }//GEN-LAST:event_BrowseButtonTSTActionPerformed
 
@@ -1070,18 +1085,12 @@ public class GUI extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTRA.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            PrintWriter pw = null;
-            try {
-                File fileSelected = fileChooser.getSelectedFile();
-                lastDirectory = fileSelected.getParentFile();
-                pw = new PrintWriter(new File("options.txt"));
-                pw.println(lastDirectory.getAbsolutePath());
-                rutaTra.setText(fileSelected.getAbsolutePath());
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-            } finally {
-                pw.close();
-            }
+            File fileSelected = fileChooser.getSelectedFile();
+            lastDirectory = fileSelected.getParentFile().getAbsolutePath();
+            //pw = new PrintWriter(new File("options.txt"));
+            //pw.println(lastDirectory.getAbsolutePath());
+            doc.getElementsByTagName("lastDir").item(0).setTextContent(lastDirectory);
+            rutaTra.setText(fileSelected.getAbsolutePath());
         }
     }//GEN-LAST:event_BrowseButtonTRAActionPerformed
 
@@ -1105,19 +1114,12 @@ public class GUI extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseButtonTRA.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            PrintWriter pw = null;
-            try {
-                File fileSelected = fileChooser.getSelectedFile();
-                lastDirectory = fileSelected.getParentFile();
-                pw = new PrintWriter(new File("options.txt"));
-                pw.println(lastDirectory.getAbsolutePath());
-                rutaModel.setText(fileSelected.getAbsolutePath() + ".ser");
-
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-            } finally {
-                pw.close();
-            }
+            File fileSelected = fileChooser.getSelectedFile();
+            lastDirectory = fileSelected.getParentFile().getAbsolutePath();
+            //pw = new PrintWriter(new File("options.txt"));
+            //pw.println(lastDirectory.getAbsolutePath());
+            doc.getElementsByTagName("lastDir").item(0).setTextContent(lastDirectory);
+            rutaModel.setText(fileSelected.getAbsolutePath());
         }
     }//GEN-LAST:event_BrowseButtonModelActionPerformed
 
@@ -1138,20 +1140,12 @@ public class GUI extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(BrowseBatchFolder.getParent());
         // If the user press in 'Ok'...
         if (result == JFileChooser.APPROVE_OPTION) {
-            PrintWriter pw = null;
-            try {
-                File fileSelected = fileChooser.getSelectedFile();
-                lastDirectory = fileSelected.getParentFile();
-                pw = new PrintWriter(new File("options.txt"));
-                pw.println(lastDirectory.getAbsolutePath());
-                rutaBatch.setText(fileSelected.getAbsolutePath());
-
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                appendToPane(BatchOutput, "ERROR: Folder " + lastDirectory.getAbsolutePath() + " Not found", Color.red);
-            } finally {
-                pw.close();
-            }
+            File fileSelected = fileChooser.getSelectedFile();
+            lastDirectory = fileSelected.getAbsolutePath();
+            //pw = new PrintWriter(new File("options.txt"));
+            //pw.println(lastDirectory.getAbsolutePath());
+            doc.getElementsByTagName("lastDir").item(0).setTextContent(lastDirectory);
+            rutaBatch.setText(fileSelected.getAbsolutePath());
         }
     }//GEN-LAST:event_BrowseBatchFolderActionPerformed
 
@@ -1379,12 +1373,12 @@ public class GUI extends javax.swing.JFrame {
         chiFilterCheckboxLearn.setEnabled(applyFiltersLearn.isSelected());
         measureFilterListLearn.setEnabled(applyFiltersLearn.isSelected());
         measureFilterCheckboxLearn.setEnabled(applyFiltersLearn.isSelected());
-        
+
         measureFilter = applyFiltersLearn.isSelected();
         minimalFilter = applyFiltersLearn.isSelected();
         maximalFilter = applyFiltersLearn.isSelected();
         chiFilter = applyFiltersLearn.isSelected();
-        
+
     }//GEN-LAST:event_applyFiltersLearnActionPerformed
 
     private void measureFilterListLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_measureFilterListLearnActionPerformed
@@ -1421,6 +1415,23 @@ public class GUI extends javax.swing.JFrame {
         // TODO add your handling code here:
         chiFilter = ((JCheckBox) evt.getSource()).isSelected();
     }//GEN-LAST:event_chiFilterCheckboxLearnActionPerformed
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        try {
+            // TODO add your handling code here:     
+            // Save the DOM Document with the changes
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            Result output = new StreamResult(new File("config.xml"));
+            Source input = new DOMSource(doc);
+            transformer.transform(input, output);
+        } catch (TransformerConfigurationException ex) {
+            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (TransformerException ex) {
+            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        // Close Windows
+        this.dispose();
+    }//GEN-LAST:event_formWindowClosing
 
     /**
      * @param args the command line arguments
@@ -1769,7 +1780,6 @@ public class GUI extends javax.swing.JFrame {
 
         // Filter By Chi-EPs
         // Params used: Supp: 0.02; GR = 10; Chi: 3.84
-       
         Measures.put("Chi", Utils.filterByChiEP((Model) newObject, 0.02, 10.0, 3.84, training));
 
         return Measures;

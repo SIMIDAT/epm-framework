@@ -66,7 +66,7 @@ public class Main {
                     new GUI().setVisible(true);
                     break;
                 case 1:
-                    Document doc = GUI.readXML("algorithms.xml");
+                    Document doc = GUI.readXML("config.xml");
                     NodeList nodes = doc.getElementsByTagName("algorithm");
                     boolean found = false;
                     HashMap<String, String> params = readParams(args[0]); // read parameters
@@ -285,7 +285,7 @@ public class Main {
                     System.out.println("You have to specify only one argument to execute in command-line or no arguments to launch the GUI.");
             }
         } catch (Exception ex) {
-
+            ex.printStackTrace();
         }
         /*catch (DatasetException | HeaderFormatException | ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
