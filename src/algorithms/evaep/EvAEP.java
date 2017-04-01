@@ -1078,7 +1078,8 @@ public class EvAEP extends Model {
                   if(crom.getCromElem(i) < Variables.getNLabelVar(i)){
                       // Variable takes part in the rule, add it to the Pattern
                       int j = crom.getCromElem(i);
-                      NominalItem it = new NominalItem(Attributes.getAttribute(i).getName(), Attributes.getInputAttribute(i).getNominalValue(j));
+                     
+                      NominalItem it = new NominalItem(Attributes.getAttribute(i).getName(), Variables.getValue(i, j));
                       items.add(it);
                   }
               } else {

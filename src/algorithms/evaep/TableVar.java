@@ -46,6 +46,10 @@ public class TableVar {
     }
 
 
+    public String getValue(int vari, int pos){
+        return var[vari].getValue(pos);
+    }
+    
     /**
      * <p>
      * Returns the number of labels for all the continuous variables
@@ -316,6 +320,7 @@ public class TableVar {
                     int aux=0;
                     for(int ii=(int) Attributes.getInputAttribute(i).getMinAttribute(); ii<=(int)Attributes.getInputAttribute(i).getMaxAttribute(); ii++){
                         v.add(aux, (int)Attributes.getInputAttribute(i).getMinAttribute()+aux);
+                        aux++;
                     }
                     var[i].initValues (v);
                     var[i].setMin(0);     // Enumerated values are translated into values from 0 to number of elements - 1

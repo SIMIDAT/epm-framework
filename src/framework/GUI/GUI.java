@@ -1188,7 +1188,11 @@ public class GUI extends javax.swing.JFrame {
                     // for each folder in the root directory
 
                     for (File dir : folders) {
-
+                        if (ParallelCheckbox.isSelected()) {
+                            data = numberFold.parallelStream();
+                        } else {
+                            data = numberFold.stream();
+                        }
                         if (dir.isDirectory()) {
                             File[] files = dir.listFiles();
                             Arrays.sort(files);

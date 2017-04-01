@@ -34,6 +34,9 @@ public class TypeVar {
     public TypeVar() {
     }
 
+    public String getValue(int pos){
+        return valores.get(pos).toString();
+    }
 
     /**
      * <p>
