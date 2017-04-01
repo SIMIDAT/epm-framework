@@ -124,7 +124,7 @@ public class GUI extends javax.swing.JFrame {
         // Here we have to read the algorithms XML and add to algorithms the names of the methods
         doc = readXML("config.xml");
         preds = "";
-        
+
         if (doc.getElementsByTagName("lastDir").getLength() == 0) {
             Element dir = doc.createElement("lastDir");
             Comment comment = doc.createComment("This option sets the first directory shown to the user");
@@ -135,7 +135,7 @@ public class GUI extends javax.swing.JFrame {
         } else {
             lastDirectory = doc.getElementsByTagName("lastDir").item(0).getTextContent();
         }
-        
+
         /*File f = new File("options.txt");
         if (f.exists()) {
             try {
@@ -147,7 +147,6 @@ public class GUI extends javax.swing.JFrame {
         } else {
             lastDirectory = new File(System.getProperty("user.home"));
         }*/
-
         // Set the default chi thresholds
         chiFilterString = "0.02,10,3.84";
         chiChiThreshold = 3.84;
@@ -942,13 +941,16 @@ public class GUI extends javax.swing.JFrame {
 
                     System.out.println("Learning Model...");
                     // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                    long t_ini = System.currentTimeMillis();
                     clase.getMethod("learn", args).invoke(newObject, training, params);
+                    long t_end = System.currentTimeMillis();
                     appendToPane(ExecutionInfoLearn, "Filtering patterns and calculating descriptive measures...", Color.BLUE);
                     System.out.println("Filtering patterns and calculating descriptive measures...");
 
                     //  Perfom the filter phase, filter the patterns
                     // NOTE: The behaviour of this function must be changed in the future to select a filter accorder to an user criterion
                     HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold, learnImbalancedRadio.isSelected());
+                    Measures.forEach((key, value) -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0));
 
                     // Call predict method for ACC and AUC for training
                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
@@ -982,7 +984,9 @@ public class GUI extends javax.swing.JFrame {
 
                         //  Perform the prediction phase to calculate the predictive
                         predictPhase(clase, newObject, training, test, Measures, false);
-
+                        Measures.forEach((key, value)
+                                -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
+                        );
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
                         if (!((Model) newObject).patterns.isEmpty()) {
@@ -1245,11 +1249,14 @@ public class GUI extends javax.swing.JFrame {
                                     args[1] = HashMap.class;
 
                                     // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                                    long t_ini = System.currentTimeMillis();
                                     clase.getMethod("learn", args).invoke(newObject, training, params);
-                                    // Get learned patterns, filter, and calculate measures
+                                    long t_end = System.currentTimeMillis();
 
+                                    // Get learned patterns, filter, and calculate measures
                                     // Filter patterns
                                     HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, filterBy, threshold, batchImbalanceRadio.isSelected());
+                                    Measures.forEach((key, value) -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0));
 
                                     // Predict phase
                                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);

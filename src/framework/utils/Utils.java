@@ -1242,7 +1242,7 @@ public class Utils {
                 for (String k : Measures.get("Unfiltered").getMeasures().keySet()) {
 
                     if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
-                        if (k.equals("ACC") || k.equals("AUC")) {
+                        if (k.equals("ACC") || k.equals("AUC") || k.equals("Exec. Time (s)")) {
                             files.get("Unfiltered").print("--------\t");
                         } else if (train) {
                             files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure(k)) + "\t");
@@ -1287,7 +1287,7 @@ public class Utils {
 
                     for (String k : Measures.get(key).getMeasures().keySet()) {
                         if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("TN") && !k.equals("FP") && !k.equals("FN")) {
-                            if (k.equals("ACC") || k.equals("AUC")) {
+                            if (k.equals("ACC") || k.equals("AUC") || k.equals("Exec. Time (s)")) {
                                 files.get(key).print("--------\t");
                             } else if (train) {
                                 files.get(key).print(sixDecimals.format(pat.getTraMeasure(k)) + "\t");

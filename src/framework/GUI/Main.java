@@ -231,16 +231,22 @@ public class Main {
                                 arg[1] = HashMap.class;
 
                                 // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                                long t_ini = System.currentTimeMillis();
                                 clase.getMethod("learn", arg).invoke(newObject, training, params);
+                                long t_end = System.currentTimeMillis();
                                 // Get learned patterns, filter, and calculate measures
                                 
                                 // Filter patterns
                                 HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
+                              
                     
                                 // Predict phase 
                                 System.out.println("Calculating precision for training...");
                                 GUI.predictPhase(clase, newObject, training, test, Measures, true);
-
+                                Measures.forEach((key, value) -> 
+                                         value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
+                                );
+                                   
                                 // Save the training results file
                                 Utils.saveMeasures2(dir, (Model) newObject, Measures, true, i);
 
@@ -252,7 +258,11 @@ public class Main {
                                 }
                                 
                                 GUI.predictPhase(clase, newObject, training, test, Measures, false);
-
+                                
+                                 Measures.forEach((key, value) -> 
+                                         value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
+                                 );
+                                   
                                 // Save meassures to a file
                                 Utils.saveMeasures2(dir, (Model) newObject, Measures, false, i);
 
