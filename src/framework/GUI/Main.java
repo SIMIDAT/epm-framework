@@ -130,7 +130,7 @@ public class Main {
                         // Call predict method for ACC and AUC for training
                         System.out.println("Calculating precision for training...");
                         
-                        GUI.predictPhase(clase, newObject, training, test, Measures, true);
+                        GUI.predictPhase(clase, newObject, training, test, Measures, true, (new File(params.get("training")).getAbsoluteFile().getParentFile()).getAbsolutePath(), 0);
                         
                         // Save training measures in a file.
                         System.out.println("Save results in a file...");
@@ -145,7 +145,7 @@ public class Main {
                             Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
                         }
                         
-                        GUI.predictPhase(clase, newObject, training, test, Measures, false);
+                        GUI.predictPhase(clase, newObject, training, test, Measures, false,(new File(params.get("test")).getAbsoluteFile().getParentFile()).getAbsolutePath(), 0);
                         
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
@@ -243,7 +243,7 @@ public class Main {
                     
                                 // Predict phase 
                                 System.out.println("Calculating precision for training...");
-                                GUI.predictPhase(clase, newObject, training, test, Measures, true);
+                                GUI.predictPhase(clase, newObject, training, test, Measures, true, dir.getAbsolutePath(), i);
                                 Measures.forEach((key, value) -> 
                                          value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
                                 );
@@ -258,7 +258,7 @@ public class Main {
                                     Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
                                 }
                                 
-                                GUI.predictPhase(clase, newObject, training, test, Measures, false);
+                                GUI.predictPhase(clase, newObject, training, test, Measures, false, dir.getAbsolutePath(), i);
                                 
                                  Measures.forEach((key, value) -> 
                                          value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
@@ -266,7 +266,16 @@ public class Main {
                                    
                                 // Save meassures to a file
                                 Utils.saveMeasures2(dir, (Model) newObject, Measures, false, i);
-
+                                
+                                
+                                // Add number of rules
+                                Measures.get("Unfiltered").addMeasure("NRULES", ((Model) newObject).patterns.size());
+                                Measures.forEach((k, v) -> {
+                                    if(!k.equalsIgnoreCase("Unfiltered")){
+                                        v.addMeasure("NRULES", ((Model) newObject).filters.get(k).size());
+                                    }
+                                });
+                                
                                 // Store the result to make the average result
                                 for (String key : totalMeasures.keySet()) {
                                     QualityMeasures updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));

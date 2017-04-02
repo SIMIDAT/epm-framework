@@ -482,12 +482,14 @@ public class Utils {
 
                 Measures.get(key).getMeasures().forEach((t, u) -> {
                     DecimalFormat sixDecimals = new DecimalFormat("0.000000");
-                    if (!u.isNaN()) {
-                        u /= (double) NUM_FOLDS;
-                        // Here is where you must made all the operations with each averaged quality measure.
-                        w.println(t + " ==> " + sixDecimals.format(u));
-                    } else {
-                        w.println(t + " ==> --------");
+                    if (!t.equalsIgnoreCase("TP") && !t.equalsIgnoreCase("FP") && !t.equalsIgnoreCase("FN") && !t.equalsIgnoreCase("TN")) {
+                        if (!u.isNaN()) {
+                            u /= (double) NUM_FOLDS;
+                            // Here is where you must made all the operations with each averaged quality measure.
+                            w.println(t + " ==> " + sixDecimals.format(u));
+                        } else {
+                            w.println(t + " ==> --------");
+                        }
                     }
                 });
 
@@ -814,7 +816,7 @@ public class Utils {
                 chiPatterns.add(Conds1.get(i));
                 //qms.add(Conds1.get(i).getTra_measures());
                 total.sum(Conds1.get(i).getTra_measures());
-                  if(Conds1.get(i).getTraMeasure("GR") > 1){
+                if (Conds1.get(i).getTraMeasure("GR") > 1) {
                     gr++;
                 }
             }
@@ -1179,7 +1181,8 @@ public class Utils {
      * @param model The model where the pattern are stored.
      * @param Measures The Averaged quality measures for each set of patterns
      * @param train Are you writing the measures for training?
-     * @param fold The number of the fold in order to appear in the name of the file
+     * @param fold The number of the fold in order to appear in the name of the
+     * file
      */
     public static void saveMeasures2(File dir, Model model, HashMap<String, QualityMeasures> Measures, boolean train, int fold) {
 
@@ -1308,7 +1311,7 @@ public class Utils {
                         + sixDecimals.format(Measures.get(key).getMeasure("FN")) + "\t");
 
                 for (String k : Measures.get(key).getMeasures().keySet()) {
-                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
+                    if (!k.equals("RULE_NUMBER") && !k.equals("NVAR") && !k.equals("TP") && !k.equals("FP") && !k.equals("TN") && !k.equals("FN")) {
                         files.get(key).print(sixDecimals.format(Measures.get(key).getMeasure(k)) + "\t");
                     }
                 }
@@ -1922,7 +1925,7 @@ public class Utils {
         qmsMin.addMeasure("GR", grMin / (double) minimalPatterns.size());
         qmsMax.addMeasure("GR", grMax / (double) maximalPatterns.size());
         qmsFil.addMeasure("GR", grFil / (double) filteredPatterns.size());
-        
+
         HashMap<String, QualityMeasures> a = new HashMap<>();
 
         a.put("Minimals", qmsMin);
@@ -1951,16 +1954,16 @@ public class Utils {
         return a;
 
     }
-    
-    
+
     /**
-     * It returns the index of the minority class in the dataset. For classes with 
-     * equal number of individuals, it returns the lower index.
+     * It returns the index of the minority class in the dataset. For classes
+     * with equal number of individuals, it returns the lower index.
+     *
      * @param data
-     * @return 
+     * @return
      */
-    public static int getMinorityClass(InstanceSet data){
-           //------ GET THE MINORITY CLASS ----------------
+    public static int getMinorityClass(InstanceSet data) {
+        //------ GET THE MINORITY CLASS ----------------
         String minorityClass = "";
         data.setAttributesAsNonStatic();
         Vector nominalValuesList = data.getAttributeDefinitions().getOutputAttribute(0).getNominalValuesList();
@@ -1981,7 +1984,7 @@ public class Utils {
             }
         }
         // ----------------------------------------------
-        
+
         return index;
     }
 

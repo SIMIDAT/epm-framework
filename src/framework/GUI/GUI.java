@@ -83,6 +83,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import keel.Dataset.Instance;
 import org.w3c.dom.Comment;
 
 /**
@@ -957,7 +958,7 @@ public class GUI extends javax.swing.JFrame {
                     System.out.println("Calculating precision for training...");
 
                     // Perform the prediction phase on training
-                    predictPhase(clase, newObject, training, test, Measures, true);
+                    predictPhase(clase, newObject, training, test, Measures, true, rutaTra.getText(), 0);
 
                     // Save training measures in a file.
                     if (!((Model) newObject).patterns.isEmpty()) {
@@ -983,7 +984,7 @@ public class GUI extends javax.swing.JFrame {
                         }
 
                         //  Perform the prediction phase to calculate the predictive
-                        predictPhase(clase, newObject, training, test, Measures, false);
+                        predictPhase(clase, newObject, training, test, Measures, false, rutaTst.getText(), 0);
                         Measures.forEach((key, value)
                                 -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
                         );
@@ -1265,7 +1266,7 @@ public class GUI extends javax.swing.JFrame {
                                     // Predict phase
                                     appendToPane(ExecutionInfoLearn, "Calculate precision for training...", Color.BLUE);
                                     System.out.println("Calculating precision for training...");
-                                    predictPhase(clase, newObject, training, test, Measures, true);
+                                    predictPhase(clase, newObject, training, test, Measures, true, rutaBatch.getText(), i);
 
                                     // Save the training results file
                                     Utils.saveMeasures2(dir, (Model) newObject, Measures, true, i);
@@ -1277,10 +1278,18 @@ public class GUI extends javax.swing.JFrame {
                                         Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
                                     }
 
-                                    predictPhase(clase, newObject, training, test, Measures, false);
+                                    predictPhase(clase, newObject, training, test, Measures, false, rutaBatch.getText(), i);
 
                                     // Save meassures to a file
                                     Utils.saveMeasures2(dir, (Model) newObject, Measures, false, i);
+
+                                    // Add number of rules
+                                    Measures.get("Unfiltered").addMeasure("NRULES", ((Model) newObject).patterns.size());
+                                    Measures.forEach((k, v) -> {
+                                        if (!k.equalsIgnoreCase("Unfiltered")) {
+                                            v.addMeasure("NRULES", ((Model) newObject).filters.get(k).size());
+                                        }
+                                    });
 
                                     // Store the result to make the average result
                                     for (String key : totalMeasures.keySet()) {
@@ -1637,7 +1646,7 @@ public class GUI extends javax.swing.JFrame {
             // If algorithms.xml has an error disable all the interface.
             this.setEnabled(false);
             ExecutionInfoLearn.setText("");
-            ExecutionInfoLearn.setText("FATAL ERROR: algorithms.xml has an error, interface blocked.");
+            ExecutionInfoLearn.setText("FATAL ERROR: config.xml has an error, interface blocked.");
         }
     }
 
@@ -1728,7 +1737,7 @@ public class GUI extends javax.swing.JFrame {
      * @param newObject
      * @param data
      */
-    public static void predictPhase(Class clase, Object newObject, InstanceSet training, InstanceSet test, HashMap<String, QualityMeasures> Measures, boolean isTrain) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public static void predictPhase(Class clase, Object newObject, InstanceSet training, InstanceSet test, HashMap<String, QualityMeasures> Measures, boolean isTrain, String dir, int fold) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Class[] args = new Class[2];
         args[0] = InstanceSet.class;
         args[1] = ArrayList.class;
@@ -1744,10 +1753,38 @@ public class GUI extends javax.swing.JFrame {
         }
 
         // After the obtention of the predictions for each filter, calculate the prediction measures
+        // Calculate tra and tst files
         if (isTrain) {
             Utils.calculatePrecisionMeasures(predictionsTra, training, training, Measures);
+            predictionsTra.forEach((k, v) -> {
+                PrintWriter pw = null;
+                try {
+                    pw = new PrintWriter(new File(dir + "/" + k + "_" + fold + ".tra"));
+                    for (int i = 0; i < training.getNumInstances(); i++) {
+                        pw.println(training.getOutputNominalValue(i, 0) + " - " + v[i]);
+                    }
+                } catch (FileNotFoundException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                } finally {
+                    pw.close();
+                }
+            });
+
         } else {
             Utils.calculatePrecisionMeasures(predictionsTra, test, training, Measures);
+            predictionsTra.forEach((k, v) -> {
+                PrintWriter pw = null;
+                try {
+                    pw = new PrintWriter(new File(dir + "/" + k + "_" + fold + ".tst"));
+                    for (int i = 0; i < test.getNumInstances(); i++) {
+                        pw.println(test.getOutputNominalValue(i, 0) + " - " + v[i]);
+                    }
+                } catch (FileNotFoundException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                } finally {
+                    pw.close();
+                }
+            });
         }
     }
 
