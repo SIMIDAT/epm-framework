@@ -958,7 +958,8 @@ public class GUI extends javax.swing.JFrame {
                     System.out.println("Calculating precision for training...");
 
                     // Perform the prediction phase on training
-                    predictPhase(clase, newObject, training, test, Measures, true, rutaTra.getText(), 0);
+                    String rute = (new File(rutaTra.getText())).getParentFile().getAbsolutePath();
+                    predictPhase(clase, newObject, training, test, Measures, true, rute, 0);
 
                     // Save training measures in a file.
                     if (!((Model) newObject).patterns.isEmpty()) {
@@ -984,7 +985,8 @@ public class GUI extends javax.swing.JFrame {
                         }
 
                         //  Perform the prediction phase to calculate the predictive
-                        predictPhase(clase, newObject, training, test, Measures, false, rutaTst.getText(), 0);
+                        rute = (new File(rutaTst.getText())).getParentFile().getAbsolutePath();
+                        predictPhase(clase, newObject, training, test, Measures, false, rute, 0);
                         Measures.forEach((key, value)
                                 -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
                         );

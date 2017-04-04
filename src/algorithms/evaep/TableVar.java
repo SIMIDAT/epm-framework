@@ -319,13 +319,13 @@ public class TableVar {
                     Vector v = new Vector();
                     int aux=0;
                     for(int ii=(int) Attributes.getInputAttribute(i).getMinAttribute(); ii<=(int)Attributes.getInputAttribute(i).getMaxAttribute(); ii++){
-                        v.add(aux, (int)Attributes.getInputAttribute(i).getMinAttribute()+aux);
+                        v.add(aux, aux);
                         aux++;
                     }
                     var[i].initValues (v);
                     var[i].setMin(0);     // Enumerated values are translated into values from 0 to number of elements - 1
-                    var[i].setMax((float) Attributes.getInputAttribute(i).getMaxAttribute()-1);
-                    var[i].setNLabels ((int) Attributes.getInputAttribute(i).getMaxAttribute());
+                    var[i].setMax((float) aux-1);
+                    var[i].setNLabels ((int) aux);
                     // Update max number of values for discrete vars
                     if (var[i].getNLabels() > MaxValores)
                         MaxValores = var[i].getNLabels();
