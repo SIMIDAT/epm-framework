@@ -122,6 +122,17 @@ public class FuzzyItem extends Item {
             return this.value.getX0() == other.value.getX0() &&
                     this.value.getX1() == other.value.getX1() &&
                     this.value.getX3() == other.value.getX3();
+            
+        } else if (itemInstance instanceof NumericItem){
+            // A fuzzy item can cover a numeric item if their belonging degree is to the 
+            // defined fuzzy set is greater than zero. NOTE: This behaviour should be improved because of its limitations.
+            
+            if(this.variable.equals(((NumericItem) itemInstance).variable)){
+                float valor = ((Double) ((NumericItem) itemInstance).value).floatValue();
+                return this.value.Fuzzy(valor) > 0;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }
