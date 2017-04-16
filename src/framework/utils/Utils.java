@@ -427,7 +427,7 @@ public class Utils {
     public static void averageQualityMeasures(QualityMeasures measures, int folds) {
 
         measures.getMeasures().forEach((key, value) -> {
-            value /= (double) folds;
+            measures.addMeasure(key, value / (double) folds);
         });
 
     }
@@ -484,7 +484,7 @@ public class Utils {
                     DecimalFormat sixDecimals = new DecimalFormat("0.000000");
                     if (!t.equalsIgnoreCase("TP") && !t.equalsIgnoreCase("FP") && !t.equalsIgnoreCase("FN") && !t.equalsIgnoreCase("TN")) {
                         if (!u.isNaN()) {
-                            u /= (double) NUM_FOLDS;
+                            //u /= (double) NUM_FOLDS;
                             // Here is where you must made all the operations with each averaged quality measure.
                             w.println(t + " ==> " + sixDecimals.format(u));
                         } else {
