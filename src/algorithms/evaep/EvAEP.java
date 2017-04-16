@@ -1078,9 +1078,13 @@ public class EvAEP extends Model {
                   if(crom.getCromElem(i) < Variables.getNLabelVar(i)){
                       // Variable takes part in the rule, add it to the Pattern
                       int j = crom.getCromElem(i);
-                     
-                      NominalItem it = new NominalItem(Attributes.getAttribute(i).getName(), Variables.getValue(i, j));
-                      items.add(it);
+                      NominalItem it = null;
+                      if(Data.getAttributeDefinitions().getInputAttribute(i).getType() == Attribute.NOMINAL){
+                        it = new NominalItem(Attributes.getAttribute(i).getName(), Variables.getValue(i, j));
+                      } else {
+                        it = new NominalItem(Attributes.getAttribute(i).getName(), Variables.getValue(i, j + (int) Data.getAttributeDefinitions().getInputAttribute(i).getMinAttribute()));
+                      }
+                        items.add(it);
                   }
               } else {
                   // Numeric variable -> Fuzzy Item
