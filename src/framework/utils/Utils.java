@@ -182,7 +182,7 @@ public class Utils {
             // Normalize WRACC
             double classPCT = (double) confusionMatrices[i][5] / (double) data.getNumInstances();
             double maxWRACC = classPCT * (1.0 - classPCT);
-            double minWRACC = classPCT * (0.0 - classPCT);
+            double minWRACC = (1.0 - classPCT) * (0.0 - classPCT);
             wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
 
             // CONF

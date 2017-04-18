@@ -1082,7 +1082,7 @@ public class EvAEP extends Model {
                       if(Data.getAttributeDefinitions().getInputAttribute(i).getType() == Attribute.NOMINAL){
                         it = new NominalItem(Attributes.getAttribute(i).getName(), Variables.getValue(i, j));
                       } else {
-                        it = new NominalItem(Attributes.getAttribute(i).getName(), Variables.getValue(i, j + (int) Data.getAttributeDefinitions().getInputAttribute(i).getMinAttribute()));
+                        it = new NominalItem(Attributes.getAttribute(i).getName(), Variables.getValue(i, j + (int) Variables.getMin(i)));
                       }
                         items.add(it);
                   }
