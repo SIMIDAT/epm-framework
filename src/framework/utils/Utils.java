@@ -175,15 +175,22 @@ public class Utils {
             // WRACC (Normalized)
             double wracc;
             if ((p + n) == 0) {
+                wracc = ((p + n) / P_N) * (0 - (P / P_N));
+            } else if (P_N == 0) {
                 wracc = 0;
             } else {
                 wracc = ((p + n) / P_N) * ((p / (p + n)) - (P / P_N));
             }
+
             // Normalize WRACC
             double classPCT = (double) confusionMatrices[i][5] / (double) data.getNumInstances();
             double maxWRACC = classPCT * (1.0 - classPCT);
             double minWRACC = (1.0 - classPCT) * (0.0 - classPCT);
-            wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
+            if (maxWRACC - minWRACC != 0) {
+                wracc = (wracc - minWRACC) / (maxWRACC - minWRACC);
+            } else {
+                wracc = 0;
+            }
 
             // CONF
             double conf;
@@ -241,7 +248,7 @@ public class Utils {
             if (tpr != 0 && fpr != 0) {
                 GR = tpr / fpr;
             } else if (tpr != 0 && fpr == 0) {
-                GR = Float.POSITIVE_INFINITY;
+                GR = Double.POSITIVE_INFINITY;
             } else {
                 GR = 0;
             }
@@ -289,7 +296,11 @@ public class Utils {
         averageQualityMeasures(total, patterns.size());
 
         //Average GR
-        total.addMeasure("GR", gr / (double) patterns.size());
+        if (!patterns.isEmpty()) {
+            total.addMeasure("GR", gr / (double) patterns.size());
+        } else {
+            total.addMeasure("GR", 0);
+        }
         HashMap<String, QualityMeasures> a = new HashMap<>();
         a.put(name, total);
         return a;
@@ -325,8 +336,7 @@ public class Utils {
                     return 0;
                 }
             } else // If it is FPR, then the less, the better
-            {
-                if (o1.get(by) > o2.get(by)) {
+             if (o1.get(by) > o2.get(by)) {
                     return -1;
                 } else if (o1.get(by) < o2.get(by)) {
                     return 1;
@@ -337,7 +347,6 @@ public class Utils {
                 } else {
                     return 0;
                 }
-            }
         });
 
         // get the best n rules and return
@@ -391,8 +400,7 @@ public class Utils {
                         return 0;
                     }
                 } else // If it is FPR, then the less, the better
-                {
-                    if (o1.get(by) > o2.get(by)) {
+                 if (o1.get(by) > o2.get(by)) {
                         return -1;
                     } else if (o1.get(by) < o2.get(by)) {
                         return 1;
@@ -403,7 +411,6 @@ public class Utils {
                     } else {
                         return 0;
                     }
-                }
             });
         }
 
@@ -1922,9 +1929,21 @@ public class Utils {
         averageQualityMeasures(qmsMin, minimalPatterns.size());
         averageQualityMeasures(qmsMax, maximalPatterns.size());
         averageQualityMeasures(qmsFil, filteredPatterns.size());
-        qmsMin.addMeasure("GR", grMin / (double) minimalPatterns.size());
-        qmsMax.addMeasure("GR", grMax / (double) maximalPatterns.size());
-        qmsFil.addMeasure("GR", grFil / (double) filteredPatterns.size());
+        if (!minimalPatterns.isEmpty()) {
+            qmsMin.addMeasure("GR", grMin / (double) minimalPatterns.size());
+        } else {
+            qmsMin.addMeasure("GR", 0);
+        }
+        if (!maximalPatterns.isEmpty()) {
+            qmsMax.addMeasure("GR", grMax / (double) maximalPatterns.size());
+        } else {
+            qmsMax.addMeasure("GR", 0);
+        }
+        if (!filteredPatterns.isEmpty()) {
+            qmsFil.addMeasure("GR", grFil / (double) filteredPatterns.size());
+        } else {
+            qmsFil.addMeasure("GR", 0);
+        }
 
         HashMap<String, QualityMeasures> a = new HashMap<>();
 
