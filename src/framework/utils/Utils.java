@@ -293,8 +293,22 @@ public class Utils {
 
         // Average the results and return
         //HashMap<String, Double> AverageQualityMeasures = averageQualityMeasures(qms);
+        if(!patterns.isEmpty()){
         averageQualityMeasures(total, patterns.size());
-
+        total.addMeasure("NVAR", total.getMeasure("NVAR") / (double) patterns.size());
+        } else{
+            total.addMeasure("WRACC", 0);  // Normalized Unusualness
+            total.addMeasure("GAIN", 0);  // Information Gain
+            total.addMeasure("CONF", 0);   // Confidence
+            total.addMeasure("GR", 0);     // Growth Rate
+            total.addMeasure("TPR", 0);    // True positive rate
+            total.addMeasure("FPR", 1.0);    // False positive rate
+            total.addMeasure("SUPDIFF", -1.0);     // Support Diference
+            total.addMeasure("FISHER", 1.0); // Fishers's test
+            total.addMeasure("SUPP", 0); // Support
+            total.addMeasure("NVAR", 0.0); // Number of variables
+            total.addMeasure("RULE_NUMBER", 0.0); // Rule ID
+        }
         //Average GR
         if (!patterns.isEmpty()) {
             total.addMeasure("GR", gr / (double) patterns.size());
@@ -434,7 +448,8 @@ public class Utils {
     public static void averageQualityMeasures(QualityMeasures measures, int folds) {
 
         measures.getMeasures().forEach((key, value) -> {
-            measures.addMeasure(key, value / (double) folds);
+            if(!key.equalsIgnoreCase("NRULES") && ! key.equalsIgnoreCase("NVAR"))
+                measures.addMeasure(key, value / (double) folds);
         });
 
     }

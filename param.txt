@@ -1,6 +1,6 @@
-algorithm = Tree-based JEP-C
-directory = /media/angel/Datos/DATASETS/classification_discretizado
+algorithm = iEPMiner
+directory = /home/angel/Escritorio/Pr
 number of folds = 5
-Ordering = hybrid
-Alpha = 0.3
-Pattern Max Length = -1
+Minimum Support = 0.02
+Minimum Growth Rate = 1
+Minimum Chi-Squared = 3.84

@@ -91,10 +91,10 @@ public class Main {
                     }
 
                     batchMode = params.containsKey("directory");
-                    if(params.containsKey("imbalanced mode")){
+                    if (params.containsKey("imbalanced mode")) {
                         imbalanced = params.get("imbalanced mode").equalsIgnoreCase("true");
                     }
-                    
+
                     if (!batchMode) {
                         // EXECUTE NORMAL MODE: ONLY TRAIN AND TEST
                         String filterBy = "CONF";
@@ -126,27 +126,27 @@ public class Main {
 
                         // Get learned patterns, filter, and calculate measures
                         HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
-                        
+
                         // Call predict method for ACC and AUC for training
                         System.out.println("Calculating precision for training...");
-                        
+
                         GUI.predictPhase(clase, newObject, training, test, Measures, true, (new File(params.get("training")).getAbsoluteFile().getParentFile()).getAbsolutePath(), 0);
-                        
+
                         // Save training measures in a file.
                         System.out.println("Save results in a file...");
                         Utils.saveMeasures2(new File(params.get("training")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, true, 0);
-                        
+
                         System.out.println("Done learning model.");
                         System.out.println("Testing instances...");
 
-                         // Calculate test measures for unfiltered and filtered patterns
+                        // Calculate test measures for unfiltered and filtered patterns
                         Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false, "Unfiltered");
                         for (String key : ((Model) newObject).filters.keySet()) {
                             Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
                         }
-                        
-                        GUI.predictPhase(clase, newObject, training, test, Measures, false,(new File(params.get("test")).getAbsoluteFile().getParentFile()).getAbsolutePath(), 0);
-                        
+
+                        GUI.predictPhase(clase, newObject, training, test, Measures, false, (new File(params.get("test")).getAbsoluteFile().getParentFile()).getAbsolutePath(), 0);
+
                         // Save Results
                         //Utils.saveResults(new File(rutaTst.getText()).getParentFile(), Measures.get(0), Measures.get(1), Measures.get(2), 1);
                         Utils.saveMeasures2(new File(params.get("test")).getAbsoluteFile().getParentFile(), (Model) newObject, Measures, false, 0);
@@ -157,7 +157,7 @@ public class Main {
                         int NUM_FOLDS = Integer.parseInt(params.get("number of folds"));
                         String filterBy = "CONF";
                         float threshold = 0.6f;
-                        
+
                         File root = new File(params.get("directory"));
                         if (!root.isDirectory()) {
                             System.out.println("ERROR: \"directory\" is not a folder. Aborting...");
@@ -171,133 +171,147 @@ public class Main {
                         // Now, look for each directory inside root for datasets to be executed.
                         for (File dir : folders) {
 
-                        if (dir.isDirectory()) {
-                            File[] files = dir.listFiles();
-                            Arrays.sort(files);
-                            HashMap<String, QualityMeasures> totalMeasures = new HashMap<>();
-                            // This must be changed in order to introduce the selection of filter by the user
-                            totalMeasures.put("Unfiltered", new QualityMeasures());
-                            totalMeasures.put("Minimals", new QualityMeasures());
-                            totalMeasures.put("Maximals", new QualityMeasures());
-                            totalMeasures.put("CONF", new QualityMeasures());
-                            totalMeasures.put("Chi", new QualityMeasures());
+                            if (dir.isDirectory()) {
+                                File[] files = dir.listFiles();
+                                Arrays.sort(files);
+                                HashMap<String, QualityMeasures> totalMeasures = new HashMap<>();
+                                // This must be changed in order to introduce the selection of filter by the user
+                                totalMeasures.put("Unfiltered", new QualityMeasures());
+                                totalMeasures.put("Minimals", new QualityMeasures());
+                                totalMeasures.put("Maximals", new QualityMeasures());
+                                totalMeasures.put("CONF", new QualityMeasures());
+                                totalMeasures.put("Chi", new QualityMeasures());
 
-                            System.out.println("Executing..." + dir.getName() + "...");
-                            
-                            /* HINT: 
+                                System.out.println("Executing..." + dir.getName() + "...");
+
+                                /* HINT: 
                             In order to perform parallel execution, you can probe the function parallelstream().foreach()
                             on an arraylist with 1 to num_folds as the data.
                             This will do the execution of each fold in parallel.
-                            */
-                            
-                            for (int i = 1; i <= NUM_FOLDS; i++) {
-                                // Search for the training and test files.
-                                for (File x : files) {
-                                    // El formato es xx5xx-1tra.dat
-                                    if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
-                                        try {
-                                            Attributes.clearAll();
-                                            training.readSet(x.getAbsolutePath(), true);
-                                            training.setAttributesAsNonStatic();
-                                        } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
-                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                            
+                                 */
+                                for (int i = 1; i <= NUM_FOLDS; i++) {
+                                    // Search for the training and test files.
+                                    for (File x : files) {
+                                        // El formato es xx5xx-1tra.dat
+                                        if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tra.dat")) {
+                                            try {
+                                                Attributes.clearAll();
+                                                training.readSet(x.getAbsolutePath(), true);
+                                                training.setAttributesAsNonStatic();
+                                            } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
+                                                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+
+                                            }
+                                        }
+                                        if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tst.dat")) {
+                                            try {
+                                                test.readSet(x.getAbsolutePath(), false);
+                                                test.setAttributesAsNonStatic();
+                                            } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
+                                                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+
+                                            }
                                         }
                                     }
-                                    if (x.getName().matches(".*" + NUM_FOLDS + ".*-" + i + "tst.dat")) {
-                                        try {
-                                            test.readSet(x.getAbsolutePath(), false);
-                                            test.setAttributesAsNonStatic();
-                                        } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
-                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                          
+
+                                    // Execute the method
+                                    //First: instantiate the class selected with the fully qualified name
+                                    Object newObject;
+                                    Class clase = Class.forName(fully_qualified_name);
+                                    newObject = clase.newInstance();
+                                    ((Model) newObject).patterns = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
+                                    ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
+                                    ((Model) newObject).filters = new HashMap<>();
+
+                                    // Second: get the argument class
+                                    Class[] arg = new Class[2];
+                                    arg[0] = InstanceSet.class;
+                                    arg[1] = HashMap.class;
+
+                                    // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
+                                    long t_ini = System.currentTimeMillis();
+                                    clase.getMethod("learn", arg).invoke(newObject, training, params);
+                                    long t_end = System.currentTimeMillis();
+                                    // Get learned patterns, filter, and calculate measures
+
+                                    // Filter patterns
+                                    HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
+
+                                    // Predict phase 
+                                    System.out.println("Calculating precision for training...");
+                                    GUI.predictPhase(clase, newObject, training, test, Measures, true, dir.getAbsolutePath(), i);
+                                    Measures.forEach((key, value)
+                                            -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
+                                    );
+
+                                    // Save the training results file
+                                    Utils.saveMeasures2(dir, (Model) newObject, Measures, true, i);
+
+                                    // Now, process the test file
+                                    // Calculate test measures for unfiltered and filtered patterns
+                                    Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false, "Unfiltered");
+                                    for (String key : ((Model) newObject).filters.keySet()) {
+                                        Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
+                                    }
+
+                                    GUI.predictPhase(clase, newObject, training, test, Measures, false, dir.getAbsolutePath(), i);
+
+                                    Measures.forEach((key, value)
+                                            -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
+                                    );
+
+                                    // Save meassures to a file
+                                    Utils.saveMeasures2(dir, (Model) newObject, Measures, false, i);
+
+                                    // Add number of rules
+                                    if (!((Model) newObject).patterns.isEmpty()) {
+                                        Measures.get("Unfiltered").addMeasure("NRULES", ((Model) newObject).patterns.size());
+                                    } else {
+                                        Measures.get("Unfiltered").addMeasure("NRULES", ((Model) newObject).patterns.size());
+                                        Measures.get("Unfiltered").addMeasure("NaNs", Measures.get("Unfiltered").getMeasures().getOrDefault("NaNs", 0.0) + 1.0);
+                                    }
+                                    
+                                    Measures.forEach((k, v) -> {
+                                        if (!k.equalsIgnoreCase("Unfiltered")) {
+                                            if (!((Model) newObject).filters.get(k).isEmpty()) {
+                                                v.addMeasure("NRULES", ((Model) newObject).filters.get(k).size());
+                                            } else {
+                                                v.addMeasure("NRULES", ((Model) newObject).filters.get(k).size());
+                                                v.addMeasure("NaNs", v.getMeasures().getOrDefault("NaNs", 0.0) + 1.0);
+                                            }
                                         }
+                                    });
+
+                                    // Store the result to make the average result
+                                    for (String key : totalMeasures.keySet()) {
+                                        QualityMeasures updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
+                                        totalMeasures.put(key, updateHashMap);
                                     }
+                                    //QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
+                                    //QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));
+                                    //QMsMaximal = Utils.updateHashMap(QMsMaximal, Measures.get(2));
+                                    //QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
+
                                 }
-
-                                // Execute the method
-                                //First: instantiate the class selected with the fully qualified name
-                                Object newObject;
-                                Class clase = Class.forName(fully_qualified_name);
-                                newObject = clase.newInstance();
-                                ((Model) newObject).patterns = new ArrayList<>();
-                                ((Model) newObject).patternsFilteredByMeasure = new ArrayList<>();
-                                ((Model) newObject).patternsFilteredMaximal = new ArrayList<>();
-                                ((Model) newObject).patternsFilteredMinimal = new ArrayList<>();
-                                ((Model) newObject).filters = new HashMap<>();
-
-                                // Second: get the argument class
-                                Class[] arg = new Class[2];
-                                arg[0] = InstanceSet.class;
-                                arg[1] = HashMap.class;
-
-                                // Third: Get the method 'learn' of the class and invoke it. (cambiar "new InstanceSet" por el training)
-                                long t_ini = System.currentTimeMillis();
-                                clase.getMethod("learn", arg).invoke(newObject, training, params);
-                                long t_end = System.currentTimeMillis();
-                                // Get learned patterns, filter, and calculate measures
-                                
-                                // Filter patterns
-                                HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
-                              
-                    
-                                // Predict phase 
-                                System.out.println("Calculating precision for training...");
-                                GUI.predictPhase(clase, newObject, training, test, Measures, true, dir.getAbsolutePath(), i);
-                                Measures.forEach((key, value) -> 
-                                         value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
-                                );
-                                   
-                                // Save the training results file
-                                Utils.saveMeasures2(dir, (Model) newObject, Measures, true, i);
-
-                                // Now, process the test file
-                                // Calculate test measures for unfiltered and filtered patterns
-                                Measures = Utils.calculateDescriptiveMeasures(test, ((Model) newObject).getPatterns(), false, "Unfiltered");
-                                for (String key : ((Model) newObject).filters.keySet()) {
-                                    Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
-                                }
-                                
-                                GUI.predictPhase(clase, newObject, training, test, Measures, false, dir.getAbsolutePath(), i);
-                                
-                                 Measures.forEach((key, value) -> 
-                                         value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
-                                 );
-                                   
-                                // Save meassures to a file
-                                Utils.saveMeasures2(dir, (Model) newObject, Measures, false, i);
-                                
-                                
-                                // Add number of rules
-                                Measures.get("Unfiltered").addMeasure("NRULES", ((Model) newObject).patterns.size());
-                                Measures.forEach((k, v) -> {
-                                    if(!k.equalsIgnoreCase("Unfiltered")){
-                                        v.addMeasure("NRULES", ((Model) newObject).filters.get(k).size());
-                                    }
+                                // Average nrules and nvars
+                                 for (String key : totalMeasures.keySet()) {
+                                        totalMeasures.get(key).addMeasure("NRULES", totalMeasures.get(key).getMeasure("NRULES") / (double) (NUM_FOLDS - totalMeasures.get(key).getMeasures().getOrDefault("NaNs", 0.0)));
+                                        totalMeasures.get(key).addMeasure("NVAR", totalMeasures.get(key).getMeasure("NVAR") / (double) (NUM_FOLDS - totalMeasures.get(key).getMeasures().getOrDefault("NaNs", 0.0)));
+                                        totalMeasures.get(key).getMeasures().remove("NaNs");
+                                 }
+                                 
+                                totalMeasures.forEach((key, value) -> {
+                                    Utils.averageQualityMeasures(value, NUM_FOLDS);
                                 });
                                 
-                                // Store the result to make the average result
-                                for (String key : totalMeasures.keySet()) {
-                                    QualityMeasures updateHashMap = Utils.updateHashMap(totalMeasures.get(key), Measures.get(key));
-                                    totalMeasures.put(key, updateHashMap);
-                                }
-                                //QMsUnfiltered = Utils.updateHashMap(QMsUnfiltered, Measures.get(0));
-                                //QMsMinimal = Utils.updateHashMap(QMsMinimal, Measures.get(1));
-                                //QMsMaximal = Utils.updateHashMap(QMsMaximal, Measures.get(2));
-                                //QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
+                                // After finished the fold cross validation, make the average calculation of each quality measure.
+                                Utils.saveResults(dir, totalMeasures, NUM_FOLDS);
 
                             }
-                            
-                            totalMeasures.forEach((key, value) ->{
-                                Utils.averageQualityMeasures(value, NUM_FOLDS);
-                            });
-
-                            // After finished the fold cross validation, make the average calculation of each quality measure.
-                            Utils.saveResults(dir, totalMeasures, NUM_FOLDS);
 
                         }
-
-                    }
                         System.out.println("FINISHED BATCH EXECUTION ! RESULTS ARE SAVED IN EACH DATASET FOLDER.");
                     }
                     break;
