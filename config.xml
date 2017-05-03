@@ -805,6 +805,49 @@
         </parameter>
     </algorithm>
     
+    <algorithm>
+        <name>FEPM</name>
+        <class>algorithms.fepm.Fepm_Wrapper</class>
+        <parameter>
+            <name>growthRate</name>
+            <type>real</type>
+            <domain>
+                <min>1</min>
+                <max>99999</max>
+            </domain>
+            <default>10</default>
+        </parameter>
+        <parameter>
+            <name>maxDepth</name>
+            <type>integer</type>
+            <domain>
+                <min>1</min>
+                <max>99999</max>
+            </domain>
+            <default>10</default>
+        </parameter>
+        <parameter>
+            <name>subsetRelation</name>
+            <type>nominal</type>
+            <domain>
+                <item>superset</item>
+                <item>equal</item>
+            </domain>
+            <default>1</default>
+        </parameter>
+        <parameter>
+            <name>treeCount</name>
+            <type>integer</type>
+            <domain>
+                <min>1</min>
+                <max>99999</max>
+            </domain>
+            <default>100</default>
+        </parameter>
+    </algorithm>
+    
     <!-- End of the algorithms definitions -->
     
-<lastDir>/home/angel/Escritorio/Pr</lastDir></document>
+<lastDir>/home/angel/DATASETS/classification/iris</lastDir>
+
+</document>

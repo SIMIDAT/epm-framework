@@ -64,7 +64,10 @@ public class Base
                 integerFeature.setMaxValue(a.getMaxAttribute());
             }
             if (a.getType() == Attribute.REAL) {
-                featToAdd = new DoubleFeature(featName, index++);
+                DoubleFeature b = new DoubleFeature(featName, index++);
+                b.setMaxValue(a.getMaxAttribute());
+                b.setMinValue(a.getMinAttribute());
+                featToAdd = b;
             }
             featureDescriptions.add(featToAdd);
             if (a == classAttr)
@@ -101,7 +104,7 @@ public class Base
 
             for (PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Item i : ep.getItems()) {
                 if (i.getFeature().getFeatureType() == FeatureType.Integer || i.getFeature().getFeatureType() == FeatureType.Double) {
-                    // IF VARIABLE IS REAL, CREATE AN REAL ITEM.
+                    // IF VARIABLE IS REAL, CREATE A REAL ITEM.
                     String operator = " = ";
                     if (i instanceof DifferentThanItem) {
                         operator = " != ";
