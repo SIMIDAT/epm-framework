@@ -40,6 +40,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,6 +118,7 @@ public class Utils {
         Attribute[] inputAttributes = data.getAttributeDefinitions().getInputAttributes();
         Attribute outputAttributes = data.getAttributeDefinitions().getOutputAttribute(0);
         int[][] confusionMatrices = new int[patterns.size()][6];
+        BitSet cubiertos = new BitSet(data.getNumInstances());
         // 0 -> tp
         // 1 -> tn
         // 2 -> fp
@@ -137,6 +139,7 @@ public class Utils {
                     if (patterns.get(i).getClase() == outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
                         tp++;
                         examplesClass++;
+                        cubiertos.set(j);
                     } else {
                         fp++;
                     }
@@ -269,6 +272,7 @@ public class Utils {
             measures.addMeasure("SUPP", supp); // Support
             measures.addMeasure("NVAR", (double) confusionMatrices[i][4]); // Number of variables
             measures.addMeasure("RULE_NUMBER", (double) i); // Rule ID
+            measures.addMeasure("GLOBAR_TPR_IMBALANCED", Double.NaN);
 
             // Add confusion matrix
             // 0 -> tp
@@ -294,8 +298,15 @@ public class Utils {
         // Average the results and return
         //HashMap<String, Double> AverageQualityMeasures = averageQualityMeasures(qms);
         if(!patterns.isEmpty()){
-        averageQualityMeasures(total, patterns.size());
-        total.addMeasure("NVAR", total.getMeasure("NVAR") / (double) patterns.size());
+            averageQualityMeasures(total, patterns.size());
+            total.addMeasure("NVAR", total.getMeasure("NVAR") / (double) patterns.size());
+            
+            // adds the TPR of the whole set of rules. 
+            // This measure is only valid for imbalanced dataset. 
+            // The value is calculated assuming all patterns contains the same class.
+            // This could be only possible in imbalanced mode due to we keep only those rules with the minority class
+            total.addMeasure("GLOBAR_TPR_IMBALANCED", (double) cubiertos.cardinality() / (double)confusionMatrices[0][5]);
+            
         } else{
             total.addMeasure("WRACC", 0);  // Normalized Unusualness
             total.addMeasure("GAIN", 0);  // Information Gain
@@ -1207,10 +1218,7 @@ public class Utils {
      * file
      */
     public static void saveMeasures2(File dir, Model model, HashMap<String, QualityMeasures> Measures, boolean train, int fold) {
-
-        // Tienes que modificar este ArrayList por un HashMap, Así puedes
-        // identificar cada fichero con su conjunto de datos.
-        // AHORA SE ESCRIBEN TODAS LAS REGLAS EN TODOS LOS FICHEROS! ES ALGO NO DESEADO!
+        
         HashMap<String, PrintWriter> files = new HashMap<>();
         PrintWriter rules = null;
 

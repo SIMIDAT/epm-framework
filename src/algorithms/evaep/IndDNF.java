@@ -37,7 +37,8 @@ public class IndDNF extends Individual {
 
           tamano = lenght;
           cromosoma = new CromDNF(lenght, Variables);
-
+          medidas = new QualityMeasures( );
+          
           evaluado = false;
           cubre = new boolean [neje];
 

@@ -1304,7 +1304,7 @@ public class GUI extends javax.swing.JFrame {
                                     //QMsByMeasure = Utils.updateHashMap(QMsByMeasure, Measures.get(3));
                                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
                                     appendToPane(BatchOutput, "An unexpected error has ocurred: " + ex.getCause().toString(), Color.red);
-
+                                    ex.printStackTrace();
                                 }
 
                             });
@@ -1312,7 +1312,10 @@ public class GUI extends javax.swing.JFrame {
                             // Average the summary of the measures for the fold cross validation
                             totalMeasures.forEach((key, value) -> {
                                 Utils.averageQualityMeasures(value, NUM_FOLDS);
+                                value.addMeasure("NRULES", value.getMeasure("NRULES") / (double) NUM_FOLDS);
+                                value.addMeasure("NVAR", value.getMeasure("NVAR") / (double) NUM_FOLDS);
                             });
+                            
 
                             //Utils.averageQualityMeasures(totalMeasures, NUM_FOLDS);
                             // After finished the fold cross validation, make the average calculation of each quality measure.
@@ -1797,6 +1800,7 @@ public class GUI extends javax.swing.JFrame {
      * @param training The training data
      * @param filterBy A measure to filter the data
      * @param threshold the threshold of the measure filter
+     * @param imbalanced it calculates measures only for the minority class
      * @return
      */
     public static HashMap<String, QualityMeasures> filterPhase(Object newObject, InstanceSet training, String filterBy, float threshold, boolean imbalanced) {

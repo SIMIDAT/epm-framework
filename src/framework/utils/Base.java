@@ -103,6 +103,7 @@ public class Base
             ArrayList<Item> items = new ArrayList<>();
 
             for (PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Item i : ep.getItems()) {
+                System.out.println(i.getFeature().getFeatureType());
                 if (i.getFeature().getFeatureType() == FeatureType.Integer || i.getFeature().getFeatureType() == FeatureType.Double) {
                     // IF VARIABLE IS REAL, CREATE A REAL ITEM.
                     String operator = " = ";

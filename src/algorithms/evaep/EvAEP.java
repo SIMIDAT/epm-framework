@@ -1017,6 +1017,108 @@ public class EvAEP extends Model {
 
                 } while (terminar==false);            
             }
+        } else {
+                // EXECUTION FOR IMBALANCED
+                int numClass = Variables.getNClass();
+                int minorityClass = -1;
+                int count = Integer.MAX_VALUE;
+                for(int i = 0; i < numClass; i++){
+                    if(Examples.getExamplesClass(i) < count){
+                        count = Examples.getExamplesClass(i);
+                        minorityClass = i;
+                    }
+                }
+                clase = minorityClass;
+                
+                Variables.setNumClassObj(clase);
+                Variables.setNameClassObj(Attributes.getOutputAttribute(0).getNominalValue(clase));
+                System.out.println ("Generate rules for class: "+clase);
+
+                // Set all the examples as not covered
+                for (int ej=0; ej<Examples.getNEx(); ej++)
+                    Examples.setCovered (ej,false);  // Set example to not covered
+
+                // Load the number of examples of the target class
+                Examples.setExamplesClassObj(Variables.getNumClassObj());
+
+                // Variables Initialization
+                Examples.setExamplesCovered(0);
+                Examples.setExamplesCoveredClass(0);
+                terminar = false;
+
+                // Tracking to file and "seg" file
+                System.out.println ("\nTarget class number: " + Variables.getNumClassObj() + " (value " + Variables.getNameClassObj() + ")");
+
+                contents = "\n";
+                contents+= "--------------------------------------------\n";
+                contents+= "|                 Class "+Variables.getNumClassObj()+"                  |\n";
+                contents+= "--------------------------------------------\n\n";
+
+                //File.AddtoFile(seg_file, contents);
+                System.out.println(contents);
+
+                System.out.println("Number of rule: \n");
+
+                //File.AddtoFile(seg_file, "Number of rule: \n");
+
+                boolean rulesClass = false;
+                
+                do {        
+
+                    Individual result = AG.GeneticAlgorithm(Variables,Examples,seg_file);
+                 
+                    if((result.getMeasures().getGRat() < 1) ||
+                        (Examples.getExamplesCoveredClass()==Examples.getExamplesClassObj()) ||
+                        result.getMeasures().getNSup()==0) {
+                            terminar = true;
+                    }
+
+                    if((rulesClass == false) || (terminar==false)){
+                    
+                        System.out.print("#"+NumRulesGenerated+":\n");
+                       // File.AddtoFile(seg_file, "#"+NumRulesGenerated+":\n");
+                       
+                       // Here is where the translation of CAN or DNF rules to Pattern is done              
+                        this.patterns.add(toPattern(result));
+                        
+                       
+                        result.Print("");
+                        result.getMeasures().Print("", AG);
+                        
+                        // Duplicate the size of the result population if neccesary
+                        /*if(NumRulesGenerated==popFinal.getNumIndiv()-1){
+                            Population aux_popFinal = new Population(popFinal.getNumIndiv()*2, Variables.getNVars(), Examples.getNEx(), AG.getRulesRep(), Variables, AG.getTrials());
+                            int[] aux_classFinal = new int[classFinal.length*2];
+                            for(int i=0; i<classFinal.length; i++)
+                                aux_classFinal[i] = classFinal[i];
+                            aux_popFinal.CopyPopulation(popFinal, Examples.getNEx());
+                            popFinal = new Population(popFinal.getNumIndiv()*2, Variables.getNVars(), Examples.getNEx(), AG.getRulesRep(), Variables, AG.getTrials());
+                            popFinal.CopyPopulation(aux_popFinal, Examples.getNEx());
+                            classFinal = new int[aux_classFinal.length];
+                            for(int i=0; i<classFinal.length; i++)
+                                classFinal[i] = aux_classFinal[i];
+                        }
+                        popFinal.CopyIndiv(NumRulesGenerated, Examples.getNEx(), result);
+                        classFinal[NumRulesGenerated] = clase;
+                        */
+                        NumRulesGenerated++; 
+
+                        //Update Examples Structure
+                        for(int j=0; j<Examples.getNEx(); j++){
+                            if(result.getIndivCovered(j)==true){
+                                if(Examples.getCovered(j)==false) {
+                                    Examples.setCovered(j, true);
+                                    Examples.setExamplesCovered(Examples.getExamplesCovered()+1);
+                                if(Examples.getClass(j) == Variables.getNumClassObj())
+                                    Examples.setExamplesCoveredClass(Examples.getExamplesCoveredClass()+1);
+                                }
+                            }
+                        }
+                    }
+                    
+                    rulesClass = true;
+
+                } while (terminar==false);  
         } 
         
         System.out.println("Algorithm terminated\n\n");
