@@ -196,6 +196,7 @@ public class IndCAN extends Individual {
     /**
      * <p>
      * Evaluate a individual. This function evaluates an individual.
+     * NOTE: FUZZY COVERAGE IS <strong>DISABLED</strong>
      * </p>
      * @param AG                Genetic algorithm
      * @param Variables         Variables structure

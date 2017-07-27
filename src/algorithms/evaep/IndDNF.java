@@ -191,6 +191,10 @@ public class IndDNF extends Individual {
     /**
      * <p>
      * Evaluate a individual. This function evaluates an individual.
+     * NOTE: FUZZY COVERAGE IS <strong>ENABLED</strong>
+     * 
+     * <strong> MEASURES ARE NOT COMPUTED ON THIS VERSION!! </strong>
+     * 
      * </p>
      * @param AG                Genetic algorithm
      * @param Variables         Variables structure

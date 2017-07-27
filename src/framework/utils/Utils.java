@@ -119,6 +119,7 @@ public class Utils {
         Attribute outputAttributes = data.getAttributeDefinitions().getOutputAttribute(0);
         int[][] confusionMatrices = new int[patterns.size()][6];
         BitSet cubiertos = new BitSet(data.getNumInstances());
+        int minorityClass = getMinorityClass(data);
         // 0 -> tp
         // 1 -> tn
         // 2 -> fp
@@ -135,11 +136,15 @@ public class Utils {
             for (int j = 0; j < data.getNumInstances(); j++) {
                 // If the pattern covers the example
                 if (patterns.get(i).covers(data.getInstance(j), inputAttributes)) {
-
+                    
                     if (patterns.get(i).getClase() == outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0))) {
                         tp++;
                         examplesClass++;
-                        cubiertos.set(j);
+                        
+                        // Check if the examples belongs to the minority class, if true, mark for global TPR with respect the minority class
+                        if(outputAttributes.convertNominalValue(data.getOutputNominalValue(j, 0)) == minorityClass){
+                            cubiertos.set(j);
+                        }
                     } else {
                         fp++;
                     }
@@ -272,7 +277,7 @@ public class Utils {
             measures.addMeasure("SUPP", supp); // Support
             measures.addMeasure("NVAR", (double) confusionMatrices[i][4]); // Number of variables
             measures.addMeasure("RULE_NUMBER", (double) i); // Rule ID
-            measures.addMeasure("GLOBAR_TPR_IMBALANCED", Double.NaN);
+            measures.addMeasure("GLOBAL_TPR_IMBALANCED", Double.NaN);
 
             // Add confusion matrix
             // 0 -> tp
@@ -305,7 +310,7 @@ public class Utils {
             // This measure is only valid for imbalanced dataset. 
             // The value is calculated assuming all patterns contains the same class.
             // This could be only possible in imbalanced mode due to we keep only those rules with the minority class
-            total.addMeasure("GLOBAR_TPR_IMBALANCED", (double) cubiertos.cardinality() / (double)confusionMatrices[0][5]);
+            total.addMeasure("GLOBAL_TPR_IMBALANCED", (double) cubiertos.cardinality() / (double)confusionMatrices[0][5]);
             
         } else{
             total.addMeasure("WRACC", 0);  // Normalized Unusualness
@@ -319,6 +324,7 @@ public class Utils {
             total.addMeasure("SUPP", 0); // Support
             total.addMeasure("NVAR", 0.0); // Number of variables
             total.addMeasure("RULE_NUMBER", 0.0); // Rule ID
+            total.addMeasure("GLOBAL_TPR_IMBALANCED", 0.0); // Rule ID
         }
         //Average GR
         if (!patterns.isEmpty()) {

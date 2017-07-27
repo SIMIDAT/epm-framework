@@ -92,7 +92,8 @@ public class Main {
 
                     batchMode = params.containsKey("directory");
                     if (params.containsKey("imbalanced mode")) {
-                        imbalanced = params.get("imbalanced mode").equalsIgnoreCase("true");
+                        imbalanced = params.get("imbalanced mode").equalsIgnoreCase("true") || 
+                                     params.get("imbalanced mode").equalsIgnoreCase("yes");
                     }
 
                     if (!batchMode) {
