@@ -1226,14 +1226,14 @@ public class Utils {
     public static void saveMeasures2(File dir, Model model, HashMap<String, QualityMeasures> Measures, boolean train, int fold) {
         
         HashMap<String, PrintWriter> files = new HashMap<>();
-        PrintWriter rules = null;
-
+        //PrintWriter rules = null;
+        HashMap<String,PrintWriter> rules = new HashMap<>();
         try {
             // define the files to write
             if (train) {
-                rules = new PrintWriter(dir.getAbsolutePath() + "/RULES.txt");
                 for (String key : Measures.keySet()) {
                     files.put(key, new PrintWriter(dir.getAbsolutePath() + "/TRA_QUAC_" + key + "_" + fold + ".txt"));
+                    rules.put(key,new PrintWriter(dir.getAbsolutePath() + "/RULES_" + key + "_" + fold + ".txt"));
                 }
             } else {
 
@@ -1260,9 +1260,6 @@ public class Utils {
 
             // write rules and training qms for all rules
             for (Pattern pat : model.getPatterns()) {
-                if (train) {
-                    rules.println("RULE NUMBER " + pat.getTra_measures().getMeasure("RULE_NUMBER") + ": " + pat.toString());
-                }
 
                 files.get("Unfiltered").print(pat.getTraMeasure("RULE_NUMBER") + "\t");
                 if (train) {
@@ -1271,6 +1268,7 @@ public class Utils {
                     files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("TN")) + "\t");
                     files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("FP")) + "\t");
                     files.get("Unfiltered").print(sixDecimals.format(pat.getTraMeasure("FN")) + "\t");
+                    rules.get("Unfiltered").println("RULE NUMBER " + pat.getTra_measures().getMeasure("RULE_NUMBER") + ": " + pat.toString());
                 } else {
                     files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure("NVAR")) + "\t");
                     files.get("Unfiltered").print(sixDecimals.format(pat.getTst_measures().getMeasure("TP")) + "\t");
@@ -1315,6 +1313,7 @@ public class Utils {
                         files.get(key).print(sixDecimals.format(pat.getTraMeasure("TN")) + "\t");
                         files.get(key).print(sixDecimals.format(pat.getTraMeasure("FP")) + "\t");
                         files.get(key).print(sixDecimals.format(pat.getTraMeasure("FN")) + "\t");
+                        rules.get(key).println("RULE NUMBER " + pat.getTra_measures().getMeasure("RULE_NUMBER") + ": " + pat.toString());
                     } else {
                         files.get(key).print(pat.getTst_measures().getMeasure("RULE_NUMBER") + "\t");
                         files.get(key).print(sixDecimals.format(pat.getTst_measures().getMeasure("NVAR")) + "\t");
@@ -1357,7 +1356,7 @@ public class Utils {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (train) {
-                rules.close();
+                rules.forEach((key,pw) -> {pw.close();});
             }
             files.forEach((key, pw) -> {
                 pw.close();
