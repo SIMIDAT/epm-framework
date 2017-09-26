@@ -126,7 +126,7 @@ public class Main {
                         clase.getMethod("learn", arg).invoke(newObject, training, params);
 
                         // Get learned patterns, filter, and calculate measures
-                        HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
+                        HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, test, filterBy, threshold, imbalanced);
 
                         // Call predict method for ACC and AUC for training
                         System.out.println("Calculating precision for training...");
@@ -238,7 +238,7 @@ public class Main {
                                     // Get learned patterns, filter, and calculate measures
 
                                     // Filter patterns
-                                    HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, filterBy, threshold, imbalanced);
+                                    HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, test, filterBy, threshold, imbalanced);
 
                                     // Predict phase 
                                     System.out.println("Calculating precision for training...");
