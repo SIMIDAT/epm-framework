@@ -35,7 +35,7 @@ import PRFramework.Core.SupervisedClassifiers.DecisionTrees.Builder.DecisionTree
 import PRFramework.Core.SupervisedClassifiers.DecisionTrees.DistributionTesters.PureNodeStopCondition;
 import PRFramework.Core.SupervisedClassifiers.DecisionTrees.PruneTesters.PessimisticError;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.IEmergingPattern;
-import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Miners.CepmMiner;
+//import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Miners.CepmMiner;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.PatternTests.QualityBasedPatternTester;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Qualities.Statistical.ConfidenceQuality;
 import PRFramework.Core.SupervisedClassifiers.EmergingPatterns.Qualities.Statistical.GrowthRateQuality;
@@ -86,7 +86,7 @@ public class Cepm extends Cepm_Wrapper
     }
 
     public void mine ()
-    {
+    { /*
         ArrayList<Instance> prfInstances = new ArrayList<>();
         InstanceModel model = new InstanceModel();
 
@@ -118,7 +118,7 @@ public class Cepm extends Cepm_Wrapper
         System.out.println(name + " " + model.getRelationName() + " Training " + trainingTime + "s");
 
         // SETS THE ARRAYLIST OF PATTERNS OF THE MODEL CLASS
-        super.setPatterns(keelPatterns);
+        super.setPatterns(keelPatterns); */
     }
 
     /**
