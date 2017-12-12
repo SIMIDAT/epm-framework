@@ -950,7 +950,7 @@ public class GUI extends javax.swing.JFrame {
 
                     //  Perfom the filter phase, filter the patterns
                     // NOTE: The behaviour of this function must be changed in the future to select a filter accorder to an user criterion
-                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, test, filterBy, threshold, learnImbalancedRadio.isSelected());
+                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, test, filterBy, threshold, learnImbalancedRadio.isSelected(), applyFiltersLearn.isSelected());
                     Measures.forEach((key, value) -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0));
 
                     // Call predict method for ACC and AUC for training
@@ -1262,7 +1262,7 @@ public class GUI extends javax.swing.JFrame {
 
                                     // Get learned patterns, filter, and calculate measures
                                     // Filter patterns
-                                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, test, filterBy, threshold, batchImbalanceRadio.isSelected());
+                                    HashMap<String, QualityMeasures> Measures = filterPhase(newObject, training, test, filterBy, threshold, batchImbalanceRadio.isSelected(),false);
                                     Measures.forEach((key, value) -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0));
 
                                     // Predict phase
@@ -1803,7 +1803,7 @@ public class GUI extends javax.swing.JFrame {
      * @param imbalanced it calculates measures only for the minority class
      * @return
      */
-    public static HashMap<String, QualityMeasures> filterPhase(Object newObject, InstanceSet training, InstanceSet test, String filterBy, float threshold, boolean imbalanced) {
+    public static HashMap<String, QualityMeasures> filterPhase(Object newObject, InstanceSet training, InstanceSet test, String filterBy, float threshold, boolean imbalanced, boolean filter) {
 
         // Check if we need to work with imbalanced data.
         if (imbalanced) {
@@ -1825,7 +1825,10 @@ public class GUI extends javax.swing.JFrame {
 
         // Filter the patterns, returning the average quality measures for each set of patterns
         //ArrayList<HashMap<String, Double>> filterPatterns = Utils.filterPatterns((Model) newObject, "CONF", 0.6f);
-        HashMap<String, QualityMeasures> filterPatterns = Utils.filterPatterns2((Model) newObject, filterBy, threshold);
+        
+        HashMap<String, QualityMeasures> filterPatterns = new HashMap<>();
+        if(filter)
+            filterPatterns = Utils.filterPatterns2((Model) newObject, filterBy, threshold);
 
         // Add each averaged measur with key in "filters" to the Measures variable
         for (String key : filterPatterns.keySet()) {
@@ -1834,7 +1837,8 @@ public class GUI extends javax.swing.JFrame {
 
         // Filter By Chi-EPs
         // Params used: Supp: 0.02; GR = 10; Chi: 3.84
-        Measures.put("Chi", Utils.filterByChiEP((Model) newObject, 0.02, 10.0, 3.84, training));
+        if(filter)
+            Measures.put("Chi", Utils.filterByChiEP((Model) newObject, 0.02, 10.0, 3.84, training));
 
         return Measures;
     }

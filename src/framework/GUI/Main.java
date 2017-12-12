@@ -57,6 +57,8 @@ import keel.Dataset.Attributes;
  */
 public class Main {
 
+    static boolean filterPatterns;
+
     public static void main(String[] args) {
         try {
             String fully_qualified_name = "";
@@ -74,6 +76,7 @@ public class Main {
                     InstanceSet test = new InstanceSet();
                     boolean batchMode = false;
                     boolean imbalanced = false;
+                    filterPatterns = params.getOrDefault("filter", "no").equalsIgnoreCase("yes");
 
                     // Find an algorithm that match on the list of algorithms
                     for (int i = 0; i < nodes.getLength() && !found; i++) {
@@ -92,8 +95,8 @@ public class Main {
 
                     batchMode = params.containsKey("directory");
                     if (params.containsKey("imbalanced mode")) {
-                        imbalanced = params.get("imbalanced mode").equalsIgnoreCase("true") || 
-                                     params.get("imbalanced mode").equalsIgnoreCase("yes");
+                        imbalanced = params.get("imbalanced mode").equalsIgnoreCase("true")
+                                || params.get("imbalanced mode").equalsIgnoreCase("yes");
                     }
 
                     if (!batchMode) {
@@ -126,7 +129,7 @@ public class Main {
                         clase.getMethod("learn", arg).invoke(newObject, training, params);
 
                         // Get learned patterns, filter, and calculate measures
-                        HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, test, filterBy, threshold, imbalanced);
+                        HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, test, filterBy, threshold, imbalanced, filterPatterns);
 
                         // Call predict method for ACC and AUC for training
                         System.out.println("Calculating precision for training...");
@@ -178,11 +181,12 @@ public class Main {
                                 HashMap<String, QualityMeasures> totalMeasures = new HashMap<>();
                                 // This must be changed in order to introduce the selection of filter by the user
                                 totalMeasures.put("Unfiltered", new QualityMeasures());
-                                totalMeasures.put("Minimals", new QualityMeasures());
-                                totalMeasures.put("Maximals", new QualityMeasures());
-                                totalMeasures.put("CONF", new QualityMeasures());
-                                totalMeasures.put("Chi", new QualityMeasures());
-
+                                if (filterPatterns) {
+                                    totalMeasures.put("Minimals", new QualityMeasures());
+                                    totalMeasures.put("Maximals", new QualityMeasures());
+                                    totalMeasures.put("CONF", new QualityMeasures());
+                                    totalMeasures.put("Chi", new QualityMeasures());
+                                }
                                 System.out.println("Executing..." + dir.getName() + "...");
 
                                 /* HINT: 
@@ -238,11 +242,13 @@ public class Main {
                                     // Get learned patterns, filter, and calculate measures
 
                                     // Filter patterns
-                                    HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, test, filterBy, threshold, imbalanced);
+                                    HashMap<String, QualityMeasures> Measures = GUI.filterPhase(newObject, training, test, filterBy, threshold, imbalanced, filterPatterns);
 
                                     // Predict phase 
                                     System.out.println("Calculating precision for training...");
-                                    GUI.predictPhase(clase, newObject, training, test, Measures, true, dir.getAbsolutePath(), i);
+                                    if (filterPatterns) {
+                                        GUI.predictPhase(clase, newObject, training, test, Measures, true, dir.getAbsolutePath(), i);
+                                    }
                                     Measures.forEach((key, value)
                                             -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
                                     );
@@ -256,9 +262,9 @@ public class Main {
                                     for (String key : ((Model) newObject).filters.keySet()) {
                                         Measures.put(key, Utils.calculateDescriptiveMeasures(test, ((Model) newObject).filters.get(key), false, key).get(key));
                                     }
-
-                                    GUI.predictPhase(clase, newObject, training, test, Measures, false, dir.getAbsolutePath(), i);
-
+                                    if (filterPatterns) {
+                                        GUI.predictPhase(clase, newObject, training, test, Measures, false, dir.getAbsolutePath(), i);
+                                    }
                                     Measures.forEach((key, value)
                                             -> value.addMeasure("Exec. Time (s)", (double) (t_end - t_ini) / 1000.0)
                                     );
@@ -273,7 +279,7 @@ public class Main {
                                         Measures.get("Unfiltered").addMeasure("NRULES", ((Model) newObject).patterns.size());
                                         Measures.get("Unfiltered").addMeasure("NaNs", Measures.get("Unfiltered").getMeasures().getOrDefault("NaNs", 0.0) + 1.0);
                                     }
-                                    
+
                                     Measures.forEach((k, v) -> {
                                         if (!k.equalsIgnoreCase("Unfiltered")) {
                                             if (!((Model) newObject).filters.get(k).isEmpty()) {
@@ -297,16 +303,16 @@ public class Main {
 
                                 }
                                 // Average nrules and nvars
-                                 for (String key : totalMeasures.keySet()) {
-                                        totalMeasures.get(key).addMeasure("NRULES", totalMeasures.get(key).getMeasure("NRULES") / (double) (NUM_FOLDS - totalMeasures.get(key).getMeasures().getOrDefault("NaNs", 0.0)));
-                                        totalMeasures.get(key).addMeasure("NVAR", totalMeasures.get(key).getMeasure("NVAR") / (double) (NUM_FOLDS - totalMeasures.get(key).getMeasures().getOrDefault("NaNs", 0.0)));
-                                        totalMeasures.get(key).getMeasures().remove("NaNs");
-                                 }
-                                 
+                                for (String key : totalMeasures.keySet()) {
+                                    totalMeasures.get(key).addMeasure("NRULES", totalMeasures.get(key).getMeasure("NRULES") / (double) (NUM_FOLDS - totalMeasures.get(key).getMeasures().getOrDefault("NaNs", 0.0)));
+                                    totalMeasures.get(key).addMeasure("NVAR", totalMeasures.get(key).getMeasure("NVAR") / (double) (NUM_FOLDS - totalMeasures.get(key).getMeasures().getOrDefault("NaNs", 0.0)));
+                                    totalMeasures.get(key).getMeasures().remove("NaNs");
+                                }
+
                                 totalMeasures.forEach((key, value) -> {
                                     Utils.averageQualityMeasures(value, NUM_FOLDS);
                                 });
-                                
+
                                 // After finished the fold cross validation, make the average calculation of each quality measure.
                                 Utils.saveResults(dir, totalMeasures, NUM_FOLDS);
 

@@ -1,5 +1,5 @@
 algorithm = iEPMiner
-directory = /home/angel/Escritorio/Pr
+directory = /home/agvico/Escritorio/Pr
 number of folds = 5
 Minimum Support = 0.02
 Minimum Growth Rate = 1
