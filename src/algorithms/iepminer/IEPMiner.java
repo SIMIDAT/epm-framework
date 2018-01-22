@@ -107,6 +107,7 @@ public class IEPMiner extends Model {
             super.setPatterns(pruneEPs(super.patterns));
             System.out.println("Number of iEPs: " + patterns.size());
         } catch (IllegalActionException ex) {
+            System.err.println(ex.getReason());
             GUI.setInfoLearnTextError(ex.getReason());
         }
     }

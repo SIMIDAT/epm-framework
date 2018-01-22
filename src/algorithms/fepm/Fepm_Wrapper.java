@@ -51,10 +51,6 @@ public class Fepm_Wrapper extends Model
     @Override
     public String[] predict (InstanceSet test, ArrayList<Pattern> patterns)
     {
-        return algorithm.getPredictions(patterns, test);
-        //algorithm.setPatternsFilteredAllClass(super.getPatternsFilteredAllClass());
-        //algorithm.setPatternsFilteredByClass(super.getPatternsFilteredByClass());
-        //return algorithm.executeTest(test);
-        //return new String[2][2];
+         return super.getPredictions(patterns, test);
     }
 }

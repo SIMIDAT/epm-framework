@@ -844,10 +844,19 @@
             </domain>
             <default>100</default>
         </parameter>
+        <parameter>
+            <name>fuzzyfierCount</name>
+            <type>integer</type>
+            <domain>
+                <min>1</min>
+                <max>99999</max>
+            </domain>
+            <default>4</default>
+        </parameter>
     </algorithm>
     
     <!-- End of the algorithms definitions -->
     
-<lastDir>/home/agvico/Escritorio/abalone9-18</lastDir>
+<lastDir>/home/agvico/DATASETS/classification/appendicitis</lastDir>
 
 </document>

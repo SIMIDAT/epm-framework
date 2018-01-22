@@ -89,7 +89,8 @@ public class Main {
                     }
 
                     if (!found) {
-                        System.out.println("ERROR: Algorithm does not match with any algorithm implemented. Aborting...");
+                        //System.out.println("ERROR: Algorithm does not match with any algorithm implemented. Aborting...");
+                        System.err.println("ERROR: Algorithm does not match with any algorithm implemented. Aborting...");
                         System.exit(-1);
                     }
 

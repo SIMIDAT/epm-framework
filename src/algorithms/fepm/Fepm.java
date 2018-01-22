@@ -46,11 +46,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import keel.Dataset.InstanceSet;
 import framework.items.Pattern;
+import framework.GUI.Model;
 
 public class Fepm extends Fepm_Wrapper
 {
 
-    public String name = "Fepm";
+    public String name = "FEPM";
 
     public InstanceSet train;
 
@@ -77,14 +78,15 @@ public class Fepm extends Fepm_Wrapper
     {
         this.train = train;
 
-        growthRate = Double.parseDouble(params.get("growthRate"));
-        if ("superset".equals(params.get("subsetRelation"))) {
+        growthRate = Double.parseDouble(params.getOrDefault("growthRate", "10"));
+        if ("superset".equals(params.getOrDefault("subsetRelation", "superset"))) {
             subsetRelation = SubsetRelation.Superset;
         } else {
             subsetRelation = SubsetRelation.Equal;
         }
-        maxDepth = Integer.parseInt(params.get("maxDepth"));
-        treeCount = Integer.parseInt(params.get("treeCount"));
+        maxDepth = Integer.parseInt(params.getOrDefault("maxDepth", "10"));
+        treeCount = Integer.parseInt(params.getOrDefault("treeCount", "100"));
+        fuzzyfierCount = Integer.parseInt(params.getOrDefault("fuzzyfierCount", "4"));
     }
 
     public void mine ()
@@ -133,13 +135,22 @@ public class Fepm extends Fepm_Wrapper
         ArrayList<IEmergingPattern> prfPatterns = miner.mine(model, prfInstances, classFeature.argValue);
         ArrayList<Pattern> keelPatterns = new ArrayList<>();
 
-        Base.convertPRFPatternsToKeelPatterns(prfPatterns, keelPatterns);
+        /**
+         * Here we need to re-design the whole framework in order to convert
+         * the fuzzy set returned by FEPM to EPM-Framework.
+         * 
+         * This is due to the fuzzy sets of are more complex, and contains fuzzy hedges.
+         * 
+         *  SO THE FUNCTION IS NOT AVAILABLE
+         */
+        //Base.convertPRFPatternsToKeelPatterns(prfPatterns, keelPatterns);
 
         trainingTime = ((double) System.currentTimeMillis() - initialTime) / 1000.0;
         System.out.println(name + " " + model.getRelationName() + " Training " + trainingTime + "s");
 
         // SETS THE ARRAYLIST OF PATTERNS OF THE MODEL CLASS
-        super.setPatterns(keelPatterns);
+        //super.setPatterns(keelPatterns);
+        super.setPatterns(new ArrayList<>());
     }
 
     /**
