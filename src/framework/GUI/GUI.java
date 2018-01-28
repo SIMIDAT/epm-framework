@@ -916,6 +916,7 @@ public class GUI extends javax.swing.JFrame {
                     Attributes.clearAll();
                     try {
                         training.readSet(rutaTra.getText(), true);
+                         params.put("traData", rutaTra.getText());
                     } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                         throw new IllegalActionException("ERROR: Format error on training file.");
                     }
@@ -923,6 +924,7 @@ public class GUI extends javax.swing.JFrame {
                     if (!rutaTst.getText().equals("")) {
                         test.readSet(rutaTst.getText(), false);
                         test.setAttributesAsNonStatic();
+                        params.put("testData", rutaTst.getText());
                     }
 
                     appendToPane(ExecutionInfoLearn, "Executing " + (String) AlgorithmList.getSelectedItem() + " algorithm... (This may take a while)", Color.BLUE);
@@ -1223,6 +1225,7 @@ public class GUI extends javax.swing.JFrame {
                                                 Attributes.clearAll();
                                                 training.readSet(x.getAbsolutePath(), true);
                                                 training.setAttributesAsNonStatic();
+                                                params.put("traData", x.getAbsolutePath());
                                             } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                                                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                                                 appendToPane(BatchOutput, ex.toString(), Color.red);
@@ -1232,6 +1235,7 @@ public class GUI extends javax.swing.JFrame {
                                             try {
                                                 test.readSet(x.getAbsolutePath(), false);
                                                 test.setAttributesAsNonStatic();
+                                                params.put("testData",x.getAbsolutePath());
                                             } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                                                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                                                 appendToPane(BatchOutput, ex.toString(), Color.red);

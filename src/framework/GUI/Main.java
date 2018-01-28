@@ -165,7 +165,7 @@ public class Main {
 
                         File root = new File(params.get("directory"));
                         if (!root.isDirectory()) {
-                            System.out.println("ERROR: \"directory\" is not a folder. Aborting...");
+                            System.err.println("ERROR: \"directory\" is not a folder. Aborting...");
                             System.exit(-1);
                         }
                         File[] folders = root.listFiles();
@@ -204,6 +204,7 @@ public class Main {
                                                 Attributes.clearAll();
                                                 training.readSet(x.getAbsolutePath(), true);
                                                 training.setAttributesAsNonStatic();
+                                                params.put("traData", algName);
                                             } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                                                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
 
@@ -213,6 +214,7 @@ public class Main {
                                             try {
                                                 test.readSet(x.getAbsolutePath(), false);
                                                 test.setAttributesAsNonStatic();
+                                                params.put("testData", x.getAbsolutePath());
                                             } catch (DatasetException | HeaderFormatException | NullPointerException ex) {
                                                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
 
