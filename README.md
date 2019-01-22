@@ -6,7 +6,9 @@ EPM is a data mining task which tries to describe a set of data using supervised
 * Discover differences between multiple varaibles.
 * Discover characteristical differencies between classes.
 
-In this framework you can execute the most important EPM algorithms that exists in the literature. The supported data format is the KEEL dataset format.
+In this framework you can execute the most important EPM algorithms that exists in the literature. The framework provides both a graphical user interface (GUI) and a command-line interface (CLI) for an easy deployment of your own experiments. In addition, the framework also allows you to use the different algorithms that are available within your own machine learning processes easily. 
+
+Right now, the supported data format is the KEEL dataset format.
 
 # How to add a new EPM
 
